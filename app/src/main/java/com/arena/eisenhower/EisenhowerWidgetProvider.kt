@@ -6,6 +6,7 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.widget.RemoteViews
 
 class EisenhowerWidgetProvider : AppWidgetProvider() {
@@ -19,56 +20,65 @@ class EisenhowerWidgetProvider : AppWidgetProvider() {
     }
 
     override fun onReceive(context: Context, intent: Intent) {
-        when (intent.action) {
-            ACTION_TOGGLE -> {
-                val id = intent.getLongExtra(EXTRA_TASK_ID, -1L)
-                if (id > 0L) {
-                    TaskRepository(context).toggleTask(id)
-                    updateAllWidgets(context)
-                }
-                return
-            }
-            ACTION_REFRESH -> {
+        // Recibimos los clics desde el ListView
+        val taskId = intent.getLongExtra(EXTRA_TASK_ID, -1L)
+        val actionType = intent.getStringExtra(EXTRA_ACTION_TYPE)
+
+        if (taskId != -1L) {
+            if (actionType == ACTION_TOGGLE) {
+                TaskRepository(context).toggleTask(taskId)
                 updateAllWidgets(context)
-                return
+            } else if (actionType == ACTION_EDIT) {
+                val editIntent = Intent(context, QuickAddActivity::class.java).apply {
+                    putExtra(EXTRA_TASK_ID, taskId)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                }
+                context.startActivity(editIntent)
             }
+            return
+        }
+
+        if (intent.action == ACTION_REFRESH) {
+            updateAllWidgets(context)
+            return
         }
         super.onReceive(context, intent)
     }
 
     companion object {
         const val ACTION_TOGGLE = "com.arena.eisenhower.ACTION_TOGGLE"
+        const val ACTION_EDIT = "com.arena.eisenhower.ACTION_EDIT"
         const val ACTION_REFRESH = "com.arena.eisenhower.ACTION_REFRESH"
         const val EXTRA_TASK_ID = "extra_task_id"
         const val EXTRA_QUADRANT = "extra_quadrant"
+        const val EXTRA_ACTION_TYPE = "extra_action_type"
 
-        private data class SlotViews(val cardId: Int, val titleId: Int, val tasksId: Int, val addId: Int)
+        private data class SlotViews(val cardId: Int, val titleId: Int, val listId: Int, val addId: Int)
 
         fun updateAllWidgets(context: Context) {
             val manager = AppWidgetManager.getInstance(context)
             val ids = manager.getAppWidgetIds(ComponentName(context, EisenhowerWidgetProvider::class.java))
-            ids.forEach { id -> updateWidget(context, manager, id) }
+            ids.forEach { id -> 
+                updateWidget(context, manager, id)
+                // Refrescamos las listas internas
+                manager.notifyAppWidgetViewDataChanged(id, R.id.q1_tasks)
+                manager.notifyAppWidgetViewDataChanged(id, R.id.q2_tasks)
+                manager.notifyAppWidgetViewDataChanged(id, R.id.q3_tasks)
+                manager.notifyAppWidgetViewDataChanged(id, R.id.q4_tasks)
+            }
         }
 
         private fun updateWidget(context: Context, manager: AppWidgetManager, appWidgetId: Int) {
-            val repo = TaskRepository(context)
             val settings = AppSettings(context)
-            val now = System.currentTimeMillis()
-
-            val allTasks = repo.getAll()
-            val visible = allTasks.filter { settings.showCompleted || !it.done }
-
-            val options = manager.getAppWidgetOptions(appWidgetId)
-            val minHeight = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 220)
-            val minWidth = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 250)
-            val perQuadrantHeight = ((minHeight - 56).coerceAtLeast(80) / 2)
-            val rowsByHeight = ((perQuadrantHeight - 40) / 28).coerceAtLeast(1)
-            val rowsByWidth = if (minWidth < 160) 1 else 5
-            val maxPer = minOf(settings.maxPerQuadrant, rowsByHeight, rowsByWidth).coerceAtLeast(1)
-
+            val repo = TaskRepository(context)
+            
             val views = RemoteViews(context.packageName, R.layout.eisenhower_widget)
             views.setTextColor(R.id.widget_header, android.graphics.Color.parseColor("#0F172A"))
             views.setTextColor(R.id.widget_sync, android.graphics.Color.parseColor("#2563EB"))
+
+            // Abrir la app al tocar el título
+            val mainIntent = Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            views.setOnClickPendingIntent(R.id.widget_header, PendingIntent.getActivity(context, 800, mainIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
 
             val refreshIntent = Intent(context, EisenhowerWidgetProvider::class.java).apply { action = ACTION_REFRESH }
             views.setOnClickPendingIntent(R.id.widget_sync, PendingIntent.getBroadcast(context, 900, refreshIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
@@ -91,6 +101,10 @@ class EisenhowerWidgetProvider : AppWidgetProvider() {
                 }
             }
 
+            // PendingIntent maestro que recibirá los clics de los ListView
+            val clickIntent = Intent(context, EisenhowerWidgetProvider::class.java)
+            val clickPi = PendingIntent.getBroadcast(context, 0, clickIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE)
+
             slots.forEachIndexed { index, slot ->
                 val quadrant = quadrantsToRender.getOrNull(index) ?: return@forEachIndexed
                 val title = when (quadrant) {
@@ -107,58 +121,21 @@ class EisenhowerWidgetProvider : AppWidgetProvider() {
                 }
 
                 views.setInt(slot.cardId, "setBackgroundColor", color)
-
-                val tasks = visible.filter { it.quadrant == quadrant }.sortedWith(
-                    compareBy<Task> { it.done }.thenBy { it.dueAt ?: Long.MAX_VALUE }.thenByDescending { it.createdAt }
-                )
-
-                views.setTextViewText(slot.titleId, "$title · ${tasks.count { !it.done }}")
+                
+                val pendingCount = repo.getAll().count { it.quadrant == quadrant && !it.done }
+                views.setTextViewText(slot.titleId, "$title · $pendingCount")
                 views.setTextColor(slot.titleId, android.graphics.Color.parseColor("#0F172A"))
                 views.setTextColor(slot.addId, android.graphics.Color.parseColor("#0F172A"))
-                views.removeAllViews(slot.tasksId)
 
-                if (tasks.isEmpty()) {
-                    val empty = RemoteViews(context.packageName, R.layout.widget_empty_row)
-                    empty.setTextViewText(R.id.empty_text, "—")
-                    empty.setTextColor(R.id.empty_text, android.graphics.Color.parseColor("#64748B"))
-                    views.addView(slot.tasksId, empty)
-                } else {
-                    tasks.take(maxPer).forEach { task ->
-                        val row = RemoteViews(context.packageName, R.layout.widget_task_row)
-                        val prefix = when {
-                            task.done -> "✓ "
-                            task.dueAt != null && task.dueAt < now -> "⚠ "
-                            else -> ""
-                        }
-                        row.setTextViewText(R.id.row_title, prefix + task.title)
-                        row.setTextViewText(R.id.row_check, if (task.done) "☑" else "□")
-                        row.setTextColor(R.id.row_check, if (task.done) android.graphics.Color.parseColor("#2563EB") else android.graphics.Color.parseColor("#475569"))
-                        row.setTextColor(R.id.row_title, if (task.done) android.graphics.Color.parseColor("#94A3B8") else android.graphics.Color.parseColor("#0F172A"))
-
-                        row.setOnClickPendingIntent(R.id.row_check, togglePendingIntent(context, task.id))
-                        
-                        val editIntent = Intent(context, QuickAddActivity::class.java).apply {
-                            putExtra(EXTRA_TASK_ID, task.id)
-                            putExtra(EXTRA_QUADRANT, task.quadrant.key)
-                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                        }
-                        val editPi = PendingIntent.getActivity(context, (task.id + 5000).toInt(), editIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-                        row.setOnClickPendingIntent(R.id.row_title, editPi)
-
-                        views.addView(slot.tasksId, row)
-                    }
-
-                    val hidden = tasks.size - maxPer
-                    if (hidden > 0) {
-                        val more = RemoteViews(context.packageName, R.layout.widget_empty_row)
-                        more.setTextViewText(R.id.empty_text, "+$hidden más")
-                        more.setTextColor(R.id.empty_text, android.graphics.Color.parseColor("#2563EB"))
-                        val mainIntent = Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                        more.setOnClickPendingIntent(R.id.empty_text, PendingIntent.getActivity(context, 2000 + quadrant.ordinal, mainIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
-                        views.addView(slot.tasksId, more)
-                    }
+                // Configurar el ListView con el Servicio
+                val serviceIntent = Intent(context, WidgetService::class.java).apply {
+                    putExtra("EXTRA_QUADRANT", quadrant.key)
+                    data = Uri.parse(toUri(Intent.URI_INTENT_SCHEME)) // Necesario para distinguir los 4 ListViews
                 }
+                views.setRemoteAdapter(slot.listId, serviceIntent)
+                views.setPendingIntentTemplate(slot.listId, clickPi)
 
+                // Botón de añadir tarea
                 val addIntent = Intent(context, QuickAddActivity::class.java).apply {
                     putExtra(EXTRA_QUADRANT, quadrant.key)
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
@@ -167,14 +144,6 @@ class EisenhowerWidgetProvider : AppWidgetProvider() {
             }
 
             manager.updateAppWidget(appWidgetId, views)
-        }
-
-        private fun togglePendingIntent(context: Context, taskId: Long): PendingIntent {
-            val intent = Intent(context, EisenhowerWidgetProvider::class.java).apply {
-                action = ACTION_TOGGLE
-                putExtra(EXTRA_TASK_ID, taskId)
-            }
-            return PendingIntent.getBroadcast(context, taskId.toInt(), intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         }
     }
 }
