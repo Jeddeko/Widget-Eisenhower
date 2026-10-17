@@ -42,39 +42,26 @@ class MainActivity : Activity() {
         taskInput = findViewById(R.id.taskInput)
         tasksContainer = findViewById(R.id.tasksContainer)
 
-        quadrantSpinner.adapter = ArrayAdapter(
-            this,
-            android.R.layout.simple_spinner_dropdown_item,
-            listOf("Hazlo ya", "Planifica", "Delega", "Elimina")
-        )
-
-        dueSpinner.adapter = ArrayAdapter(
-            this,
-            android.R.layout.simple_spinner_dropdown_item,
-            DueDateUtils.labels.toList()
-        )
+        quadrantSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, listOf("Hazlo ya", "Planifica", "Delega", "Elimina"))
+        dueSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, DueDateUtils.labels.toList())
 
         findViewById<Button>(R.id.btnAdd).setOnClickListener { addTask() }
-
         findViewById<Button>(R.id.btnWidget).setOnClickListener {
             EisenhowerWidgetProvider.updateAllWidgets(this)
             Toast.makeText(this, "Widget actualizado", Toast.LENGTH_SHORT).show()
         }
-
-        findViewById<Button>(R.id.btnSettings).setOnClickListener {
-            startActivity(Intent(this, SettingsActivity::class.java))
-        }
-
-        findViewById<Button>(R.id.btnNotify).setOnClickListener {
-            askPermissions()
-            Toast.makeText(this, "Permisos solicitados", Toast.LENGTH_SHORT).show()
-        }
+        findViewById<Button>(R.id.btnSettings).setOnClickListener { startActivity(Intent(this, SettingsActivity::class.java)) }
+        findViewById<Button>(R.id.btnNotify).setOnClickListener { askPermissions() }
 
         findViewById<Button>(R.id.btnTestNotify).setOnClickListener {
             askPermissions()
-            WorkManager.getInstance(this)
-                .enqueue(OneTimeWorkRequestBuilder<ReminderWorker>().build())
-            Toast.makeText(this, "Recordatorio en cola", Toast.LENGTH_SHORT).show()
+            // Creamos una tarea de prueba con fecha de hace 1 minuto para forzar la notificación
+            val dummyTime = System.currentTimeMillis() - 60000 
+            repo.addTask("¡Probar notificación de Eisenhower!", Quadrant.DO_FIRST, dummyTime)
+            refreshTasks()
+            
+            WorkManager.getInstance(this).enqueue(OneTimeWorkRequestBuilder<ReminderWorker>().build())
+            Toast.makeText(this, "Recordatorio en cola. Revisa tu cortina.", Toast.LENGTH_SHORT).show()
         }
 
         askPermissions()
@@ -95,12 +82,8 @@ class MainActivity : Activity() {
 
         val quadrant = Quadrant.values()[quadrantSpinner.selectedItemPosition]
         val dueAt = DueDateUtils.resolve(dueSpinner.selectedItemPosition)
-        
-        // Insertar en Google Calendar si tiene fecha
         var calendarId: Long? = null
-        if (dueAt != null) {
-            calendarId = insertCalendarEvent(title, dueAt)
-        }
+        if (dueAt != null) calendarId = insertCalendarEvent(title, dueAt)
 
         repo.addTask(title, quadrant, dueAt, calendarId)
         taskInput.setText("")
@@ -109,36 +92,24 @@ class MainActivity : Activity() {
     }
 
     private fun insertCalendarEvent(title: String, dueAt: Long): Long? {
-        if (Build.VERSION.SDK_INT >= 23 && checkSelfPermission(Manifest.permission.WRITE_CALENDAR) != PackageManager.PERMISSION_GRANTED) {
-            return null
-        }
-        
+        if (Build.VERSION.SDK_INT >= 23 && checkSelfPermission(Manifest.permission.WRITE_CALENDAR) != PackageManager.PERMISSION_GRANTED) return null
         try {
             val values = ContentValues().apply {
                 put(CalendarContract.Events.DTSTART, dueAt)
-                put(CalendarContract.Events.DTEND, dueAt + 60 * 60 * 1000) // 1 hora de duración
+                put(CalendarContract.Events.DTEND, dueAt + 60 * 60 * 1000)
                 put(CalendarContract.Events.TITLE, title)
                 put(CalendarContract.Events.DESCRIPTION, "Tarea creada desde Eisenhower Widget")
-                put(CalendarContract.Events.CALENDAR_ID, 1) // ID de calendario por defecto (suele ser el de Google)
+                put(CalendarContract.Events.CALENDAR_ID, 1)
                 put(CalendarContract.Events.EVENT_TIMEZONE, java.util.TimeZone.getDefault().id)
             }
             val uri: Uri? = contentResolver.insert(CalendarContract.Events.CONTENT_URI, values)
             return uri?.lastPathSegment?.toLongOrNull()
-        } catch (e: Exception) {
-            e.printStackTrace()
-            return null
-        }
+        } catch (e: Exception) { return null }
     }
 
     private fun refreshTasks() {
         tasksContainer.removeAllViews()
-
-        val tasks = repo.getAll().sortedWith(
-            compareBy<Task> { it.done }
-                .thenBy { it.quadrant.ordinal }
-                .thenBy { it.dueAt ?: Long.MAX_VALUE }
-                .thenByDescending { it.createdAt }
-        )
+        val tasks = repo.getAll().sortedWith(compareBy<Task> { it.done }.thenBy { it.quadrant.ordinal }.thenBy { it.dueAt ?: Long.MAX_VALUE }.thenByDescending { it.createdAt })
 
         if (tasks.isEmpty()) {
             val empty = TextView(this).apply {
@@ -152,44 +123,23 @@ class MainActivity : Activity() {
         }
 
         val inflater = LayoutInflater.from(this)
-
         tasks.forEach { task ->
             val row = inflater.inflate(R.layout.row_task_main, tasksContainer, false)
-
             val check = row.findViewById<CheckBox>(R.id.rowCheck)
             val title = row.findViewById<TextView>(R.id.rowTitle)
             val meta = row.findViewById<TextView>(R.id.rowMeta)
             val delete = row.findViewById<Button>(R.id.btnDelete)
 
             check.isChecked = task.done
-
             val titleText = SpannableString(task.title)
-            if (task.done) {
-                titleText.setSpan(
-                    StrikethroughSpan(),
-                    0,
-                    titleText.length,
-                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-                )
-            }
-
+            if (task.done) titleText.setSpan(StrikethroughSpan(), 0, titleText.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
             title.text = titleText
             
             val calText = if (task.calendarEventId != null) " 📅" else ""
             meta.text = "${quadrantLabel(task.quadrant)} · ${DueDateUtils.format(task.dueAt)}$calText"
 
-            check.setOnClickListener {
-                repo.toggleTask(task.id)
-                refreshTasks()
-                EisenhowerWidgetProvider.updateAllWidgets(this)
-            }
-
-            delete.setOnClickListener {
-                repo.deleteTask(task.id)
-                refreshTasks()
-                EisenhowerWidgetProvider.updateAllWidgets(this)
-            }
-
+            check.setOnClickListener { repo.toggleTask(task.id); refreshTasks(); EisenhowerWidgetProvider.updateAllWidgets(this) }
+            delete.setOnClickListener { repo.deleteTask(task.id); refreshTasks(); EisenhowerWidgetProvider.updateAllWidgets(this) }
             tasksContainer.addView(row)
         }
     }
@@ -203,19 +153,9 @@ class MainActivity : Activity() {
 
     private fun askPermissions() {
         val permissions = mutableListOf<String>()
-        
-        if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-            permissions.add(Manifest.permission.POST_NOTIFICATIONS)
-        }
-        if (checkSelfPermission(Manifest.permission.READ_CALENDAR) != PackageManager.PERMISSION_GRANTED) {
-            permissions.add(Manifest.permission.READ_CALENDAR)
-        }
-        if (checkSelfPermission(Manifest.permission.WRITE_CALENDAR) != PackageManager.PERMISSION_GRANTED) {
-            permissions.add(Manifest.permission.WRITE_CALENDAR)
-        }
-
-        if (permissions.isNotEmpty()) {
-            requestPermissions(permissions.toTypedArray(), 42)
-        }
+        if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) permissions.add(Manifest.permission.POST_NOTIFICATIONS)
+        if (checkSelfPermission(Manifest.permission.READ_CALENDAR) != PackageManager.PERMISSION_GRANTED) permissions.add(Manifest.permission.READ_CALENDAR)
+        if (checkSelfPermission(Manifest.permission.WRITE_CALENDAR) != PackageManager.PERMISSION_GRANTED) permissions.add(Manifest.permission.WRITE_CALENDAR)
+        if (permissions.isNotEmpty()) requestPermissions(permissions.toTypedArray(), 42)
     }
 }
