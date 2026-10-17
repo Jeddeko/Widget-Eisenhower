@@ -20,7 +20,6 @@ class EisenhowerWidgetProvider : AppWidgetProvider() {
     }
 
     override fun onReceive(context: Context, intent: Intent) {
-        // Recibimos los clics desde el ListView
         val taskId = intent.getLongExtra(EXTRA_TASK_ID, -1L)
         val actionType = intent.getStringExtra(EXTRA_ACTION_TYPE)
 
@@ -60,7 +59,6 @@ class EisenhowerWidgetProvider : AppWidgetProvider() {
             val ids = manager.getAppWidgetIds(ComponentName(context, EisenhowerWidgetProvider::class.java))
             ids.forEach { id -> 
                 updateWidget(context, manager, id)
-                // Refrescamos las listas internas
                 manager.notifyAppWidgetViewDataChanged(id, R.id.q1_tasks)
                 manager.notifyAppWidgetViewDataChanged(id, R.id.q2_tasks)
                 manager.notifyAppWidgetViewDataChanged(id, R.id.q3_tasks)
@@ -76,7 +74,6 @@ class EisenhowerWidgetProvider : AppWidgetProvider() {
             views.setTextColor(R.id.widget_header, android.graphics.Color.parseColor("#0F172A"))
             views.setTextColor(R.id.widget_sync, android.graphics.Color.parseColor("#2563EB"))
 
-            // Abrir la app al tocar el título
             val mainIntent = Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
             views.setOnClickPendingIntent(R.id.widget_header, PendingIntent.getActivity(context, 800, mainIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
 
@@ -101,7 +98,6 @@ class EisenhowerWidgetProvider : AppWidgetProvider() {
                 }
             }
 
-            // PendingIntent maestro que recibirá los clics de los ListView
             val clickIntent = Intent(context, EisenhowerWidgetProvider::class.java)
             val clickPi = PendingIntent.getBroadcast(context, 0, clickIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE)
 
@@ -127,15 +123,13 @@ class EisenhowerWidgetProvider : AppWidgetProvider() {
                 views.setTextColor(slot.titleId, android.graphics.Color.parseColor("#0F172A"))
                 views.setTextColor(slot.addId, android.graphics.Color.parseColor("#0F172A"))
 
-                // Configurar el ListView con el Servicio
                 val serviceIntent = Intent(context, WidgetService::class.java).apply {
                     putExtra("EXTRA_QUADRANT", quadrant.key)
-                    data = Uri.parse(toUri(Intent.URI_INTENT_SCHEME)) // Necesario para distinguir los 4 ListViews
+                    data = Uri.parse("eisenhower://widget/${quadrant.key}")
                 }
                 views.setRemoteAdapter(slot.listId, serviceIntent)
                 views.setPendingIntentTemplate(slot.listId, clickPi)
 
-                // Botón de añadir tarea
                 val addIntent = Intent(context, QuickAddActivity::class.java).apply {
                     putExtra(EXTRA_QUADRANT, quadrant.key)
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
