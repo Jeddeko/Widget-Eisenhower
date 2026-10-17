@@ -53,8 +53,8 @@ class MainActivity : Activity() {
 
         findViewById<Button>(R.id.btnTestNotify).setOnClickListener {
             askPermissions()
-            // Notificación de prueba sin guardar tareas basura
-            val testTask = Task(id = -1, title = "¡Prueba de notificación exitosa!", quadrant = Quadrant.DO_FIRST, dueAt = System.currentTimeMillis() + 3600000)
+            // Notificación de prueba sin guardar tareas basura. (Aquí estaba el error del -1L)
+            val testTask = Task(id = -1L, title = "¡Prueba de notificación exitosa!", quadrant = Quadrant.DO_FIRST, dueAt = System.currentTimeMillis() + 3600000)
             NotificationHelper.showReminder(this, listOf(testTask), 0)
             Toast.makeText(this, "Notificación enviada. Revisa tu cortina.", Toast.LENGTH_SHORT).show()
         }
