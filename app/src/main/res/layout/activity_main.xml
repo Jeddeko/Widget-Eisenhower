@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#F8FAFC"
@@ -26,10 +27,11 @@
             style="@style/Widget.Material3.Button.TonalButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            app:backgroundTint="#BFDBFE"
+            android:textColor="#1E3A8A"
             android:text="@string/settings" />
     </LinearLayout>
 
-    <!-- Cuadro azul claro para nueva tarea -->
     <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -87,39 +89,6 @@
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:orientation="horizontal">
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnWidget"
-            style="@style/Widget.Material3.Button.OutlinedButton"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/update_widget" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnNotify"
-            style="@style/Widget.Material3.Button.OutlinedButton"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_weight="1"
-            android:text="@string/allow_notifications" />
-    </LinearLayout>
-
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnTestNotify"
-        style="@style/Widget.Material3.Button.TonalButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="@string/test_reminder" />
-
-    <!-- Scroll horizontal para las 4 columnas -->
     <HorizontalScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -132,7 +101,6 @@
             android:layout_height="match_parent"
             android:orientation="horizontal">
 
-            <!-- Columna 1 -->
             <LinearLayout
                 android:layout_width="300dp"
                 android:layout_height="match_parent"
@@ -142,7 +110,6 @@
                 <androidx.recyclerview.widget.RecyclerView android:id="@+id/listQ1" android:layout_width="match_parent" android:layout_height="match_parent" />
             </LinearLayout>
 
-            <!-- Columna 2 -->
             <LinearLayout
                 android:layout_width="300dp"
                 android:layout_height="match_parent"
@@ -152,7 +119,6 @@
                 <androidx.recyclerview.widget.RecyclerView android:id="@+id/listQ2" android:layout_width="match_parent" android:layout_height="match_parent" />
             </LinearLayout>
 
-            <!-- Columna 3 -->
             <LinearLayout
                 android:layout_width="300dp"
                 android:layout_height="match_parent"
@@ -162,7 +128,6 @@
                 <androidx.recyclerview.widget.RecyclerView android:id="@+id/listQ3" android:layout_width="match_parent" android:layout_height="match_parent" />
             </LinearLayout>
 
-            <!-- Columna 4 -->
             <LinearLayout
                 android:layout_width="300dp"
                 android:layout_height="match_parent"
