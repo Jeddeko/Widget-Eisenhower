@@ -23,7 +23,6 @@
             </intent-filter>
         </activity>
 
-        <!-- taskAffinity="" hace que la ventana sea independiente y no abra la app -->
         <activity
             android:name=".QuickAddActivity"
             android:excludeFromRecents="true"
@@ -47,6 +46,12 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/eisenhower_widget_info" />
         </receiver>
+
+        <!-- SERVICIO NUEVO PARA EL SCROLL -->
+        <service
+            android:name=".WidgetService"
+            android:permission="android.permission.BIND_REMOTEVIEWS"
+            android:exported="false" />
 
         <receiver
             android:name=".NotificationActionReceiver"
