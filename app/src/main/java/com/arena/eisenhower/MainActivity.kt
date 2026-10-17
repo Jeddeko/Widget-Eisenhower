@@ -5,33 +5,32 @@ import android.app.Activity
 import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Color
-import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.CalendarContract
-import android.text.SpannableString
-import android.text.Spanned
-import android.text.style.StrikethroughSpan
-import android.view.LayoutInflater
-import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.Button
-import android.widget.CheckBox
 import android.widget.EditText
-import android.widget.LinearLayout
 import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
+import androidx.recyclerview.widget.ItemTouchHelper
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import java.util.Collections
 
 class MainActivity : Activity() {
     private lateinit var repo: TaskRepository
     private lateinit var quadrantSpinner: Spinner
     private lateinit var dueSpinner: Spinner
     private lateinit var taskInput: EditText
-    private lateinit var tasksContainer: LinearLayout
     private lateinit var settings: AppSettings
+
+    private lateinit var rvQ1: RecyclerView
+    private lateinit var rvQ2: RecyclerView
+    private lateinit var rvQ3: RecyclerView
+    private lateinit var rvQ4: RecyclerView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -39,7 +38,10 @@ class MainActivity : Activity() {
         repo = TaskRepository(this); settings = AppSettings(this)
 
         quadrantSpinner = findViewById(R.id.quadrantSpinner); dueSpinner = findViewById(R.id.dueSpinner)
-        taskInput = findViewById(R.id.taskInput); tasksContainer = findViewById(R.id.tasksContainer)
+        taskInput = findViewById(R.id.taskInput)
+
+        rvQ1 = findViewById(R.id.listQ1); rvQ2 = findViewById(R.id.listQ2)
+        rvQ3 = findViewById(R.id.listQ3); rvQ4 = findViewById(R.id.listQ4)
 
         quadrantSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, listOf("Hazlo ya", "Planifica", "Delega", "Elimina"))
         dueSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, DueDateUtils.labels.toList())
@@ -84,41 +86,59 @@ class MainActivity : Activity() {
     }
 
     private fun refreshTasks() {
-        tasksContainer.removeAllViews()
         val allTasks = repo.getAll()
-        val quadrants = listOf(
-            Triple(Quadrant.DO_FIRST, settings.titleQ1, settings.colorQ1), Triple(Quadrant.SCHEDULE, settings.titleQ2, settings.colorQ2),
-            Triple(Quadrant.DELEGATE, settings.titleQ3, settings.colorQ3), Triple(Quadrant.ELIMINATE, settings.titleQ4, settings.colorQ4)
-        )
-        val inflater = LayoutInflater.from(this)
+        findViewById<TextView>(R.id.titleQ1View).text = settings.titleQ1
+        findViewById<TextView>(R.id.titleQ2View).text = settings.titleQ2
+        findViewById<TextView>(R.id.titleQ3View).text = settings.titleQ3
+        findViewById<TextView>(R.id.titleQ4View).text = settings.titleQ4
 
-        quadrants.forEach { (quadrant, titleStr, color) ->
-            tasksContainer.addView(TextView(this).apply { text = titleStr; setTextColor(Color.parseColor("#0F172A")); textSize = 18f; setTypeface(null, android.graphics.Typeface.BOLD); setPadding(16, 24, 16, 8) })
-            val quadrantTasks = allTasks.filter { it.quadrant == quadrant }.sortedBy { it.order }
+        setupRecyclerView(rvQ1, Quadrant.DO_FIRST, settings.colorQ1, allTasks)
+        setupRecyclerView(rvQ2, Quadrant.SCHEDULE, settings.colorQ2, allTasks)
+        setupRecyclerView(rvQ3, Quadrant.DELEGATE, settings.colorQ3, allTasks)
+        setupRecyclerView(rvQ4, Quadrant.ELIMINATE, settings.colorQ4, allTasks)
+    }
 
-            if (quadrantTasks.isEmpty()) {
-                tasksContainer.addView(TextView(this).apply { text = "No hay tareas aquí."; setTextColor(Color.parseColor("#64748B")); textSize = 14f; setPadding(16, 4, 16, 16) })
-            } else {
-                quadrantTasks.forEachIndexed { index, task ->
-                    val row = inflater.inflate(R.layout.row_task_main, tasksContainer, false)
-                    val layout = row as LinearLayout
-                    layout.background = GradientDrawable().apply { setColor(color); cornerRadius = 8f }
-                    
-                    val check = row.findViewById<CheckBox>(R.id.rowCheck); val title = row.findViewById<TextView>(R.id.rowTitle)
-                    val meta = row.findViewById<TextView>(R.id.rowMeta); val delete = row.findViewById<Button>(R.id.btnDelete)
-                    delete.visibility = View.GONE
-                    
-                    layout.addView(Button(this).apply { text = "⬆️"; textSize = 12f; setOnClickListener { if (index > 0) { val prev = quadrantTasks[index - 1]; repo.updateOrder(task.id, prev.order); repo.updateOrder(prev.id, task.order); refreshTasks(); EisenhowerWidgetProvider.updateAllWidgets(this@MainActivity) } } })
-                    layout.addView(Button(this).apply { text = "⬇️"; textSize = 12f; setOnClickListener { if (index < quadrantTasks.size - 1) { val next = quadrantTasks[index + 1]; repo.updateOrder(task.id, next.order); repo.updateOrder(next.id, task.order); refreshTasks(); EisenhowerWidgetProvider.updateAllWidgets(this@MainActivity) } } })
-
-                    check.isChecked = task.done
-                    val titleText = SpannableString(task.title); if (task.done) titleText.setSpan(StrikethroughSpan(), 0, titleText.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-                    title.text = titleText; meta.text = "Orden: ${task.order} · ${DueDateUtils.format(task.dueAt)}"
-                    check.setOnClickListener { repo.toggleTask(task.id); refreshTasks(); EisenhowerWidgetProvider.updateAllWidgets(this) }
-                    tasksContainer.addView(row)
+    private fun setupRecyclerView(rv: RecyclerView, quadrant: Quadrant, color: Int, allTasks: List<Task>) {
+        val tasks = allTasks.filter { it.quadrant == quadrant }.sortedBy { it.order }.toMutableList()
+        
+        val adapter = TaskAdapter(tasks, color, 
+            onCheckClick = { task -> repo.toggleTask(task.id); refreshTasks(); EisenhowerWidgetProvider.updateAllWidgets(this) },
+            onItemClick = { task -> 
+                val editIntent = Intent(this, QuickAddActivity::class.java).apply {
+                    putExtra(EisenhowerWidgetProvider.EXTRA_TASK_ID, task.id)
+                    putExtra(EisenhowerWidgetProvider.EXTRA_QUADRANT, task.quadrant.key)
                 }
+                startActivity(editIntent)
             }
-        }
+        )
+        
+        rv.layoutManager = LinearLayoutManager(this)
+        rv.adapter = adapter
+
+        // Lógica para arrastrar y soltar
+        val itemTouchHelper = ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(
+            ItemTouchHelper.UP or ItemTouchHelper.DOWN, 0
+        ) {
+            override fun onMove(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder): Boolean {
+                val fromPos = viewHolder.adapterPosition
+                val toPos = target.adapterPosition
+                Collections.swap(tasks, fromPos, toPos)
+                adapter.notifyItemMoved(fromPos, toPos)
+                return true
+            }
+
+            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {}
+
+            override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
+                super.clearView(recyclerView, viewHolder)
+                // Guardar el nuevo orden en la base de datos cuando se suelta la tarea
+                for (i in tasks.indices) {
+                    repo.updateOrder(tasks[i].id, i + 1)
+                }
+                EisenhowerWidgetProvider.updateAllWidgets(this@MainActivity)
+            }
+        })
+        itemTouchHelper.attachToRecyclerView(rv)
     }
 
     private fun askPermissions() {
