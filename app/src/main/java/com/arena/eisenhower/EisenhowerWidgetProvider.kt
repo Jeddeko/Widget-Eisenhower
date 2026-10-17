@@ -12,7 +12,14 @@ import android.widget.RemoteViews
 class EisenhowerWidgetProvider : AppWidgetProvider() {
 
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
-        appWidgetIds.forEach { appWidgetId -> updateWidget(context, appWidgetManager, appWidgetId) }
+        appWidgetIds.forEach { appWidgetId -> 
+            updateWidget(context, appWidgetManager, appWidgetId)
+            // ARREGLO: Forzar a las listas a cargar los datos desde el inicio
+            appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetId, R.id.q1_tasks)
+            appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetId, R.id.q2_tasks)
+            appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetId, R.id.q3_tasks)
+            appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetId, R.id.q4_tasks)
+        }
     }
 
     override fun onAppWidgetOptionsChanged(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int, newOptions: android.os.Bundle) {
