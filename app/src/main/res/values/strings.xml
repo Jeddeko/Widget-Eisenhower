@@ -1,0 +1,37 @@
+<resources>
+    <string name="app_name">Eisenhower Widget</string>
+    <string name="widget_description">Matriz Eisenhower interactiva, redimensionable y con captura rápida.</string>
+    <string name="widget_header">Matriz Eisenhower</string>
+
+    <string name="q1_title">Hazlo ya</string>
+    <string name="q2_title">Planifica</string>
+    <string name="q3_title">Delega</string>
+    <string name="q4_title">Elimina</string>
+
+    <string name="add_task">+ Añadir</string>
+    <string name="main_title">Eisenhower</string>
+    <string name="settings">Ajustes</string>
+    <string name="task_hint">Nueva tarea…</string>
+    <string name="add">Añadir</string>
+    <string name="update_widget">Actualizar widget</string>
+    <string name="allow_notifications">Permitir notificaciones</string>
+    <string name="test_reminder">Probar recordatorio</string>
+
+    <string name="quick_title">Captura rápida</string>
+    <string name="quick_subtitle">Se guarda desde el widget sin abrir la pantalla principal.</string>
+    <string name="quick_hint">¿Qué hay que hacer?</string>
+    <string name="save_task">Guardar tarea</string>
+
+    <string name="custom_title">Personalización</string>
+    <string name="theme_label">Tema del widget</string>
+    <string name="theme_light">Claro</string>
+    <string name="theme_dark">Oscuro</string>
+    <string name="theme_ocean">Océano</string>
+    <string name="show_completed">Mostrar tareas completadas</string>
+    <string name="save_settings">Guardar y actualizar widget</string>
+    
+    <!-- Nuevos textos para Google Calendar -->
+    <string name="calendar_sync">Sincronizar con Calendario</string>
+    <string name="calendar_permission">Permiso de calendario necesario para leer y guardar eventos.</string>
+    <string name="calendar_no_events">Sin eventos próximos en el calendario.</string>
+</resources>
