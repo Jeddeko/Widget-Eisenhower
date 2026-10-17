@@ -23,13 +23,11 @@ object DueDateUtils {
                 calendar.set(Calendar.HOUR_OF_DAY, 20)
                 calendar.set(Calendar.MINUTE, 0)
             }
-
             2 -> {
                 calendar.add(Calendar.DAY_OF_YEAR, 1)
                 calendar.set(Calendar.HOUR_OF_DAY, 9)
                 calendar.set(Calendar.MINUTE, 0)
             }
-
             3 -> {
                 calendar.add(Calendar.DAY_OF_YEAR, 3)
                 calendar.set(Calendar.HOUR_OF_DAY, 9)
@@ -40,6 +38,18 @@ object DueDateUtils {
         calendar.set(Calendar.SECOND, 0)
         calendar.set(Calendar.MILLISECOND, 0)
         return calendar.timeInMillis
+    }
+
+    // Nueva función para saber qué opción del menú mostrar al editar
+    fun findPosition(dueAt: Long?): Int {
+        if (dueAt == null) return 0
+        for (i in 1..3) {
+            val calc = resolve(i)
+            if (calc != null && Math.abs(calc - dueAt) < 120000) { // 2 minutos de margen
+                return i
+            }
+        }
+        return 0 
     }
 
     fun format(dueAt: Long?): String {
