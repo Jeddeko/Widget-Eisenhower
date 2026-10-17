@@ -10,22 +10,11 @@ import android.widget.RemoteViews
 
 class EisenhowerWidgetProvider : AppWidgetProvider() {
 
-    override fun onUpdate(
-        context: Context,
-        appWidgetManager: AppWidgetManager,
-        appWidgetIds: IntArray
-    ) {
-        appWidgetIds.forEach { appWidgetId ->
-            updateWidget(context, appWidgetManager, appWidgetId)
-        }
+    override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
+        appWidgetIds.forEach { appWidgetId -> updateWidget(context, appWidgetManager, appWidgetId) }
     }
 
-    override fun onAppWidgetOptionsChanged(
-        context: Context,
-        appWidgetManager: AppWidgetManager,
-        appWidgetId: Int,
-        newOptions: android.os.Bundle
-    ) {
+    override fun onAppWidgetOptionsChanged(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int, newOptions: android.os.Bundle) {
         updateWidget(context, appWidgetManager, appWidgetId)
     }
 
@@ -53,28 +42,15 @@ class EisenhowerWidgetProvider : AppWidgetProvider() {
         const val EXTRA_TASK_ID = "extra_task_id"
         const val EXTRA_QUADRANT = "extra_quadrant"
 
-        private data class SlotViews(
-            val cardId: Int,
-            val titleId: Int,
-            val tasksId: Int,
-            val addId: Int
-        )
+        private data class SlotViews(val cardId: Int, val titleId: Int, val tasksId: Int, val addId: Int)
 
         fun updateAllWidgets(context: Context) {
             val manager = AppWidgetManager.getInstance(context)
-            val ids = manager.getAppWidgetIds(
-                ComponentName(context, EisenhowerWidgetProvider::class.java)
-            )
-            ids.forEach { id ->
-                updateWidget(context, manager, id)
-            }
+            val ids = manager.getAppWidgetIds(ComponentName(context, EisenhowerWidgetProvider::class.java))
+            ids.forEach { id -> updateWidget(context, manager, id) }
         }
 
-        private fun updateWidget(
-            context: Context,
-            manager: AppWidgetManager,
-            appWidgetId: Int
-        ) {
+        private fun updateWidget(context: Context, manager: AppWidgetManager, appWidgetId: Int) {
             val repo = TaskRepository(context)
             val settings = AppSettings(context)
             val now = System.currentTimeMillis()
@@ -94,16 +70,8 @@ class EisenhowerWidgetProvider : AppWidgetProvider() {
             views.setTextColor(R.id.widget_header, android.graphics.Color.parseColor("#0F172A"))
             views.setTextColor(R.id.widget_sync, android.graphics.Color.parseColor("#2563EB"))
 
-            val refreshIntent = Intent(context, EisenhowerWidgetProvider::class.java).apply {
-                action = ACTION_REFRESH
-            }
-            views.setOnClickPendingIntent(
-                R.id.widget_sync,
-                PendingIntent.getBroadcast(
-                    context, 900, refreshIntent,
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                )
-            )
+            val refreshIntent = Intent(context, EisenhowerWidgetProvider::class.java).apply { action = ACTION_REFRESH }
+            views.setOnClickPendingIntent(R.id.widget_sync, PendingIntent.getBroadcast(context, 900, refreshIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
 
             val slots = listOf(
                 SlotViews(R.id.q1_card, R.id.q1_title, R.id.q1_tasks, R.id.q1_add),
@@ -125,7 +93,6 @@ class EisenhowerWidgetProvider : AppWidgetProvider() {
 
             slots.forEachIndexed { index, slot ->
                 val quadrant = quadrantsToRender.getOrNull(index) ?: return@forEachIndexed
-                
                 val title = when (quadrant) {
                     Quadrant.DO_FIRST -> settings.titleQ1
                     Quadrant.SCHEDULE -> settings.titleQ2
@@ -141,19 +108,13 @@ class EisenhowerWidgetProvider : AppWidgetProvider() {
 
                 views.setInt(slot.cardId, "setBackgroundColor", color)
 
-                val tasks = visible
-                    .filter { it.quadrant == quadrant }
-                    .sortedWith(
-                        compareBy<Task> { it.done }
-                            .thenBy { it.dueAt ?: Long.MAX_VALUE }
-                            .thenByDescending { it.createdAt }
-                    )
+                val tasks = visible.filter { it.quadrant == quadrant }.sortedWith(
+                    compareBy<Task> { it.done }.thenBy { it.dueAt ?: Long.MAX_VALUE }.thenByDescending { it.createdAt }
+                )
 
-                val pendingCount = tasks.count { !it.done }
-                views.setTextViewText(slot.titleId, "$title · $pendingCount")
+                views.setTextViewText(slot.titleId, "$title · ${tasks.count { !it.done }}")
                 views.setTextColor(slot.titleId, android.graphics.Color.parseColor("#0F172A"))
                 views.setTextColor(slot.addId, android.graphics.Color.parseColor("#0F172A"))
-
                 views.removeAllViews(slot.tasksId)
 
                 if (tasks.isEmpty()) {
@@ -170,15 +131,21 @@ class EisenhowerWidgetProvider : AppWidgetProvider() {
                             else -> ""
                         }
                         row.setTextViewText(R.id.row_title, prefix + task.title)
-                        
-                        // Usamos texto en lugar de CheckBox
                         row.setTextViewText(R.id.row_check, if (task.done) "☑" else "□")
                         row.setTextColor(R.id.row_check, if (task.done) android.graphics.Color.parseColor("#2563EB") else android.graphics.Color.parseColor("#475569"))
                         row.setTextColor(R.id.row_title, if (task.done) android.graphics.Color.parseColor("#94A3B8") else android.graphics.Color.parseColor("#0F172A"))
 
-                        val togglePi = togglePendingIntent(context, task.id)
-                        row.setOnClickPendingIntent(R.id.row_check, togglePi)
-                        row.setOnClickPendingIntent(R.id.row_root, togglePi)
+                        // Tocar el cuadrito -> Tacha la tarea
+                        row.setOnClickPendingIntent(R.id.row_check, togglePendingIntent(context, task.id))
+                        
+                        // Tocar el texto -> Abre el pop-up en modo edición
+                        val editIntent = Intent(context, QuickAddActivity::class.java).apply {
+                            putExtra(EXTRA_TASK_ID, task.id)
+                            putExtra(EXTRA_QUADRANT, task.quadrant.key)
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                        }
+                        val editPi = PendingIntent.getActivity(context, (task.id + 5000).toInt(), editIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+                        row.setOnClickPendingIntent(R.id.row_title, editPi)
 
                         views.addView(slot.tasksId, row)
                     }
@@ -209,10 +176,7 @@ class EisenhowerWidgetProvider : AppWidgetProvider() {
                 action = ACTION_TOGGLE
                 putExtra(EXTRA_TASK_ID, taskId)
             }
-            return PendingIntent.getBroadcast(
-                context, taskId.toInt(), intent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
+            return PendingIntent.getBroadcast(context, taskId.toInt(), intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         }
     }
 }
