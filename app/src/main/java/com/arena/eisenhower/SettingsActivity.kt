@@ -14,6 +14,7 @@ import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.Spinner
 import android.widget.Toast
+import com.google.android.material.button.MaterialButton
 
 class SettingsActivity : Activity() {
     private lateinit var settings: AppSettings
@@ -29,6 +30,7 @@ class SettingsActivity : Activity() {
         val btnColorQ1 = findViewById<Button>(R.id.btnColorQ1); val btnColorQ2 = findViewById<Button>(R.id.btnColorQ2)
         val btnColorQ3 = findViewById<Button>(R.id.btnColorQ3); val btnColorQ4 = findViewById<Button>(R.id.btnColorQ4)
         val spinnerOrder = findViewById<Spinner>(R.id.spinnerOrder); val showCompleted = findViewById<CheckBox>(R.id.showCompleted)
+        val btnTestNotify = findViewById<MaterialButton>(R.id.btnTestNotifySettings)
 
         etTitleQ1.setText(settings.titleQ1); etTitleQ2.setText(settings.titleQ2); etTitleQ3.setText(settings.titleQ3); etTitleQ4.setText(settings.titleQ4)
         currentColorQ1 = settings.colorQ1; currentColorQ2 = settings.colorQ2; currentColorQ3 = settings.colorQ3; currentColorQ4 = settings.colorQ4
@@ -46,6 +48,13 @@ class SettingsActivity : Activity() {
         btnColorQ2.setOnClickListener { showColorPicker(currentColorQ2) { c -> currentColorQ2 = c; actualizarColorBoton(btnColorQ2, c) } }
         btnColorQ3.setOnClickListener { showColorPicker(currentColorQ3) { c -> currentColorQ3 = c; actualizarColorBoton(btnColorQ3, c) } }
         btnColorQ4.setOnClickListener { showColorPicker(currentColorQ4) { c -> currentColorQ4 = c; actualizarColorBoton(btnColorQ4, c) } }
+
+        // LOGICA DEL BOTÓN DE PRUEBA
+        btnTestNotify.setOnClickListener {
+            val testTask = Task(id = -1L, title = "¡Prueba de notificación!", quadrant = Quadrant.DO_FIRST, dueAt = System.currentTimeMillis() + 3600000)
+            NotificationHelper.showReminder(this, listOf(testTask), 0)
+            Toast.makeText(this, "Notificación enviada", Toast.LENGTH_SHORT).show()
+        }
 
         findViewById<Button>(R.id.btnSaveSettings).setOnClickListener {
             settings.titleQ1 = etTitleQ1.text.toString().ifBlank { "Hazlo ya" }; settings.titleQ2 = etTitleQ2.text.toString().ifBlank { "Planifica" }
