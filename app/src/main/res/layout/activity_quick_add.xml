@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="#FFFFFF"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/quick_title"
+        android:textColor="#0F172A"
+        android:textSize="22sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:text="@string/quick_subtitle"
+        android:textColor="#64748B"
+        android:textSize="12sp" />
+
+    <EditText
+        android:id="@+id/quickInput"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:hint="@string/quick_hint"
+        android:inputType="textCapSentences|textMultiLine"
+        android:maxLines="3"
+        android:minHeight="48dp" />
+
+    <Spinner
+        android:id="@+id/quickQuadrant"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp" />
+
+    <Spinner
+        android:id="@+id/quickDue"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp" />
+
+    <!-- Casilla para sincronizar con Google Calendar -->
+    <CheckBox
+        android:id="@+id/quickCalendarCheck"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:checked="true"
+        android:text="@string/calendar_sync" />
+
+    <Button
+        android:id="@+id/quickSave"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:text="@string/save_task" />
+</LinearLayout>
