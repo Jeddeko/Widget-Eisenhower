@@ -15,6 +15,7 @@ import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.Spinner
+import android.widget.TextView
 import android.widget.Toast
 
 class QuickAddActivity : Activity() {
@@ -38,6 +39,7 @@ class QuickAddActivity : Activity() {
         val dueSpinner = findViewById<Spinner>(R.id.quickDue)
         val calendarCheck = findViewById<CheckBox>(R.id.quickCalendarCheck)
         val save = findViewById<Button>(R.id.quickSave)
+        val titleText = findViewById<TextView>(R.id.quickTitle)
 
         quadrantSpinner.adapter = ArrayAdapter(
             this,
@@ -51,10 +53,25 @@ class QuickAddActivity : Activity() {
             DueDateUtils.labels.toList()
         )
 
-        val incoming = Quadrant.fromKey(
-            intent.getStringExtra(EisenhowerWidgetProvider.EXTRA_QUADRANT)
-        )
-        quadrantSpinner.setSelection(incoming.ordinal)
+        // Recibimos si venimos a editar o a crear
+        val taskId = intent.getLongExtra("EXTRA_TASK_ID", -1L)
+        val incomingQuadrant = Quadrant.fromKey(intent.getStringExtra(EisenhowerWidgetProvider.EXTRA_QUADRANT))
+
+        if (taskId != -1L) {
+            // MODO EDICIÓN
+            val task = repo.getAll().firstOrNull { it.id == taskId }
+            if (task != null) {
+                titleText.text = "Editar tarea"
+                input.setText(task.title)
+                quadrantSpinner.setSelection(task.quadrant.ordinal)
+                dueSpinner.setSelection(DueDateUtils.findPosition(task.dueAt))
+                save.text = "ACTUALIZAR TAREA"
+                calendarCheck.visibility = CheckBox.GONE // Ocultamos el check para no duplicar eventos
+            }
+        } else {
+            // MODO CREACIÓN
+            quadrantSpinner.setSelection(incomingQuadrant.ordinal)
+        }
 
         input.requestFocus()
 
@@ -68,38 +85,39 @@ class QuickAddActivity : Activity() {
             val quadrant = Quadrant.values()[quadrantSpinner.selectedItemPosition]
             val dueAt = DueDateUtils.resolve(dueSpinner.selectedItemPosition)
             
-            // Insertar en el calendario si el usuario dejó la casilla marcada
-            var calendarId: Long? = null
-            if (calendarCheck.isChecked && dueAt != null) {
-                calendarId = insertCalendarEvent(title, dueAt)
+            if (taskId != -1L) {
+                // Actualizar tarea existente
+                val existingTask = repo.getAll().firstOrNull { it.id == taskId }
+                if (existingTask != null) {
+                    repo.updateTask(existingTask.copy(title = title, quadrant = quadrant, dueAt = dueAt))
+                }
+            } else {
+                // Crear nueva tarea
+                var calendarId: Long? = null
+                if (calendarCheck.isChecked && dueAt != null) {
+                    calendarId = insertCalendarEvent(title, dueAt)
+                }
+                repo.addTask(title, quadrant, dueAt, calendarId)
             }
 
-            repo.addTask(title, quadrant, dueAt, calendarId)
             EisenhowerWidgetProvider.updateAllWidgets(this)
             finish()
         }
     }
 
     private fun insertCalendarEvent(title: String, dueAt: Long): Long? {
-        if (Build.VERSION.SDK_INT >= 23 && checkSelfPermission(Manifest.permission.WRITE_CALENDAR) != PackageManager.PERMISSION_GRANTED) {
-            Toast.makeText(this, "Sin permiso de calendario", Toast.LENGTH_SHORT).show()
-            return null
-        }
-        
+        if (Build.VERSION.SDK_INT >= 23 && checkSelfPermission(Manifest.permission.WRITE_CALENDAR) != PackageManager.PERMISSION_GRANTED) return null
         try {
             val values = ContentValues().apply {
                 put(CalendarContract.Events.DTSTART, dueAt)
-                put(CalendarContract.Events.DTEND, dueAt + 60 * 60 * 1000) // 1 hora de duración
+                put(CalendarContract.Events.DTEND, dueAt + 60 * 60 * 1000)
                 put(CalendarContract.Events.TITLE, title)
                 put(CalendarContract.Events.DESCRIPTION, "Tarea creada desde Eisenhower Widget")
-                put(CalendarContract.Events.CALENDAR_ID, 1) 
+                put(CalendarContract.Events.CALENDAR_ID, 1)
                 put(CalendarContract.Events.EVENT_TIMEZONE, java.util.TimeZone.getDefault().id)
             }
             val uri: Uri? = contentResolver.insert(CalendarContract.Events.CONTENT_URI, values)
             return uri?.lastPathSegment?.toLongOrNull()
-        } catch (e: Exception) {
-            e.printStackTrace()
-            return null
-        }
+        } catch (e: Exception) { return null }
     }
 }
