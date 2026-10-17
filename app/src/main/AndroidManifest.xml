@@ -23,10 +23,12 @@
             </intent-filter>
         </activity>
 
+        <!-- taskAffinity="" hace que la ventana sea independiente y no abra la app -->
         <activity
             android:name=".QuickAddActivity"
             android:excludeFromRecents="true"
             android:exported="false"
+            android:taskAffinity=""
             android:theme="@style/QuickAddTheme" />
 
         <activity
@@ -41,7 +43,6 @@
                 <action android:name="com.arena.eisenhower.ACTION_TOGGLE" />
                 <action android:name="com.arena.eisenhower.ACTION_REFRESH" />
             </intent-filter>
-
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/eisenhower_widget_info" />
