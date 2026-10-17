@@ -8,6 +8,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.CalendarContract
+import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.ArrayAdapter
@@ -41,20 +42,11 @@ class QuickAddActivity : Activity() {
         val save = findViewById<Button>(R.id.quickSave)
         val titleText = findViewById<TextView>(R.id.quickTitle)
 
-        quadrantSpinner.adapter = ArrayAdapter(
-            this,
-            android.R.layout.simple_spinner_dropdown_item,
-            listOf("Hazlo ya", "Planifica", "Delega", "Elimina")
-        )
-
-        dueSpinner.adapter = ArrayAdapter(
-            this,
-            android.R.layout.simple_spinner_dropdown_item,
-            DueDateUtils.labels.toList()
-        )
+        quadrantSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, listOf("Hazlo ya", "Planifica", "Delega", "Elimina"))
+        dueSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, DueDateUtils.labels.toList())
 
         // Recibimos si venimos a editar o a crear
-        val taskId = intent.getLongExtra("EXTRA_TASK_ID", -1L)
+        val taskId = intent.getLongExtra(EisenhowerWidgetProvider.EXTRA_TASK_ID, -1L)
         val incomingQuadrant = Quadrant.fromKey(intent.getStringExtra(EisenhowerWidgetProvider.EXTRA_QUADRANT))
 
         if (taskId != -1L) {
@@ -66,7 +58,7 @@ class QuickAddActivity : Activity() {
                 quadrantSpinner.setSelection(task.quadrant.ordinal)
                 dueSpinner.setSelection(DueDateUtils.findPosition(task.dueAt))
                 save.text = "ACTUALIZAR TAREA"
-                calendarCheck.visibility = CheckBox.GONE // Ocultamos el check para no duplicar eventos
+                calendarCheck.visibility = View.GONE // Corregido aquí
             }
         } else {
             // MODO CREACIÓN
@@ -86,13 +78,11 @@ class QuickAddActivity : Activity() {
             val dueAt = DueDateUtils.resolve(dueSpinner.selectedItemPosition)
             
             if (taskId != -1L) {
-                // Actualizar tarea existente
                 val existingTask = repo.getAll().firstOrNull { it.id == taskId }
                 if (existingTask != null) {
                     repo.updateTask(existingTask.copy(title = title, quadrant = quadrant, dueAt = dueAt))
                 }
             } else {
-                // Crear nueva tarea
                 var calendarId: Long? = null
                 if (calendarCheck.isChecked && dueAt != null) {
                     calendarId = insertCalendarEvent(title, dueAt)
