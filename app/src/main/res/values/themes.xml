@@ -1,11 +1,12 @@
 <resources>
-    <style name="AppTheme" parent="Theme.Material3.DayNight.NoActionBar">
+    <!-- Forzamos el tema Light para que no se rompan los colores en modo oscuro -->
+    <style name="AppTheme" parent="Theme.Material3.Light.NoActionBar">
         <item name="colorPrimary">#2563EB</item>
         <item name="android:statusBarColor">#0F172A</item>
         <item name="android:navigationBarColor">#0F172A</item>
     </style>
 
-    <style name="QuickAddTheme" parent="Theme.Material3.DayNight.Dialog.Alert">
+    <style name="QuickAddTheme" parent="Theme.Material3.Light.Dialog.Alert">
         <item name="android:windowIsTranslucent">true</item>
         <item name="android:windowCloseOnTouchOutside">true</item>
     </style>
