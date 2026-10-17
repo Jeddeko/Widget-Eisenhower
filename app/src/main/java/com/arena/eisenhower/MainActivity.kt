@@ -47,15 +47,8 @@ class MainActivity : Activity() {
         dueSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, DueDateUtils.labels.toList())
 
         findViewById<Button>(R.id.btnAdd).setOnClickListener { addTask() }
-        findViewById<Button>(R.id.btnWidget).setOnClickListener { EisenhowerWidgetProvider.updateAllWidgets(this); Toast.makeText(this, "Widget actualizado", Toast.LENGTH_SHORT).show() }
         findViewById<Button>(R.id.btnSettings).setOnClickListener { startActivity(Intent(this, SettingsActivity::class.java)) }
-        findViewById<Button>(R.id.btnNotify).setOnClickListener { askPermissions() }
-        findViewById<Button>(R.id.btnTestNotify).setOnClickListener {
-            askPermissions()
-            val testTask = Task(id = -1L, title = "¡Prueba de notificación!", quadrant = Quadrant.DO_FIRST, dueAt = System.currentTimeMillis() + 3600000)
-            NotificationHelper.showReminder(this, listOf(testTask), 0)
-            Toast.makeText(this, "Notificación enviada", Toast.LENGTH_SHORT).show()
-        }
+        
         askPermissions()
     }
 
@@ -115,7 +108,6 @@ class MainActivity : Activity() {
         rv.layoutManager = LinearLayoutManager(this)
         rv.adapter = adapter
 
-        // Lógica para arrastrar y soltar
         val itemTouchHelper = ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(
             ItemTouchHelper.UP or ItemTouchHelper.DOWN, 0
         ) {
@@ -131,7 +123,6 @@ class MainActivity : Activity() {
 
             override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
                 super.clearView(recyclerView, viewHolder)
-                // Guardar el nuevo orden en la base de datos cuando se suelta la tarea
                 for (i in tasks.indices) {
                     repo.updateOrder(tasks[i].id, i + 1)
                 }
