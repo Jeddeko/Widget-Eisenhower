@@ -16,9 +16,14 @@ import android.text.Spanned
 import android.text.style.StrikethroughSpan
 import android.view.LayoutInflater
 import android.view.View
-import android.widget.*
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkManager
+import android.widget.ArrayAdapter
+import android.widget.Button
+import android.widget.CheckBox
+import android.widget.EditText
+import android.widget.LinearLayout
+import android.widget.Spinner
+import android.widget.TextView
+import android.widget.Toast
 
 class MainActivity : Activity() {
     private lateinit var repo: TaskRepository
@@ -96,14 +101,15 @@ class MainActivity : Activity() {
             } else {
                 quadrantTasks.forEachIndexed { index, task ->
                     val row = inflater.inflate(R.layout.row_task_main, tasksContainer, false)
-                    row.background = GradientDrawable().apply { setColor(color); cornerRadius = 8f }
+                    val layout = row as LinearLayout
+                    layout.background = GradientDrawable().apply { setColor(color); cornerRadius = 8f }
                     
                     val check = row.findViewById<CheckBox>(R.id.rowCheck); val title = row.findViewById<TextView>(R.id.rowTitle)
                     val meta = row.findViewById<TextView>(R.id.rowMeta); val delete = row.findViewById<Button>(R.id.btnDelete)
                     delete.visibility = View.GONE
                     
-                    row.addView(Button(this).apply { text = "⬆️"; textSize = 12f; setOnClickListener { if (index > 0) { val prev = quadrantTasks[index - 1]; repo.updateOrder(task.id, prev.order); repo.updateOrder(prev.id, task.order); refreshTasks(); EisenhowerWidgetProvider.updateAllWidgets(this@MainActivity) } } })
-                    row.addView(Button(this).apply { text = "⬇️"; textSize = 12f; setOnClickListener { if (index < quadrantTasks.size - 1) { val next = quadrantTasks[index + 1]; repo.updateOrder(task.id, next.order); repo.updateOrder(next.id, task.order); refreshTasks(); EisenhowerWidgetProvider.updateAllWidgets(this@MainActivity) } } })
+                    layout.addView(Button(this).apply { text = "⬆️"; textSize = 12f; setOnClickListener { if (index > 0) { val prev = quadrantTasks[index - 1]; repo.updateOrder(task.id, prev.order); repo.updateOrder(prev.id, task.order); refreshTasks(); EisenhowerWidgetProvider.updateAllWidgets(this@MainActivity) } } })
+                    layout.addView(Button(this).apply { text = "⬇️"; textSize = 12f; setOnClickListener { if (index < quadrantTasks.size - 1) { val next = quadrantTasks[index + 1]; repo.updateOrder(task.id, next.order); repo.updateOrder(next.id, task.order); refreshTasks(); EisenhowerWidgetProvider.updateAllWidgets(this@MainActivity) } } })
 
                     check.isChecked = task.done
                     val titleText = SpannableString(task.title); if (task.done) titleText.setSpan(StrikethroughSpan(), 0, titleText.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
