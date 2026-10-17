@@ -21,8 +21,6 @@ import android.widget.LinearLayout
 import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkManager
 
 class MainActivity : Activity() {
     private lateinit var repo: TaskRepository
@@ -55,13 +53,10 @@ class MainActivity : Activity() {
 
         findViewById<Button>(R.id.btnTestNotify).setOnClickListener {
             askPermissions()
-            // Creamos una tarea de prueba con fecha de hace 1 minuto para forzar la notificación
-            val dummyTime = System.currentTimeMillis() - 60000 
-            repo.addTask("¡Probar notificación de Eisenhower!", Quadrant.DO_FIRST, dummyTime)
-            refreshTasks()
-            
-            WorkManager.getInstance(this).enqueue(OneTimeWorkRequestBuilder<ReminderWorker>().build())
-            Toast.makeText(this, "Recordatorio en cola. Revisa tu cortina.", Toast.LENGTH_SHORT).show()
+            // Notificación de prueba sin guardar tareas basura
+            val testTask = Task(id = -1, title = "¡Prueba de notificación exitosa!", quadrant = Quadrant.DO_FIRST, dueAt = System.currentTimeMillis() + 3600000)
+            NotificationHelper.showReminder(this, listOf(testTask), 0)
+            Toast.makeText(this, "Notificación enviada. Revisa tu cortina.", Toast.LENGTH_SHORT).show()
         }
 
         askPermissions()
