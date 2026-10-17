@@ -135,10 +135,8 @@ class EisenhowerWidgetProvider : AppWidgetProvider() {
                         row.setTextColor(R.id.row_check, if (task.done) android.graphics.Color.parseColor("#2563EB") else android.graphics.Color.parseColor("#475569"))
                         row.setTextColor(R.id.row_title, if (task.done) android.graphics.Color.parseColor("#94A3B8") else android.graphics.Color.parseColor("#0F172A"))
 
-                        // Tocar el cuadrito -> Tacha la tarea
                         row.setOnClickPendingIntent(R.id.row_check, togglePendingIntent(context, task.id))
                         
-                        // Tocar el texto -> Abre el pop-up en modo edición
                         val editIntent = Intent(context, QuickAddActivity::class.java).apply {
                             putExtra(EXTRA_TASK_ID, task.id)
                             putExtra(EXTRA_QUADRANT, task.quadrant.key)
