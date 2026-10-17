@@ -82,7 +82,6 @@ class EisenhowerWidgetProvider : AppWidgetProvider() {
             val allTasks = repo.getAll()
             val visible = allTasks.filter { settings.showCompleted || !it.done }
 
-            // Calcular cuántas tareas caben según el tamaño del widget
             val options = manager.getAppWidgetOptions(appWidgetId)
             val minHeight = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 220)
             val minWidth = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 250)
@@ -95,7 +94,6 @@ class EisenhowerWidgetProvider : AppWidgetProvider() {
             views.setTextColor(R.id.widget_header, android.graphics.Color.parseColor("#0F172A"))
             views.setTextColor(R.id.widget_sync, android.graphics.Color.parseColor("#2563EB"))
 
-            // Botón de recargar
             val refreshIntent = Intent(context, EisenhowerWidgetProvider::class.java).apply {
                 action = ACTION_REFRESH
             }
@@ -107,7 +105,6 @@ class EisenhowerWidgetProvider : AppWidgetProvider() {
                 )
             )
 
-            // Definir los 4 espacios visuales (Arriba-Izq, Arriba-Der, Abajo-Izq, Abajo-Der)
             val slots = listOf(
                 SlotViews(R.id.q1_card, R.id.q1_title, R.id.q1_tasks, R.id.q1_add),
                 SlotViews(R.id.q2_card, R.id.q2_title, R.id.q2_tasks, R.id.q2_add),
@@ -115,10 +112,7 @@ class EisenhowerWidgetProvider : AppWidgetProvider() {
                 SlotViews(R.id.q4_card, R.id.q4_title, R.id.q4_tasks, R.id.q4_add)
             )
 
-            // Leer el orden elegido (ej. "1,2,3,4" o "2,1,4,3")
             val orderKeys = settings.quadrantOrder.split(",")
-            
-            // Mapear qué cuadrante lógico va en cada espacio visual
             val quadrantsToRender = orderKeys.map { key ->
                 when (key.trim()) {
                     "1" -> Quadrant.DO_FIRST
@@ -132,7 +126,6 @@ class EisenhowerWidgetProvider : AppWidgetProvider() {
             slots.forEachIndexed { index, slot ->
                 val quadrant = quadrantsToRender.getOrNull(index) ?: return@forEachIndexed
                 
-                // Obtener título y color personalizados
                 val title = when (quadrant) {
                     Quadrant.DO_FIRST -> settings.titleQ1
                     Quadrant.SCHEDULE -> settings.titleQ2
@@ -146,7 +139,6 @@ class EisenhowerWidgetProvider : AppWidgetProvider() {
                     Quadrant.ELIMINATE -> settings.colorQ4
                 }
 
-                // Aplicar color de fondo a la tarjeta entera
                 views.setInt(slot.cardId, "setBackgroundColor", color)
 
                 val tasks = visible
@@ -159,8 +151,6 @@ class EisenhowerWidgetProvider : AppWidgetProvider() {
 
                 val pendingCount = tasks.count { !it.done }
                 views.setTextViewText(slot.titleId, "$title · $pendingCount")
-                
-                // Color del texto del título (oscuro para que se lea en fondos claros)
                 views.setTextColor(slot.titleId, android.graphics.Color.parseColor("#0F172A"))
                 views.setTextColor(slot.addId, android.graphics.Color.parseColor("#0F172A"))
 
@@ -180,7 +170,10 @@ class EisenhowerWidgetProvider : AppWidgetProvider() {
                             else -> ""
                         }
                         row.setTextViewText(R.id.row_title, prefix + task.title)
-                        row.setBoolean(R.id.row_check, "setChecked", task.done)
+                        
+                        // Usamos texto en lugar de CheckBox
+                        row.setTextViewText(R.id.row_check, if (task.done) "☑" else "□")
+                        row.setTextColor(R.id.row_check, if (task.done) android.graphics.Color.parseColor("#2563EB") else android.graphics.Color.parseColor("#475569"))
                         row.setTextColor(R.id.row_title, if (task.done) android.graphics.Color.parseColor("#94A3B8") else android.graphics.Color.parseColor("#0F172A"))
 
                         val togglePi = togglePendingIntent(context, task.id)
@@ -195,14 +188,12 @@ class EisenhowerWidgetProvider : AppWidgetProvider() {
                         val more = RemoteViews(context.packageName, R.layout.widget_empty_row)
                         more.setTextViewText(R.id.empty_text, "+$hidden más")
                         more.setTextColor(R.id.empty_text, android.graphics.Color.parseColor("#2563EB"))
-                        // Abre la app principal al tocar "+X más"
                         val mainIntent = Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
                         more.setOnClickPendingIntent(R.id.empty_text, PendingIntent.getActivity(context, 2000 + quadrant.ordinal, mainIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
                         views.addView(slot.tasksId, more)
                     }
                 }
 
-                // Botón de añadir (abre la captura rápida)
                 val addIntent = Intent(context, QuickAddActivity::class.java).apply {
                     putExtra(EXTRA_QUADRANT, quadrant.key)
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
