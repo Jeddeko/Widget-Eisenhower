@@ -39,11 +39,14 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp" />
 
-    <Spinner
-        android:id="@+id/quickDue"
+    <!-- Botón que abrirá el calendario y reloj -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/quickDateBtn"
+        style="@style/Widget.Material3.Button.OutlinedButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="6dp" />
+        android:layout_marginTop="10dp"
+        android:text="Sin recordatorio" />
 
     <CheckBox
         android:id="@+id/quickCalendarCheck"
