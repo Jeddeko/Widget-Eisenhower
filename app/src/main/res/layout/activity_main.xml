@@ -29,18 +29,12 @@
             android:text="@string/settings" />
     </LinearLayout>
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
-        android:text="Widget con 4 cuadrantes, tachado y captura rápida desde el propio escritorio."
-        android:textColor="#64748B"
-        android:textSize="12sp" />
-
+    <!-- Cuadro azul claro para nueva tarea -->
     <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
+        android:backgroundTint="#DBEAFE"
         android:elevation="0dp">
 
         <LinearLayout
@@ -125,7 +119,8 @@
         android:layout_marginTop="8dp"
         android:text="@string/test_reminder" />
 
-    <ScrollView
+    <!-- Scroll horizontal para las 4 columnas -->
+    <HorizontalScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_marginTop="16dp"
@@ -133,9 +128,49 @@
         android:fillViewport="true">
 
         <LinearLayout
-            android:id="@+id/tasksContainer"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical" />
-    </ScrollView>
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:orientation="horizontal">
+
+            <!-- Columna 1 -->
+            <LinearLayout
+                android:layout_width="300dp"
+                android:layout_height="match_parent"
+                android:layout_marginEnd="12dp"
+                android:orientation="vertical">
+                <TextView android:id="@+id/titleQ1View" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#0F172A" android:textSize="18sp" android:textStyle="bold" android:paddingBottom="8dp"/>
+                <androidx.recyclerview.widget.RecyclerView android:id="@+id/listQ1" android:layout_width="match_parent" android:layout_height="match_parent" />
+            </LinearLayout>
+
+            <!-- Columna 2 -->
+            <LinearLayout
+                android:layout_width="300dp"
+                android:layout_height="match_parent"
+                android:layout_marginEnd="12dp"
+                android:orientation="vertical">
+                <TextView android:id="@+id/titleQ2View" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#0F172A" android:textSize="18sp" android:textStyle="bold" android:paddingBottom="8dp"/>
+                <androidx.recyclerview.widget.RecyclerView android:id="@+id/listQ2" android:layout_width="match_parent" android:layout_height="match_parent" />
+            </LinearLayout>
+
+            <!-- Columna 3 -->
+            <LinearLayout
+                android:layout_width="300dp"
+                android:layout_height="match_parent"
+                android:layout_marginEnd="12dp"
+                android:orientation="vertical">
+                <TextView android:id="@+id/titleQ3View" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#0F172A" android:textSize="18sp" android:textStyle="bold" android:paddingBottom="8dp"/>
+                <androidx.recyclerview.widget.RecyclerView android:id="@+id/listQ3" android:layout_width="match_parent" android:layout_height="match_parent" />
+            </LinearLayout>
+
+            <!-- Columna 4 -->
+            <LinearLayout
+                android:layout_width="300dp"
+                android:layout_height="match_parent"
+                android:orientation="vertical">
+                <TextView android:id="@+id/titleQ4View" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#0F172A" android:textSize="18sp" android:textStyle="bold" android:paddingBottom="8dp"/>
+                <androidx.recyclerview.widget.RecyclerView android:id="@+id/listQ4" android:layout_width="match_parent" android:layout_height="match_parent" />
+            </LinearLayout>
+
+        </LinearLayout>
+    </HorizontalScrollView>
 </LinearLayout>
