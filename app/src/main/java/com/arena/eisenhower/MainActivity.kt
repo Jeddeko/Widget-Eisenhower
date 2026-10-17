@@ -5,6 +5,8 @@ import android.app.Activity
 import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -13,14 +15,10 @@ import android.text.SpannableString
 import android.text.Spanned
 import android.text.style.StrikethroughSpan
 import android.view.LayoutInflater
-import android.widget.ArrayAdapter
-import android.widget.Button
-import android.widget.CheckBox
-import android.widget.EditText
-import android.widget.LinearLayout
-import android.widget.Spinner
-import android.widget.TextView
-import android.widget.Toast
+import android.view.View
+import android.widget.*
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 
 class MainActivity : Activity() {
     private lateinit var repo: TaskRepository
@@ -28,58 +26,41 @@ class MainActivity : Activity() {
     private lateinit var dueSpinner: Spinner
     private lateinit var taskInput: EditText
     private lateinit var tasksContainer: LinearLayout
+    private lateinit var settings: AppSettings
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        repo = TaskRepository(this); settings = AppSettings(this)
 
-        repo = TaskRepository(this)
-
-        quadrantSpinner = findViewById(R.id.quadrantSpinner)
-        dueSpinner = findViewById(R.id.dueSpinner)
-        taskInput = findViewById(R.id.taskInput)
-        tasksContainer = findViewById(R.id.tasksContainer)
+        quadrantSpinner = findViewById(R.id.quadrantSpinner); dueSpinner = findViewById(R.id.dueSpinner)
+        taskInput = findViewById(R.id.taskInput); tasksContainer = findViewById(R.id.tasksContainer)
 
         quadrantSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, listOf("Hazlo ya", "Planifica", "Delega", "Elimina"))
         dueSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, DueDateUtils.labels.toList())
 
         findViewById<Button>(R.id.btnAdd).setOnClickListener { addTask() }
-        findViewById<Button>(R.id.btnWidget).setOnClickListener {
-            EisenhowerWidgetProvider.updateAllWidgets(this)
-            Toast.makeText(this, "Widget actualizado", Toast.LENGTH_SHORT).show()
-        }
+        findViewById<Button>(R.id.btnWidget).setOnClickListener { EisenhowerWidgetProvider.updateAllWidgets(this); Toast.makeText(this, "Widget actualizado", Toast.LENGTH_SHORT).show() }
         findViewById<Button>(R.id.btnSettings).setOnClickListener { startActivity(Intent(this, SettingsActivity::class.java)) }
         findViewById<Button>(R.id.btnNotify).setOnClickListener { askPermissions() }
-
         findViewById<Button>(R.id.btnTestNotify).setOnClickListener {
             askPermissions()
-            // Notificación de prueba sin guardar tareas basura. (Aquí estaba el error del -1L)
-            val testTask = Task(id = -1L, title = "¡Prueba de notificación exitosa!", quadrant = Quadrant.DO_FIRST, dueAt = System.currentTimeMillis() + 3600000)
+            val testTask = Task(id = -1L, title = "¡Prueba de notificación!", quadrant = Quadrant.DO_FIRST, dueAt = System.currentTimeMillis() + 3600000)
             NotificationHelper.showReminder(this, listOf(testTask), 0)
-            Toast.makeText(this, "Notificación enviada. Revisa tu cortina.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Notificación enviada", Toast.LENGTH_SHORT).show()
         }
-
         askPermissions()
     }
 
-    override fun onResume() {
-        super.onResume()
-        refreshTasks()
-        EisenhowerWidgetProvider.updateAllWidgets(this)
-    }
+    override fun onResume() { super.onResume(); refreshTasks(); EisenhowerWidgetProvider.updateAllWidgets(this) }
 
     private fun addTask() {
         val title = taskInput.text.toString().trim()
-        if (title.isBlank()) {
-            Toast.makeText(this, "Escribe una tarea", Toast.LENGTH_SHORT).show()
-            return
-        }
-
+        if (title.isBlank()) { Toast.makeText(this, "Escribe una tarea", Toast.LENGTH_SHORT).show(); return }
         val quadrant = Quadrant.values()[quadrantSpinner.selectedItemPosition]
         val dueAt = DueDateUtils.resolve(dueSpinner.selectedItemPosition)
         var calendarId: Long? = null
         if (dueAt != null) calendarId = insertCalendarEvent(title, dueAt)
-
         repo.addTask(title, quadrant, dueAt, calendarId)
         taskInput.setText("")
         refreshTasks()
@@ -90,60 +71,48 @@ class MainActivity : Activity() {
         if (Build.VERSION.SDK_INT >= 23 && checkSelfPermission(Manifest.permission.WRITE_CALENDAR) != PackageManager.PERMISSION_GRANTED) return null
         try {
             val values = ContentValues().apply {
-                put(CalendarContract.Events.DTSTART, dueAt)
-                put(CalendarContract.Events.DTEND, dueAt + 60 * 60 * 1000)
-                put(CalendarContract.Events.TITLE, title)
-                put(CalendarContract.Events.DESCRIPTION, "Tarea creada desde Eisenhower Widget")
-                put(CalendarContract.Events.CALENDAR_ID, 1)
-                put(CalendarContract.Events.EVENT_TIMEZONE, java.util.TimeZone.getDefault().id)
+                put(CalendarContract.Events.DTSTART, dueAt); put(CalendarContract.Events.DTEND, dueAt + 60 * 60 * 1000)
+                put(CalendarContract.Events.TITLE, title); put(CalendarContract.Events.CALENDAR_ID, 1); put(CalendarContract.Events.EVENT_TIMEZONE, java.util.TimeZone.getDefault().id)
             }
-            val uri: Uri? = contentResolver.insert(CalendarContract.Events.CONTENT_URI, values)
-            return uri?.lastPathSegment?.toLongOrNull()
+            return contentResolver.insert(CalendarContract.Events.CONTENT_URI, values)?.lastPathSegment?.toLongOrNull()
         } catch (e: Exception) { return null }
     }
 
     private fun refreshTasks() {
         tasksContainer.removeAllViews()
-        val tasks = repo.getAll().sortedWith(compareBy<Task> { it.done }.thenBy { it.quadrant.ordinal }.thenBy { it.dueAt ?: Long.MAX_VALUE }.thenByDescending { it.createdAt })
-
-        if (tasks.isEmpty()) {
-            val empty = TextView(this).apply {
-                text = "Sin tareas todavía. Añade una o toca + en el widget."
-                setTextColor(android.graphics.Color.parseColor("#64748B"))
-                textSize = 14f
-                setPadding(8, 8, 8, 8)
-            }
-            tasksContainer.addView(empty)
-            return
-        }
-
+        val allTasks = repo.getAll()
+        val quadrants = listOf(
+            Triple(Quadrant.DO_FIRST, settings.titleQ1, settings.colorQ1), Triple(Quadrant.SCHEDULE, settings.titleQ2, settings.colorQ2),
+            Triple(Quadrant.DELEGATE, settings.titleQ3, settings.colorQ3), Triple(Quadrant.ELIMINATE, settings.titleQ4, settings.colorQ4)
+        )
         val inflater = LayoutInflater.from(this)
-        tasks.forEach { task ->
-            val row = inflater.inflate(R.layout.row_task_main, tasksContainer, false)
-            val check = row.findViewById<CheckBox>(R.id.rowCheck)
-            val title = row.findViewById<TextView>(R.id.rowTitle)
-            val meta = row.findViewById<TextView>(R.id.rowMeta)
-            val delete = row.findViewById<Button>(R.id.btnDelete)
 
-            check.isChecked = task.done
-            val titleText = SpannableString(task.title)
-            if (task.done) titleText.setSpan(StrikethroughSpan(), 0, titleText.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-            title.text = titleText
-            
-            val calText = if (task.calendarEventId != null) " 📅" else ""
-            meta.text = "${quadrantLabel(task.quadrant)} · ${DueDateUtils.format(task.dueAt)}$calText"
+        quadrants.forEach { (quadrant, titleStr, color) ->
+            tasksContainer.addView(TextView(this).apply { text = titleStr; setTextColor(Color.parseColor("#0F172A")); textSize = 18f; setTypeface(null, android.graphics.Typeface.BOLD); setPadding(16, 24, 16, 8) })
+            val quadrantTasks = allTasks.filter { it.quadrant == quadrant }.sortedBy { it.order }
 
-            check.setOnClickListener { repo.toggleTask(task.id); refreshTasks(); EisenhowerWidgetProvider.updateAllWidgets(this) }
-            delete.setOnClickListener { repo.deleteTask(task.id); refreshTasks(); EisenhowerWidgetProvider.updateAllWidgets(this) }
-            tasksContainer.addView(row)
+            if (quadrantTasks.isEmpty()) {
+                tasksContainer.addView(TextView(this).apply { text = "No hay tareas aquí."; setTextColor(Color.parseColor("#64748B")); textSize = 14f; setPadding(16, 4, 16, 16) })
+            } else {
+                quadrantTasks.forEachIndexed { index, task ->
+                    val row = inflater.inflate(R.layout.row_task_main, tasksContainer, false)
+                    row.background = GradientDrawable().apply { setColor(color); cornerRadius = 8f }
+                    
+                    val check = row.findViewById<CheckBox>(R.id.rowCheck); val title = row.findViewById<TextView>(R.id.rowTitle)
+                    val meta = row.findViewById<TextView>(R.id.rowMeta); val delete = row.findViewById<Button>(R.id.btnDelete)
+                    delete.visibility = View.GONE
+                    
+                    row.addView(Button(this).apply { text = "⬆️"; textSize = 12f; setOnClickListener { if (index > 0) { val prev = quadrantTasks[index - 1]; repo.updateOrder(task.id, prev.order); repo.updateOrder(prev.id, task.order); refreshTasks(); EisenhowerWidgetProvider.updateAllWidgets(this@MainActivity) } } })
+                    row.addView(Button(this).apply { text = "⬇️"; textSize = 12f; setOnClickListener { if (index < quadrantTasks.size - 1) { val next = quadrantTasks[index + 1]; repo.updateOrder(task.id, next.order); repo.updateOrder(next.id, task.order); refreshTasks(); EisenhowerWidgetProvider.updateAllWidgets(this@MainActivity) } } })
+
+                    check.isChecked = task.done
+                    val titleText = SpannableString(task.title); if (task.done) titleText.setSpan(StrikethroughSpan(), 0, titleText.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                    title.text = titleText; meta.text = "Orden: ${task.order} · ${DueDateUtils.format(task.dueAt)}"
+                    check.setOnClickListener { repo.toggleTask(task.id); refreshTasks(); EisenhowerWidgetProvider.updateAllWidgets(this) }
+                    tasksContainer.addView(row)
+                }
+            }
         }
-    }
-
-    private fun quadrantLabel(quadrant: Quadrant): String = when (quadrant) {
-        Quadrant.DO_FIRST -> "Hazlo ya"
-        Quadrant.SCHEDULE -> "Planifica"
-        Quadrant.DELEGATE -> "Delega"
-        Quadrant.ELIMINATE -> "Elimina"
     }
 
     private fun askPermissions() {
