@@ -2,15 +2,12 @@ package com.arena.eisenhower
 
 import android.Manifest
 import android.app.Activity
-import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
+import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
-import android.provider.CalendarContract
 import android.widget.TextView
-import android.widget.Toast
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -33,7 +30,6 @@ class MainActivity : Activity() {
         rvQ1 = findViewById(R.id.listQ1); rvQ2 = findViewById(R.id.listQ2)
         rvQ3 = findViewById(R.id.listQ3); rvQ4 = findViewById(R.id.listQ4)
 
-        // Botones de "+" para añadir tareas
         findViewById<MaterialButton>(R.id.btnAddQ1).setOnClickListener { openQuickAdd(Quadrant.DO_FIRST) }
         findViewById<MaterialButton>(R.id.btnAddQ2).setOnClickListener { openQuickAdd(Quadrant.SCHEDULE) }
         findViewById<MaterialButton>(R.id.btnAddQ3).setOnClickListener { openQuickAdd(Quadrant.DELEGATE) }
@@ -54,7 +50,6 @@ class MainActivity : Activity() {
     private fun refreshTasks() {
         val allTasks = repo.getAll()
         
-        // Pintar fondos de los cuadrantes
         findViewById<MaterialCardView>(R.id.cardQ1).setCardBackgroundColor(settings.colorQ1)
         findViewById<MaterialCardView>(R.id.cardQ2).setCardBackgroundColor(settings.colorQ2)
         findViewById<MaterialCardView>(R.id.cardQ3).setCardBackgroundColor(settings.colorQ3)
@@ -65,12 +60,11 @@ class MainActivity : Activity() {
         findViewById<TextView>(R.id.titleQ3View).text = settings.titleQ3
         findViewById<TextView>(R.id.titleQ4View).text = settings.titleQ4
 
-        // Adaptamos el color para que las tareas se vean blancas y resalten
-        val taskColor = android.graphics.Color.parseColor("#FFFFFF")
-        setupRecyclerView(rvQ1, Quadrant.DO_FIRST, taskColor, allTasks)
-        setupRecyclerView(rvQ2, Quadrant.SCHEDULE, taskColor, allTasks)
-        setupRecyclerView(rvQ3, Quadrant.DELEGATE, taskColor, allTasks)
-        setupRecyclerView(rvQ4, Quadrant.ELIMINATE, taskColor, allTasks)
+        // Pasamos Color.TRANSPARENT para que no pinte el cuadro blanco
+        setupRecyclerView(rvQ1, Quadrant.DO_FIRST, Color.TRANSPARENT, allTasks)
+        setupRecyclerView(rvQ2, Quadrant.SCHEDULE, Color.TRANSPARENT, allTasks)
+        setupRecyclerView(rvQ3, Quadrant.DELEGATE, Color.TRANSPARENT, allTasks)
+        setupRecyclerView(rvQ4, Quadrant.ELIMINATE, Color.TRANSPARENT, allTasks)
     }
 
     private fun setupRecyclerView(rv: RecyclerView, quadrant: Quadrant, color: Int, allTasks: List<Task>) {
