@@ -16,7 +16,7 @@ android {
         versionName = "1.0.0"
     }
 
-    // Usar el keystore JKS generado por el workflow
+    // Configuración de la firma fija (no afecta al login por correo, pero es buena práctica mantenerla)
     signingConfigs {
         getByName("debug") {
             storeFile = file("debug.keystore")
@@ -48,8 +48,11 @@ dependencies {
     implementation("com.google.android.material:material:1.12.0")
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("androidx.recyclerview:recyclerview:1.3.2")
+    
+    // Firebase (Solo Firestore y Auth por correo)
     implementation(platform("com.google.firebase:firebase-bom:32.8.1"))
     implementation("com.google.firebase:firebase-firestore-ktx")
     implementation("com.google.firebase:firebase-auth-ktx")
-    implementation("com.google.android.gms:play-services-auth:20.7.0")
+    
+    // NOTA: La librería play-services-auth ya ha sido eliminada.
 }
