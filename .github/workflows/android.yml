@@ -21,11 +21,10 @@ jobs:
         with:
           gradle-version: 8.7
 
-      # Crea una firma estándar permanente
-      - name: Generate Standard Debug Keystore
+      # DESCARGA UNA FIRMA FIJA Y PERMANENTE
+      - name: Download Fixed Debug Keystore
         run: |
-          mkdir -p ~/.android
-          keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          wget -O app/debug.keystore https://raw.githubusercontent.com/facebook/react-native/main/packages/react-native/template/android/app/debug.keystore
 
       - name: Build debug APK
         run: gradle assembleDebug --no-daemon
