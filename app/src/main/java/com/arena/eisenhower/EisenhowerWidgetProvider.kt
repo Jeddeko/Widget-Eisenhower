@@ -6,6 +6,8 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
+import android.graphics.Color
 import android.net.Uri
 import android.widget.RemoteViews
 
@@ -76,9 +78,15 @@ class EisenhowerWidgetProvider : AppWidgetProvider() {
             val settings = AppSettings(context)
             val repo = TaskRepository(context)
             
+            val isDark = (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+            val bgColor = if (isDark) Color.parseColor("#121212") else Color.parseColor("#F8FAFC")
+            val textColor = if (isDark) Color.parseColor("#F8FAFC") else Color.parseColor("#0F172A")
+
             val views = RemoteViews(context.packageName, R.layout.eisenhower_widget)
-            views.setTextColor(R.id.widget_header, android.graphics.Color.parseColor("#0F172A"))
-            views.setTextColor(R.id.widget_sync, android.graphics.Color.parseColor("#2563EB"))
+            
+            views.setInt(R.id.widget_root, "setBackgroundColor", bgColor)
+            views.setTextColor(R.id.widget_header, textColor)
+            views.setTextColor(R.id.widget_sync, Color.parseColor("#2563EB"))
 
             val mainIntent = Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
             views.setOnClickPendingIntent(R.id.widget_header, PendingIntent.getActivity(context, 800, mainIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
@@ -126,16 +134,15 @@ class EisenhowerWidgetProvider : AppWidgetProvider() {
                 
                 val activeCount = repo.getAll().count { it.quadrant == quadrant && !it.done }
                 views.setTextViewText(slot.titleId, "$title · $activeCount")
-                views.setTextColor(slot.titleId, android.graphics.Color.parseColor("#0F172A"))
+                views.setTextColor(slot.titleId, textColor) // Texto adaptado
                 
-                // El texto del boton dice "+ Añadir", pero si hay completadas, avisa
                 val completedCount = repo.getAll().count { it.quadrant == quadrant && it.done }
                 if (completedCount > 0) {
                     views.setTextViewText(slot.addId, "+ Añadir (Completadas: $completedCount)")
                 } else {
                     views.setTextViewText(slot.addId, "+ Añadir")
                 }
-                views.setTextColor(slot.addId, android.graphics.Color.parseColor("#0F172A"))
+                views.setTextColor(slot.addId, textColor) // Texto adaptado
 
                 val serviceIntent = Intent(context, WidgetService::class.java).apply {
                     putExtra("EXTRA_QUADRANT", quadrant.key)
