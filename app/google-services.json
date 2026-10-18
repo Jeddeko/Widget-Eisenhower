@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "804130731802-jd9j76aonrjsp5akk07p58bg0hdqqouj.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.arena.eisenhower",
+            "certificate_hash": "f5df3f3fba3c3fa3ebbf00db4e75071d66a5dde2"
+          }
+        },
+        {
           "client_id": "804130731802-pb8h26vf9g1l19p4psoquj0ig0ea6dii.apps.googleusercontent.com",
           "client_type": 3
         }
