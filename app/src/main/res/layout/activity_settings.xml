@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F8FAFC"
+    android:background="@color/app_background"
     android:fillViewport="true">
 
     <LinearLayout
@@ -16,16 +16,16 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/custom_title"
-            android:textColor="#0F172A"
+            android:textColor="@color/text_primary"
             android:textSize="24sp"
             android:textStyle="bold" />
 
-        <!-- SECCIÓN DE SINCRONIZACIÓN (CORREO Y CONTRASEÑA) -->
+        <!-- SECCIÓN DE SINCRONIZACIÓN -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            app:cardBackgroundColor="#DBEAFE"
+            app:cardBackgroundColor="@color/card_background"
             app:cardCornerRadius="12dp"
             app:cardElevation="0dp">
             
@@ -39,11 +39,11 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Sincronización en la Nube"
-                    android:textColor="#1E3A8A"
+                    android:textColor="@color/text_primary"
                     android:textStyle="bold"
                     android:textSize="16sp"/>
 
-                <!-- Campos de Login (se ocultan si ya está logueado) -->
+                <!-- Campos de Login -->
                 <LinearLayout
                     android:id="@+id/layoutLogin"
                     android:layout_width="match_parent"
@@ -56,6 +56,8 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:hint="Correo electrónico"
+                        android:textColorHint="@color/text_secondary"
+                        android:textColor="@color/text_primary"
                         android:inputType="textEmailAddress"
                         android:maxLines="1" />
 
@@ -64,6 +66,8 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:hint="Contraseña (mín. 6 caracteres)"
+                        android:textColorHint="@color/text_secondary"
+                        android:textColor="@color/text_primary"
                         android:inputType="textPassword"
                         android:maxLines="1" />
 
@@ -94,7 +98,7 @@
                     </LinearLayout>
                 </LinearLayout>
 
-                <!-- Botón de Sincronizar (se muestra si ya está logueado) -->
+                <!-- Botón de Sincronizar -->
                 <LinearLayout
                     android:id="@+id/layoutSync"
                     android:layout_width="match_parent"
@@ -106,7 +110,7 @@
                         android:id="@+id/tvUserEmail"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:textColor="#1E3A8A"
+                        android:textColor="@color/text_primary"
                         android:textSize="14sp"
                         android:layout_marginBottom="8dp"/>
 
@@ -135,25 +139,25 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
             android:text="Nombres de los cuadrantes"
-            android:textColor="#334155"
+            android:textColor="@color/text_primary"
             android:textStyle="bold" />
 
-        <EditText android:id="@+id/etTitleQ1" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="Cuadrante 1" android:inputType="textCapSentences" android:maxLines="1" />
-        <EditText android:id="@+id/etTitleQ2" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="Cuadrante 2" android:inputType="textCapSentences" android:maxLines="1" />
-        <EditText android:id="@+id/etTitleQ3" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="Cuadrante 3" android:inputType="textCapSentences" android:maxLines="1" />
-        <EditText android:id="@+id/etTitleQ4" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="Cuadrante 4" android:inputType="textCapSentences" android:maxLines="1" />
+        <EditText android:id="@+id/etTitleQ1" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="Cuadrante 1" android:textColorHint="@color/text_secondary" android:textColor="@color/text_primary" android:inputType="textCapSentences" android:maxLines="1" />
+        <EditText android:id="@+id/etTitleQ2" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="Cuadrante 2" android:textColorHint="@color/text_secondary" android:textColor="@color/text_primary" android:inputType="textCapSentences" android:maxLines="1" />
+        <EditText android:id="@+id/etTitleQ3" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="Cuadrante 3" android:textColorHint="@color/text_secondary" android:textColor="@color/text_primary" android:inputType="textCapSentences" android:maxLines="1" />
+        <EditText android:id="@+id/etTitleQ4" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="Cuadrante 4" android:textColorHint="@color/text_secondary" android:textColor="@color/text_primary" android:inputType="textCapSentences" android:maxLines="1" />
 
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="20dp" android:text="Colores de fondo" android:textColor="#334155" android:textStyle="bold" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="20dp" android:text="Colores de fondo" android:textColor="@color/text_primary" android:textStyle="bold" />
 
         <Button android:id="@+id/btnColorQ1" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="Elegir color Cuadrante 1" />
         <Button android:id="@+id/btnColorQ2" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="Elegir color Cuadrante 2" />
         <Button android:id="@+id/btnColorQ3" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="Elegir color Cuadrante 3" />
         <Button android:id="@+id/btnColorQ4" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="Elegir color Cuadrante 4" />
 
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="20dp" android:text="Posición de los cuadrantes" android:textColor="#334155" android:textStyle="bold" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="20dp" android:text="Posición de los cuadrantes" android:textColor="@color/text_primary" android:textStyle="bold" />
         <Spinner android:id="@+id/spinnerOrder" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" />
 
-        <CheckBox android:id="@+id/showCompleted" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:text="@string/show_completed" />
+        <CheckBox android:id="@+id/showCompleted" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:textColor="@color/text_primary" android:text="@string/show_completed" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnTestNotifySettings"
