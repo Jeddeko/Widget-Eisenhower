@@ -27,6 +27,12 @@ class EisenhowerWidgetProvider : AppWidgetProvider() {
     }
 
     override fun onReceive(context: Context, intent: Intent) {
+        // Si el usuario cambia entre modo claro y oscuro, refrescamos el widget
+        if (intent.action == Intent.ACTION_CONFIGURATION_CHANGED) {
+            updateAllWidgets(context)
+            return
+        }
+
         val taskId = intent.getLongExtra(EXTRA_TASK_ID, -1L)
         val actionType = intent.getStringExtra(EXTRA_ACTION_TYPE)
 
@@ -81,7 +87,7 @@ class EisenhowerWidgetProvider : AppWidgetProvider() {
         private fun updateWidget(context: Context, manager: AppWidgetManager, appWidgetId: Int) {
             val settings = AppSettings(context)
             val repo = TaskRepository(context)
-            val isDarkTheme = (context.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
+            val isDarkTheme = settings.isDarkMode
             
             val bgColor = if (isDarkTheme) Color.parseColor("#121212") else Color.parseColor("#F8FAFC")
             val mainTextColor = if (isDarkTheme) Color.parseColor("#F8FAFC") else Color.parseColor("#0F172A")
@@ -136,7 +142,6 @@ class EisenhowerWidgetProvider : AppWidgetProvider() {
 
                 views.setInt(slot.cardId, "setBackgroundColor", color)
                 
-                // Color de texto dinámico según el fondo
                 val isBgDark = isColorDark(color)
                 val textColor = if (isBgDark) Color.WHITE else Color.BLACK
 
