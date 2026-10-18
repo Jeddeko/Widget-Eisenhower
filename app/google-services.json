@@ -12,7 +12,12 @@
           "package_name": "com.arena.eisenhower"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "804130731802-pb8h26vf9g1l19p4psoquj0ig0ea6dii.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCDbgvbbrc7HeHslHNnSufuf0Hy3MIWTB4"
@@ -20,7 +25,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "804130731802-pb8h26vf9g1l19p4psoquj0ig0ea6dii.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
