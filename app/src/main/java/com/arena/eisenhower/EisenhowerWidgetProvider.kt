@@ -6,7 +6,6 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.content.res.Configuration
 import android.graphics.Color
 import android.net.Uri
 import android.widget.RemoteViews
@@ -74,18 +73,23 @@ class EisenhowerWidgetProvider : AppWidgetProvider() {
             }
         }
 
+        private fun isColorDark(color: Int): Boolean {
+            val darkness = 1.0 - (0.299 * Color.red(color) + 0.587 * Color.green(color) + 0.114 * Color.blue(color)) / 255
+            return darkness > 0.5
+        }
+
         private fun updateWidget(context: Context, manager: AppWidgetManager, appWidgetId: Int) {
             val settings = AppSettings(context)
             val repo = TaskRepository(context)
+            val isDarkTheme = (context.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
             
-            val isDark = (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
-            val bgColor = if (isDark) Color.parseColor("#121212") else Color.parseColor("#F8FAFC")
-            val textColor = if (isDark) Color.parseColor("#F8FAFC") else Color.parseColor("#0F172A")
+            val bgColor = if (isDarkTheme) Color.parseColor("#121212") else Color.parseColor("#F8FAFC")
+            val mainTextColor = if (isDarkTheme) Color.parseColor("#F8FAFC") else Color.parseColor("#0F172A")
 
             val views = RemoteViews(context.packageName, R.layout.eisenhower_widget)
             
             views.setInt(R.id.widget_root, "setBackgroundColor", bgColor)
-            views.setTextColor(R.id.widget_header, textColor)
+            views.setTextColor(R.id.widget_header, mainTextColor)
             views.setTextColor(R.id.widget_sync, Color.parseColor("#2563EB"))
 
             val mainIntent = Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
@@ -132,9 +136,13 @@ class EisenhowerWidgetProvider : AppWidgetProvider() {
 
                 views.setInt(slot.cardId, "setBackgroundColor", color)
                 
+                // Color de texto dinámico según el fondo
+                val isBgDark = isColorDark(color)
+                val textColor = if (isBgDark) Color.WHITE else Color.BLACK
+
                 val activeCount = repo.getAll().count { it.quadrant == quadrant && !it.done }
                 views.setTextViewText(slot.titleId, "$title · $activeCount")
-                views.setTextColor(slot.titleId, textColor) // Texto adaptado
+                views.setTextColor(slot.titleId, textColor)
                 
                 val completedCount = repo.getAll().count { it.quadrant == quadrant && it.done }
                 if (completedCount > 0) {
@@ -142,7 +150,7 @@ class EisenhowerWidgetProvider : AppWidgetProvider() {
                 } else {
                     views.setTextViewText(slot.addId, "+ Añadir")
                 }
-                views.setTextColor(slot.addId, textColor) // Texto adaptado
+                views.setTextColor(slot.addId, textColor)
 
                 val serviceIntent = Intent(context, WidgetService::class.java).apply {
                     putExtra("EXTRA_QUADRANT", quadrant.key)
