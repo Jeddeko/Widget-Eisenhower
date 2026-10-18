@@ -19,9 +19,9 @@ class WidgetFactory(private val context: Context, private val quadrant: Quadrant
     override fun onCreate() {}
     override fun onDataSetChanged() {
         val repo = TaskRepository(context)
-        val settings = AppSettings(context)
+        // FILTRO CLAVE: Solo mostramos las tareas que NO están completadas (!it.done)
         tasks = repo.getAll()
-            .filter { it.quadrant == quadrant && (settings.showCompleted || !it.done) }
+            .filter { it.quadrant == quadrant && !it.done }
             .sortedBy { it.order }
     }
     override fun onDestroy() {}
@@ -32,14 +32,13 @@ class WidgetFactory(private val context: Context, private val quadrant: Quadrant
         val rv = RemoteViews(context.packageName, R.layout.widget_task_row)
         
         val prefix = when {
-            task.done -> "✓ "
             task.dueAt != null && task.dueAt < System.currentTimeMillis() -> "⚠ "
             else -> ""
         }
         rv.setTextViewText(R.id.row_title, prefix + task.title)
-        rv.setTextViewText(R.id.row_check, if (task.done) "☑" else "□")
-        rv.setTextColor(R.id.row_check, if (task.done) Color.parseColor("#2563EB") else Color.parseColor("#475569"))
-        rv.setTextColor(R.id.row_title, if (task.done) Color.parseColor("#94A3B8") else Color.parseColor("#0F172A"))
+        rv.setTextViewText(R.id.row_check, "□")
+        rv.setTextColor(R.id.row_check, Color.parseColor("#475569"))
+        rv.setTextColor(R.id.row_title, Color.parseColor("#0F172A"))
 
         val toggleIntent = Intent().apply {
             putExtra(EisenhowerWidgetProvider.EXTRA_TASK_ID, task.id)
