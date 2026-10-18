@@ -15,12 +15,20 @@ import androidx.core.app.RemoteInput
 import androidx.core.content.ContextCompat
 
 object NotificationHelper {
-    const val CHANNEL_ID = "eisenhower_reminders"
+    // Cambiamos el ID para forzar a Android a aplicar la nueva importancia
+    const val CHANNEL_ID = "eisenhower_reminders_v2"
     const val NOTIFICATION_ID = 4100
 
     fun createChannel(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(CHANNEL_ID, "Recordatorios", NotificationManager.IMPORTANCE_DEFAULT)
+            val channel = NotificationChannel(
+                CHANNEL_ID, 
+                "Recordatorios Eisenhower", 
+                NotificationManager.IMPORTANCE_HIGH // IMPORTANCIA ALTA para que salga el banner
+            ).apply {
+                description = "Tareas próximas y captura rápida"
+                enableVibration(true)
+            }
             context.getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
         }
     }
@@ -28,16 +36,31 @@ object NotificationHelper {
     @SuppressLint("MissingPermission")
     fun showReminder(context: Context, soon: List<Task>, overdueCount: Int) {
         if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) return
-        val contentPi = PendingIntent.getActivity(context, 500, Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-        val remoteInput = RemoteInput.Builder(NotificationActionReceiver.KEY_QUICK_TASK).setLabel("Tarea rápida").build()
         
-        // AQUI ESTABA EL CRASH: Flag mutable requerido para RemoteInput
-        val addPi = PendingIntent.getBroadcast(context, 501, Intent(context, NotificationActionReceiver::class.java).setAction(NotificationActionReceiver.ACTION_NOTIFY_ADD), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE)
+        val contentIntent = Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        val contentPi = PendingIntent.getActivity(context, 500, contentIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+
+        val remoteInput = RemoteInput.Builder(NotificationActionReceiver.KEY_QUICK_TASK).setLabel("Tarea rápida").build()
+        val addIntent = Intent(context, NotificationActionReceiver::class.java).setAction(NotificationActionReceiver.ACTION_NOTIFY_ADD)
+        
+        val addPi = PendingIntent.getBroadcast(context, 501, addIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE)
 
         val addAction = NotificationCompat.Action.Builder(android.R.drawable.ic_input_add, "Añadir", addPi).addRemoteInput(remoteInput).build()
+
+        val summary = if (overdueCount > 0) "$overdueCount vencidas · ${soon.size} próximas" else "${soon.size} tareas próximas"
+        val expanded = soon.take(4).joinToString("\n") { "• ${it.title}" }.ifBlank { summary }
+
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_widget).setContentTitle("Eisenhower: acción pendiente")
-            .setContentText("Tareas próximas").setContentIntent(contentPi).setAutoCancel(true).addAction(addAction).build()
+            .setSmallIcon(R.drawable.ic_widget)
+            .setContentTitle("Eisenhower: acción pendiente")
+            .setContentText(summary)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(expanded))
+            .setContentIntent(contentPi)
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_HIGH) // Prioridad alta
+            .addAction(addAction)
+            .build()
+
         NotificationManagerCompat.from(context).notify(NOTIFICATION_ID, notification)
     }
 }
