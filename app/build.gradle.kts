@@ -16,7 +16,7 @@ android {
         versionName = "1.0.0"
     }
 
-    // Usar el keystore generado en la carpeta app
+    // CONFIGURACIÓN DE LA FIRMA FIJA
     signingConfigs {
         getByName("debug") {
             storeFile = file("debug.keystore")
