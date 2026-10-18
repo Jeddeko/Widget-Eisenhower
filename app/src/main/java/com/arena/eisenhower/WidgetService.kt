@@ -2,6 +2,7 @@ package com.arena.eisenhower
 
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.graphics.Color
 import android.widget.RemoteViews
 import android.widget.RemoteViewsService
@@ -19,10 +20,7 @@ class WidgetFactory(private val context: Context, private val quadrant: Quadrant
     override fun onCreate() {}
     override fun onDataSetChanged() {
         val repo = TaskRepository(context)
-        // FILTRO CLAVE: Solo mostramos las tareas que NO están completadas (!it.done)
-        tasks = repo.getAll()
-            .filter { it.quadrant == quadrant && !it.done }
-            .sortedBy { it.order }
+        tasks = repo.getAll().filter { it.quadrant == quadrant && !it.done }.sortedBy { it.order }
     }
     override fun onDestroy() {}
     override fun getCount(): Int = tasks.size
@@ -31,14 +29,18 @@ class WidgetFactory(private val context: Context, private val quadrant: Quadrant
         val task = tasks[position]
         val rv = RemoteViews(context.packageName, R.layout.widget_task_row)
         
+        val isDark = (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+        val textColor = if (isDark) Color.parseColor("#F8FAFC") else Color.parseColor("#0F172A")
+        val iconColor = if (isDark) Color.parseColor("#94A3B8") else Color.parseColor("#475569")
+
         val prefix = when {
             task.dueAt != null && task.dueAt < System.currentTimeMillis() -> "⚠ "
             else -> ""
         }
         rv.setTextViewText(R.id.row_title, prefix + task.title)
         rv.setTextViewText(R.id.row_check, "□")
-        rv.setTextColor(R.id.row_check, Color.parseColor("#475569"))
-        rv.setTextColor(R.id.row_title, Color.parseColor("#0F172A"))
+        rv.setTextColor(R.id.row_check, iconColor)
+        rv.setTextColor(R.id.row_title, textColor)
 
         val toggleIntent = Intent().apply {
             putExtra(EisenhowerWidgetProvider.EXTRA_TASK_ID, task.id)
