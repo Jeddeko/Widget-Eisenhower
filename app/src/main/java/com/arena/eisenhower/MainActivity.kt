@@ -2,6 +2,8 @@ package com.arena.eisenhower
 
 import android.Manifest
 import android.app.Activity
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -18,14 +20,20 @@ import android.widget.Toast
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.button.MaterialButton
+import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Collections
+import java.util.Date
+import java.util.Locale
 
 class MainActivity : Activity() {
     private lateinit var repo: TaskRepository
     private lateinit var quadrantSpinner: Spinner
-    private lateinit var dueSpinner: Spinner
     private lateinit var taskInput: EditText
     private lateinit var settings: AppSettings
+    private var selectedDueAt: Long? = null
+    private lateinit var mainDateBtn: MaterialButton
 
     private lateinit var rvQ1: RecyclerView
     private lateinit var rvQ2: RecyclerView
@@ -37,19 +45,54 @@ class MainActivity : Activity() {
         setContentView(R.layout.activity_main)
         repo = TaskRepository(this); settings = AppSettings(this)
 
-        quadrantSpinner = findViewById(R.id.quadrantSpinner); dueSpinner = findViewById(R.id.dueSpinner)
+        quadrantSpinner = findViewById(R.id.quadrantSpinner)
         taskInput = findViewById(R.id.taskInput)
+        mainDateBtn = findViewById(R.id.mainDateBtn)
 
         rvQ1 = findViewById(R.id.listQ1); rvQ2 = findViewById(R.id.listQ2)
         rvQ3 = findViewById(R.id.listQ3); rvQ4 = findViewById(R.id.listQ4)
 
         quadrantSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, listOf("Hazlo ya", "Planifica", "Delega", "Elimina"))
-        dueSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, DueDateUtils.labels.toList())
+
+        // Lógica del botón de fecha principal
+        mainDateBtn.setOnClickListener {
+            val cal = Calendar.getInstance()
+            if (selectedDueAt != null) cal.timeInMillis = selectedDueAt!!
+
+            val datePicker = DatePickerDialog(this, { _, year, month, dayOfMonth ->
+                cal.set(Calendar.YEAR, year)
+                cal.set(Calendar.MONTH, month)
+                cal.set(Calendar.DAY_OF_MONTH, dayOfMonth)
+
+                val timePicker = TimePickerDialog(this, { _, hourOfDay, minute ->
+                    cal.set(Calendar.HOUR_OF_DAY, hourOfDay)
+                    cal.set(Calendar.MINUTE, minute)
+                    cal.set(Calendar.SECOND, 0)
+                    selectedDueAt = cal.timeInMillis
+                    updateMainDateBtnText()
+                }, cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE), true)
+                timePicker.show()
+            }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH))
+            
+            datePicker.setButton(android.app.Dialog.BUTTON_NEGATIVE, "Borrar") { _, _ ->
+                selectedDueAt = null
+                updateMainDateBtnText()
+            }
+            datePicker.show()
+        }
 
         findViewById<Button>(R.id.btnAdd).setOnClickListener { addTask() }
         findViewById<Button>(R.id.btnSettings).setOnClickListener { startActivity(Intent(this, SettingsActivity::class.java)) }
-        
         askPermissions()
+    }
+
+    private fun updateMainDateBtnText() {
+        if (selectedDueAt == null) {
+            mainDateBtn.text = "Sin recordatorio"
+        } else {
+            val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+            mainDateBtn.text = sdf.format(Date(selectedDueAt!!))
+        }
     }
 
     override fun onResume() { super.onResume(); refreshTasks(); EisenhowerWidgetProvider.updateAllWidgets(this) }
@@ -58,11 +101,20 @@ class MainActivity : Activity() {
         val title = taskInput.text.toString().trim()
         if (title.isBlank()) { Toast.makeText(this, "Escribe una tarea", Toast.LENGTH_SHORT).show(); return }
         val quadrant = Quadrant.values()[quadrantSpinner.selectedItemPosition]
-        val dueAt = DueDateUtils.resolve(dueSpinner.selectedItemPosition)
+        
         var calendarId: Long? = null
-        if (dueAt != null) calendarId = insertCalendarEvent(title, dueAt)
-        repo.addTask(title, quadrant, dueAt, calendarId)
+        if (selectedDueAt != null) calendarId = insertCalendarEvent(title, selectedDueAt!!)
+        
+        val task = repo.addTask(title, quadrant, selectedDueAt, calendarId)
+        
+        // Programar alarma exacta
+        if (task != null) {
+            ReminderScheduler.schedule(this, task)
+        }
+
         taskInput.setText("")
+        selectedDueAt = null
+        updateMainDateBtnText()
         refreshTasks()
         EisenhowerWidgetProvider.updateAllWidgets(this)
     }
