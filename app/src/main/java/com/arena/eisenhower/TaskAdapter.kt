@@ -1,5 +1,6 @@
 package com.arena.eisenhower
 
+import android.content.res.Configuration
 import android.graphics.Color
 import android.text.SpannableString
 import android.text.Spanned
@@ -13,7 +14,6 @@ import androidx.recyclerview.widget.RecyclerView
 
 class TaskAdapter(
     private val tasks: MutableList<Task>,
-    private val backgroundColor: Int,
     private val onCheckClick: (Task) -> Unit,
     private val onItemClick: (Task) -> Unit
 ) : RecyclerView.Adapter<TaskAdapter.TaskViewHolder>() {
@@ -32,19 +32,19 @@ class TaskAdapter(
 
     override fun onBindViewHolder(holder: TaskViewHolder, position: Int) {
         val task = tasks[position]
-        
-        // Hacemos el fondo transparente
-        holder.itemView.setBackgroundColor(Color.TRANSPARENT)
-        
-        val params = holder.itemView.layoutParams as RecyclerView.LayoutParams
-        params.setMargins(0, 0, 0, 4)
-        holder.itemView.layoutParams = params
+        val context = holder.itemView.context
+        val isDark = (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
 
         holder.check.isChecked = task.done
         val titleText = SpannableString(task.title)
         if (task.done) titleText.setSpan(StrikethroughSpan(), 0, titleText.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         
         holder.title.text = titleText
+        
+        // Colores dinámicos de texto
+        holder.title.setTextColor(if (isDark) Color.parseColor("#F8FAFC") else Color.parseColor("#0F172A"))
+        holder.meta.setTextColor(if (isDark) Color.parseColor("#94A3B8") else Color.parseColor("#475569"))
+        
         holder.meta.text = "Orden: ${task.order} · ${DueDateUtils.format(task.dueAt)}"
         holder.btnDelete.visibility = View.GONE
 
