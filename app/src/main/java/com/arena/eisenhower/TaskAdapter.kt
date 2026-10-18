@@ -2,6 +2,7 @@ package com.arena.eisenhower
 
 import android.content.res.ColorStateList
 import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.text.SpannableString
 import android.text.Spanned
 import android.text.style.StrikethroughSpan
@@ -15,8 +16,10 @@ import androidx.recyclerview.widget.RecyclerView
 class TaskAdapter(
     private val tasks: MutableList<Task>,
     private val quadrantColor: Int,
+    private val selectedTaskIds: MutableSet<Long>,
     private val onCheckClick: (Task) -> Unit,
-    private val onItemClick: (Task) -> Unit
+    private val onItemClick: (Task) -> Unit,
+    private val onItemLongClick: (Task) -> Unit
 ) : RecyclerView.Adapter<TaskAdapter.TaskViewHolder>() {
 
     class TaskViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -24,9 +27,9 @@ class TaskAdapter(
         val title: TextView = view.findViewById(R.id.rowTitle)
         val meta: TextView = view.findViewById(R.id.rowMeta)
         val btnDelete: View = view.findViewById(R.id.btnDelete)
+        val root: View = view
     }
 
-    // Función para saber si un color es oscuro
     private fun isColorDark(color: Int): Boolean {
         val darkness = 1.0 - (0.299 * Color.red(color) + 0.587 * Color.green(color) + 0.114 * Color.blue(color)) / 255
         return darkness > 0.5
@@ -40,11 +43,21 @@ class TaskAdapter(
     override fun onBindViewHolder(holder: TaskViewHolder, position: Int) {
         val task = tasks[position]
         val isDark = isColorDark(quadrantColor)
+        val isSelected = selectedTaskIds.contains(task.id)
         
-        // El color del texto cambia según el fondo
         val textColor = if (isDark) Color.WHITE else Color.BLACK
-        val subTextColor = if (isDark) Color.parseColor("#D1D5DB") else Color.parseColor("#4B5563") // Gris claro u oscuro
+        val subTextColor = if (isDark) Color.parseColor("#D1D5DB") else Color.parseColor("#4B5563")
         val checkColor = if (isDark) Color.WHITE else Color.BLACK
+
+        // Si está seleccionada, le ponemos un fondo ligeramente opaco
+        if (isSelected) {
+            holder.root.background = GradientDrawable().apply { 
+                setColor(if (isDark) Color.parseColor("#55FFFFFF") else Color.parseColor("#33000000")) 
+                cornerRadius = 12f
+            }
+        } else {
+            holder.root.background = null
+        }
 
         holder.check.isChecked = task.done
         holder.check.buttonTintList = ColorStateList.valueOf(checkColor)
@@ -57,11 +70,14 @@ class TaskAdapter(
         
         holder.meta.setTextColor(subTextColor)
         holder.meta.text = "Orden: ${task.order} · ${DueDateUtils.format(task.dueAt)}"
-        
         holder.btnDelete.visibility = View.GONE
 
         holder.check.setOnClickListener { onCheckClick(task) }
         holder.itemView.setOnClickListener { onItemClick(task) }
+        holder.itemView.setOnLongClickListener { 
+            onItemLongClick(task)
+            true 
+        }
     }
 
     override fun getItemCount(): Int = tasks.size
