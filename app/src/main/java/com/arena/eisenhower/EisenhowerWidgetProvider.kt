@@ -14,7 +14,6 @@ class EisenhowerWidgetProvider : AppWidgetProvider() {
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
         appWidgetIds.forEach { appWidgetId -> 
             updateWidget(context, appWidgetManager, appWidgetId)
-            // ARREGLO: Forzar a las listas a cargar los datos desde el inicio
             appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetId, R.id.q1_tasks)
             appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetId, R.id.q2_tasks)
             appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetId, R.id.q3_tasks)
@@ -125,9 +124,17 @@ class EisenhowerWidgetProvider : AppWidgetProvider() {
 
                 views.setInt(slot.cardId, "setBackgroundColor", color)
                 
-                val pendingCount = repo.getAll().count { it.quadrant == quadrant && !it.done }
-                views.setTextViewText(slot.titleId, "$title · $pendingCount")
+                val activeCount = repo.getAll().count { it.quadrant == quadrant && !it.done }
+                views.setTextViewText(slot.titleId, "$title · $activeCount")
                 views.setTextColor(slot.titleId, android.graphics.Color.parseColor("#0F172A"))
+                
+                // El texto del boton dice "+ Añadir", pero si hay completadas, avisa
+                val completedCount = repo.getAll().count { it.quadrant == quadrant && it.done }
+                if (completedCount > 0) {
+                    views.setTextViewText(slot.addId, "+ Añadir (Completadas: $completedCount)")
+                } else {
+                    views.setTextViewText(slot.addId, "+ Añadir")
+                }
                 views.setTextColor(slot.addId, android.graphics.Color.parseColor("#0F172A"))
 
                 val serviceIntent = Intent(context, WidgetService::class.java).apply {
