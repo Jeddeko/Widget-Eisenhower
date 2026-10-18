@@ -136,14 +136,12 @@ class MainActivity : Activity() {
                 if (selectedTaskIds.isEmpty()) {
                     openQuickAddEdit(task) 
                 } else {
-                    // Si estamos en modo selección, el toque normal selecciona/desmarca
                     if (selectedTaskIds.contains(task.id)) selectedTaskIds.remove(task.id) else selectedTaskIds.add(task.id)
                     updateSelectionHeader()
                     refreshTasks()
                 }
             },
             onItemLongClick = { task ->
-                // Mantener presionado selecciona
                 if (selectedTaskIds.contains(task.id)) selectedTaskIds.remove(task.id) else selectedTaskIds.add(task.id)
                 updateSelectionHeader()
                 refreshTasks()
@@ -152,7 +150,6 @@ class MainActivity : Activity() {
         rv.layoutManager = LinearLayoutManager(this)
         rv.adapter = activeAdapter
 
-        // Lógica de las tareas completadas (igual que antes)
         val completedHeader = findViewById<TextView>(headerId)
         val completedContainer = findViewById<LinearLayout>(containerId)
 
@@ -199,10 +196,9 @@ class MainActivity : Activity() {
             }
         }
 
-        // CONFIGURACIÓN DE DESLIZAR (SWIPE) Y ARRASTRAR (DRAG)
         val itemTouchHelper = ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(
             ItemTouchHelper.UP or ItemTouchHelper.DOWN, 
-            ItemTouchHelper.LEFT // Habilitamos deslizar a la izquierda
+            ItemTouchHelper.LEFT 
         ) {
             override fun onMove(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder): Boolean {
                 val fromPos = viewHolder.adapterPosition
@@ -227,8 +223,13 @@ class MainActivity : Activity() {
                 }
             }
 
+            // AQUÍ ESTÁ EL ARREGLO DEL BUG: Obligamos a la vista a volver a su lugar
             override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
                 super.clearView(recyclerView, viewHolder)
+                
+                // Resetea la posición visual de la tarjeta
+                viewHolder.itemView.translationX = 0f 
+                
                 if (selectedTaskIds.isEmpty()) {
                     for (i in activeTasks.indices) { repo.updateOrder(activeTasks[i].id, i + 1) }
                     EisenhowerWidgetProvider.updateAllWidgets(this@MainActivity)
@@ -237,7 +238,13 @@ class MainActivity : Activity() {
             }
 
             override fun isLongPressDragEnabled(): Boolean {
-                return selectedTaskIds.isEmpty() // Desactivar arrastre si estamos seleccionando
+                return selectedTaskIds.isEmpty()
+            }
+
+            // Ajustamos el umbral (la cantidad que debes deslizar para borrar)
+            // 0.5 significa que debes deslizar más de la mitad de la pantalla para que se borre.
+            override fun getSwipeThreshold(viewHolder: RecyclerView.ViewHolder): Float {
+                return 0.5f 
             }
 
             // Pintar el fondo rojo con basurero al deslizar
@@ -262,7 +269,13 @@ class MainActivity : Activity() {
                         deleteIcon.draw(c)
                     }
                 }
-                super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive)
+                // Evitamos que el usuario deslice más de lo permitido para que no se vea feo
+                val maxTranslate = -itemView.width.toFloat() 
+                val translationX = Math.max(dX, maxTranslate)
+                itemView.translationX = translationX
+
+                // Llamamos al super dibujando el desplazamiento controlado
+                super.onChildDraw(c, recyclerView, viewHolder, translationX, dY, actionState, isCurrentlyActive)
             }
         })
         itemTouchHelper.attachToRecyclerView(rv)
