@@ -4,15 +4,21 @@ import android.Manifest
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.Drawable
 import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.CheckBox
+import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -27,6 +33,12 @@ class MainActivity : Activity() {
     private lateinit var rvQ1: RecyclerView; private lateinit var rvQ2: RecyclerView
     private lateinit var rvQ3: RecyclerView; private lateinit var rvQ4: RecyclerView
 
+    // Variables para la selección múltiple
+    private val selectedTaskIds = mutableSetOf<Long>()
+    private lateinit var selectionHeader: LinearLayout
+    private lateinit var normalHeader: LinearLayout
+    private lateinit var tvSelectionCount: TextView
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -35,12 +47,30 @@ class MainActivity : Activity() {
         rvQ1 = findViewById(R.id.listQ1); rvQ2 = findViewById(R.id.listQ2)
         rvQ3 = findViewById(R.id.listQ3); rvQ4 = findViewById(R.id.listQ4)
 
+        selectionHeader = findViewById(R.id.selectionHeader)
+        normalHeader = findViewById(R.id.normalHeader)
+        tvSelectionCount = findViewById(R.id.tvSelectionCount)
+
         findViewById<MaterialButton>(R.id.btnAddQ1).setOnClickListener { openQuickAdd(Quadrant.DO_FIRST) }
         findViewById<MaterialButton>(R.id.btnAddQ2).setOnClickListener { openQuickAdd(Quadrant.SCHEDULE) }
         findViewById<MaterialButton>(R.id.btnAddQ3).setOnClickListener { openQuickAdd(Quadrant.DELEGATE) }
         findViewById<MaterialButton>(R.id.btnAddQ4).setOnClickListener { openQuickAdd(Quadrant.ELIMINATE) }
 
         findViewById<MaterialButton>(R.id.btnSettings).setOnClickListener { startActivity(Intent(this, SettingsActivity::class.java)) }
+        
+        // Botón para borrar las tareas seleccionadas
+        findViewById<ImageButton>(R.id.btnDeleteSelected).setOnClickListener {
+            if (selectedTaskIds.isNotEmpty()) {
+                selectedTaskIds.forEach { id -> repo.deleteTask(id) }
+                CloudSync.uploadTasks(this)
+                selectedTaskIds.clear()
+                updateSelectionHeader()
+                refreshTasks()
+                EisenhowerWidgetProvider.updateAllWidgets(this)
+                Toast.makeText(this, "Tareas eliminadas", Toast.LENGTH_SHORT).show()
+            }
+        }
+
         askPermissions()
     }
 
@@ -61,10 +91,20 @@ class MainActivity : Activity() {
         return darkness > 0.5
     }
 
+    private fun updateSelectionHeader() {
+        if (selectedTaskIds.isEmpty()) {
+            selectionHeader.visibility = View.GONE
+            normalHeader.visibility = View.VISIBLE
+        } else {
+            selectionHeader.visibility = View.VISIBLE
+            normalHeader.visibility = View.GONE
+            tvSelectionCount.text = "${selectedTaskIds.size} seleccionada(s)"
+        }
+    }
+
     private fun refreshTasks() {
         val allTasks = repo.getAll()
         
-        // Configurar cada cuadrante
         setupQuadrantUI(Quadrant.DO_FIRST, R.id.cardQ1, R.id.titleQ1View, R.id.btnAddQ1, R.id.headerCompletedQ1, R.id.containerCompletedQ1, rvQ1, settings.colorQ1, settings.titleQ1, allTasks)
         setupQuadrantUI(Quadrant.SCHEDULE, R.id.cardQ2, R.id.titleQ2View, R.id.btnAddQ2, R.id.headerCompletedQ2, R.id.containerCompletedQ2, rvQ2, settings.colorQ2, settings.titleQ2, allTasks)
         setupQuadrantUI(Quadrant.DELEGATE, R.id.cardQ3, R.id.titleQ3View, R.id.btnAddQ3, R.id.headerCompletedQ3, R.id.containerCompletedQ3, rvQ3, settings.colorQ3, settings.titleQ3, allTasks)
@@ -87,15 +127,32 @@ class MainActivity : Activity() {
         val activeTasks = quadrantTasks.filter { !it.done }.sortedBy { it.order }.toMutableList()
         val completedTasks = quadrantTasks.filter { it.done }.sortedByDescending { it.updatedAt }
 
-        val activeAdapter = TaskAdapter(activeTasks, color, 
+        val activeAdapter = TaskAdapter(
+            activeTasks, color, selectedTaskIds,
             onCheckClick = { task -> 
                 repo.toggleTask(task.id); refreshTasks(); EisenhowerWidgetProvider.updateAllWidgets(this); CloudSync.uploadTasks(this) 
             },
-            onItemClick = { task -> openQuickAddEdit(task) }
+            onItemClick = { task -> 
+                if (selectedTaskIds.isEmpty()) {
+                    openQuickAddEdit(task) 
+                } else {
+                    // Si estamos en modo selección, el toque normal selecciona/desmarca
+                    if (selectedTaskIds.contains(task.id)) selectedTaskIds.remove(task.id) else selectedTaskIds.add(task.id)
+                    updateSelectionHeader()
+                    refreshTasks()
+                }
+            },
+            onItemLongClick = { task ->
+                // Mantener presionado selecciona
+                if (selectedTaskIds.contains(task.id)) selectedTaskIds.remove(task.id) else selectedTaskIds.add(task.id)
+                updateSelectionHeader()
+                refreshTasks()
+            }
         )
         rv.layoutManager = LinearLayoutManager(this)
         rv.adapter = activeAdapter
 
+        // Lógica de las tareas completadas (igual que antes)
         val completedHeader = findViewById<TextView>(headerId)
         val completedContainer = findViewById<LinearLayout>(containerId)
 
@@ -142,25 +199,70 @@ class MainActivity : Activity() {
             }
         }
 
+        // CONFIGURACIÓN DE DESLIZAR (SWIPE) Y ARRASTRAR (DRAG)
         val itemTouchHelper = ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(
-            ItemTouchHelper.UP or ItemTouchHelper.DOWN, 0
+            ItemTouchHelper.UP or ItemTouchHelper.DOWN, 
+            ItemTouchHelper.LEFT // Habilitamos deslizar a la izquierda
         ) {
             override fun onMove(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder): Boolean {
                 val fromPos = viewHolder.adapterPosition
                 val toPos = target.adapterPosition
-                if (fromPos < activeTasks.size && toPos < activeTasks.size) {
+                if (fromPos < activeTasks.size && toPos < activeTasks.size && selectedTaskIds.isEmpty()) {
                     Collections.swap(activeTasks, fromPos, toPos)
                     activeAdapter.notifyItemMoved(fromPos, toPos)
                     return true
                 }
                 return false
             }
-            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {}
+
+            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
+                val position = viewHolder.adapterPosition
+                if (position != RecyclerView.NO_POSITION && direction == ItemTouchHelper.LEFT) {
+                    val taskToDelete = activeTasks[position]
+                    repo.deleteTask(taskToDelete.id)
+                    CloudSync.uploadTasks(this@MainActivity)
+                    refreshTasks()
+                    EisenhowerWidgetProvider.updateAllWidgets(this@MainActivity)
+                    Toast.makeText(this@MainActivity, "Tarea eliminada", Toast.LENGTH_SHORT).show()
+                }
+            }
+
             override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
                 super.clearView(recyclerView, viewHolder)
-                for (i in activeTasks.indices) { repo.updateOrder(activeTasks[i].id, i + 1) }
-                EisenhowerWidgetProvider.updateAllWidgets(this@MainActivity)
-                CloudSync.uploadTasks(this@MainActivity)
+                if (selectedTaskIds.isEmpty()) {
+                    for (i in activeTasks.indices) { repo.updateOrder(activeTasks[i].id, i + 1) }
+                    EisenhowerWidgetProvider.updateAllWidgets(this@MainActivity)
+                    CloudSync.uploadTasks(this@MainActivity)
+                }
+            }
+
+            override fun isLongPressDragEnabled(): Boolean {
+                return selectedTaskIds.isEmpty() // Desactivar arrastre si estamos seleccionando
+            }
+
+            // Pintar el fondo rojo con basurero al deslizar
+            override fun onChildDraw(c: Canvas, recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, dX: Float, dY: Float, actionState: Int, isCurrentlyActive: Boolean) {
+                val itemView = viewHolder.itemView
+                val background = ColorDrawable(Color.parseColor("#EF4444"))
+                val deleteIcon: Drawable? = ContextCompat.getDrawable(this@MainActivity, android.R.drawable.ic_menu_delete)
+                
+                if (actionState == ItemTouchHelper.ACTION_STATE_SWIPE && dX < 0) {
+                    background.setBounds(itemView.right + dX.toInt(), itemView.top, itemView.right, itemView.bottom)
+                    background.draw(c)
+                    
+                    if (deleteIcon != null) {
+                        val iconMargin = (itemView.height - deleteIcon.intrinsicHeight) / 2
+                        deleteIcon.setBounds(
+                            itemView.right - iconMargin - deleteIcon.intrinsicWidth,
+                            itemView.top + iconMargin,
+                            itemView.right - iconMargin,
+                            itemView.bottom - iconMargin
+                        )
+                        deleteIcon.setTint(Color.WHITE)
+                        deleteIcon.draw(c)
+                    }
+                }
+                super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive)
             }
         })
         itemTouchHelper.attachToRecyclerView(rv)
