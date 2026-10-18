@@ -22,6 +22,14 @@
           }
         },
         {
+          "client_id": "804130731802-sek8gik1mqugq90eq15qmvb2e9ghq495.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.arena.eisenhower",
+            "certificate_hash": "fac61745dc0903786fb9ede62a962b399f7348f0"
+          }
+        },
+        {
           "client_id": "804130731802-pb8h26vf9g1l19p4psoquj0ig0ea6dii.apps.googleusercontent.com",
           "client_type": 3
         }
