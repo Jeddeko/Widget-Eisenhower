@@ -4,7 +4,6 @@ import android.Manifest
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.Paint
 import android.os.Build
@@ -57,40 +56,38 @@ class MainActivity : Activity() {
         EisenhowerWidgetProvider.updateAllWidgets(this) 
     }
 
-    private fun refreshTasks() {
-        val allTasks = repo.getAll()
-        val isDark = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
-        
-        // Pintar fondos de los cuadrantes
-        findViewById<MaterialCardView>(R.id.cardQ1).setCardBackgroundColor(settings.colorQ1)
-        findViewById<MaterialCardView>(R.id.cardQ2).setCardBackgroundColor(settings.colorQ2)
-        findViewById<MaterialCardView>(R.id.cardQ3).setCardBackgroundColor(settings.colorQ3)
-        findViewById<MaterialCardView>(R.id.cardQ4).setCardBackgroundColor(settings.colorQ4)
-
-        val textColor = if (isDark) Color.parseColor("#F8FAFC") else Color.parseColor("#0F172A")
-        val secondaryColor = if (isDark) Color.parseColor("#94A3B8") else Color.parseColor("#475569")
-
-        findViewById<TextView>(R.id.titleQ1View).apply { text = settings.titleQ1; setTextColor(textColor) }
-        findViewById<TextView>(R.id.titleQ2View).apply { text = settings.titleQ2; setTextColor(textColor) }
-        findViewById<TextView>(R.id.titleQ3View).apply { text = settings.titleQ3; setTextColor(textColor) }
-        findViewById<TextView>(R.id.titleQ4View).apply { text = settings.titleQ4; setTextColor(textColor) }
-
-        setupQuadrant(rvQ1, Quadrant.DO_FIRST, R.id.headerCompletedQ1, R.id.containerCompletedQ1, allTasks, isDark, textColor, secondaryColor)
-        setupQuadrant(rvQ2, Quadrant.SCHEDULE, R.id.headerCompletedQ2, R.id.containerCompletedQ2, allTasks, isDark, textColor, secondaryColor)
-        setupQuadrant(rvQ3, Quadrant.DELEGATE, R.id.headerCompletedQ3, R.id.containerCompletedQ3, allTasks, isDark, textColor, secondaryColor)
-        setupQuadrant(rvQ4, Quadrant.ELIMINATE, R.id.headerCompletedQ4, R.id.containerCompletedQ4, allTasks, isDark, textColor, secondaryColor)
+    private fun isColorDark(color: Int): Boolean {
+        val darkness = 1.0 - (0.299 * Color.red(color) + 0.587 * Color.green(color) + 0.114 * Color.blue(color)) / 255
+        return darkness > 0.5
     }
 
-    private fun setupQuadrant(
-        rv: RecyclerView, quadrant: Quadrant, headerId: Int, containerId: Int, 
-        allTasks: List<Task>, isDark: Boolean, textColor: Int, secondaryColor: Int
+    private fun refreshTasks() {
+        val allTasks = repo.getAll()
+        
+        // Configurar cada cuadrante
+        setupQuadrantUI(Quadrant.DO_FIRST, R.id.cardQ1, R.id.titleQ1View, R.id.btnAddQ1, R.id.headerCompletedQ1, R.id.containerCompletedQ1, rvQ1, settings.colorQ1, settings.titleQ1, allTasks)
+        setupQuadrantUI(Quadrant.SCHEDULE, R.id.cardQ2, R.id.titleQ2View, R.id.btnAddQ2, R.id.headerCompletedQ2, R.id.containerCompletedQ2, rvQ2, settings.colorQ2, settings.titleQ2, allTasks)
+        setupQuadrantUI(Quadrant.DELEGATE, R.id.cardQ3, R.id.titleQ3View, R.id.btnAddQ3, R.id.headerCompletedQ3, R.id.containerCompletedQ3, rvQ3, settings.colorQ3, settings.titleQ3, allTasks)
+        setupQuadrantUI(Quadrant.ELIMINATE, R.id.cardQ4, R.id.titleQ4View, R.id.btnAddQ4, R.id.headerCompletedQ4, R.id.containerCompletedQ4, rvQ4, settings.colorQ4, settings.titleQ4, allTasks)
+    }
+
+    private fun setupQuadrantUI(
+        quadrant: Quadrant, cardId: Int, titleId: Int, btnAddId: Int, headerId: Int, containerId: Int,
+        rv: RecyclerView, color: Int, titleStr: String, allTasks: List<Task>
     ) {
+        val isDark = isColorDark(color)
+        val mainTextColor = if (isDark) Color.WHITE else Color.BLACK
+        val secondaryTextColor = if (isDark) Color.parseColor("#D1D5DB") else Color.parseColor("#4B5563")
+
+        findViewById<MaterialCardView>(cardId).setCardBackgroundColor(color)
+        findViewById<TextView>(titleId).apply { text = titleStr; setTextColor(mainTextColor) }
+        findViewById<MaterialButton>(btnAddId).setTextColor(mainTextColor)
+
         val quadrantTasks = allTasks.filter { it.quadrant == quadrant }
         val activeTasks = quadrantTasks.filter { !it.done }.sortedBy { it.order }.toMutableList()
         val completedTasks = quadrantTasks.filter { it.done }.sortedByDescending { it.updatedAt }
 
-        // El Adaptador ahora maneja sus propios colores
-        val activeAdapter = TaskAdapter(activeTasks, 
+        val activeAdapter = TaskAdapter(activeTasks, color, 
             onCheckClick = { task -> 
                 repo.toggleTask(task.id); refreshTasks(); EisenhowerWidgetProvider.updateAllWidgets(this); CloudSync.uploadTasks(this) 
             },
@@ -107,7 +104,7 @@ class MainActivity : Activity() {
             completedContainer.visibility = View.GONE
         } else {
             completedHeader.visibility = View.VISIBLE
-            completedHeader.setTextColor(secondaryColor)
+            completedHeader.setTextColor(secondaryTextColor)
             completedHeader.text = "Completadas (${completedTasks.size}) ▼"
             completedContainer.visibility = View.GONE
             
@@ -130,12 +127,13 @@ class MainActivity : Activity() {
                 val meta = row.findViewById<TextView>(R.id.rowMeta)
                 
                 check.isChecked = true
+                check.buttonTintList = android.content.res.ColorStateList.valueOf(mainTextColor)
                 title.text = task.title
-                title.setTextColor(textColor)
+                title.setTextColor(mainTextColor)
                 title.paintFlags = title.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
                 
                 meta.text = DueDateUtils.format(task.dueAt)
-                meta.setTextColor(secondaryColor)
+                meta.setTextColor(secondaryTextColor)
                 
                 check.setOnClickListener { 
                     repo.toggleTask(task.id); refreshTasks(); EisenhowerWidgetProvider.updateAllWidgets(this); CloudSync.uploadTasks(this) 
