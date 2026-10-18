@@ -12,7 +12,6 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Cabecera con Título y Ajustes -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -24,7 +23,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="@string/main_title"
+                android:text="Eisenhower"
                 android:textColor="#0F172A"
                 android:textSize="28sp"
                 android:textStyle="bold" />
@@ -36,7 +35,7 @@
                 android:layout_height="wrap_content"
                 app:backgroundTint="#BFDBFE"
                 android:textColor="#1E3A8A"
-                android:text="@string/settings" />
+                android:text="Ajustes" />
         </LinearLayout>
 
         <!-- CUADRANTE 1 -->
@@ -61,6 +60,9 @@
                     <com.google.android.material.button.MaterialButton android:id="@+id/btnAddQ1" style="@style/Widget.Material3.Button.IconButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="+" android:textSize="24sp" android:textColor="#0F172A"/>
                 </LinearLayout>
                 <androidx.recyclerview.widget.RecyclerView android:id="@+id/listQ1" android:layout_width="match_parent" android:layout_height="wrap_content" android:nestedScrollingEnabled="false" android:layout_marginTop="8dp"/>
+                
+                <TextView android:id="@+id/headerCompletedQ1" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="Completadas ▼" android:textColor="#475569" android:textSize="14sp" android:visibility="gone"/>
+                <LinearLayout android:id="@+id/containerCompletedQ1" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone"/>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -86,6 +88,9 @@
                     <com.google.android.material.button.MaterialButton android:id="@+id/btnAddQ2" style="@style/Widget.Material3.Button.IconButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="+" android:textSize="24sp" android:textColor="#0F172A"/>
                 </LinearLayout>
                 <androidx.recyclerview.widget.RecyclerView android:id="@+id/listQ2" android:layout_width="match_parent" android:layout_height="wrap_content" android:nestedScrollingEnabled="false" android:layout_marginTop="8dp"/>
+                
+                <TextView android:id="@+id/headerCompletedQ2" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="Completadas ▼" android:textColor="#475569" android:textSize="14sp" android:visibility="gone"/>
+                <LinearLayout android:id="@+id/containerCompletedQ2" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone"/>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -111,6 +116,9 @@
                     <com.google.android.material.button.MaterialButton android:id="@+id/btnAddQ3" style="@style/Widget.Material3.Button.IconButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="+" android:textSize="24sp" android:textColor="#0F172A"/>
                 </LinearLayout>
                 <androidx.recyclerview.widget.RecyclerView android:id="@+id/listQ3" android:layout_width="match_parent" android:layout_height="wrap_content" android:nestedScrollingEnabled="false" android:layout_marginTop="8dp"/>
+                
+                <TextView android:id="@+id/headerCompletedQ3" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="Completadas ▼" android:textColor="#475569" android:textSize="14sp" android:visibility="gone"/>
+                <LinearLayout android:id="@+id/containerCompletedQ3" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone"/>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -136,6 +144,9 @@
                     <com.google.android.material.button.MaterialButton android:id="@+id/btnAddQ4" style="@style/Widget.Material3.Button.IconButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="+" android:textSize="24sp" android:textColor="#0F172A"/>
                 </LinearLayout>
                 <androidx.recyclerview.widget.RecyclerView android:id="@+id/listQ4" android:layout_width="match_parent" android:layout_height="wrap_content" android:nestedScrollingEnabled="false" android:layout_marginTop="8dp"/>
+                
+                <TextView android:id="@+id/headerCompletedQ4" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="Completadas ▼" android:textColor="#475569" android:textSize="14sp" android:visibility="gone"/>
+                <LinearLayout android:id="@+id/containerCompletedQ4" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone"/>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
