@@ -73,11 +73,14 @@
                 android:layout_marginTop="8dp"
                 android:orientation="horizontal">
 
-                <Spinner
-                    android:id="@+id/dueSpinner"
+                <!-- NUEVO: Botón de fecha en vez del Spinner -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/mainDateBtn"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1" />
+                    android:layout_weight="1"
+                    android:text="Sin recordatorio" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnAdd"
@@ -101,41 +104,25 @@
             android:layout_height="match_parent"
             android:orientation="horizontal">
 
-            <LinearLayout
-                android:layout_width="300dp"
-                android:layout_height="match_parent"
-                android:layout_marginEnd="12dp"
-                android:orientation="vertical">
+            <LinearLayout android:layout_width="300dp" android:layout_height="match_parent" android:layout_marginEnd="12dp" android:orientation="vertical">
                 <TextView android:id="@+id/titleQ1View" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#0F172A" android:textSize="18sp" android:textStyle="bold" android:paddingBottom="8dp"/>
                 <androidx.recyclerview.widget.RecyclerView android:id="@+id/listQ1" android:layout_width="match_parent" android:layout_height="match_parent" />
             </LinearLayout>
 
-            <LinearLayout
-                android:layout_width="300dp"
-                android:layout_height="match_parent"
-                android:layout_marginEnd="12dp"
-                android:orientation="vertical">
+            <LinearLayout android:layout_width="300dp" android:layout_height="match_parent" android:layout_marginEnd="12dp" android:orientation="vertical">
                 <TextView android:id="@+id/titleQ2View" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#0F172A" android:textSize="18sp" android:textStyle="bold" android:paddingBottom="8dp"/>
                 <androidx.recyclerview.widget.RecyclerView android:id="@+id/listQ2" android:layout_width="match_parent" android:layout_height="match_parent" />
             </LinearLayout>
 
-            <LinearLayout
-                android:layout_width="300dp"
-                android:layout_height="match_parent"
-                android:layout_marginEnd="12dp"
-                android:orientation="vertical">
+            <LinearLayout android:layout_width="300dp" android:layout_height="match_parent" android:layout_marginEnd="12dp" android:orientation="vertical">
                 <TextView android:id="@+id/titleQ3View" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#0F172A" android:textSize="18sp" android:textStyle="bold" android:paddingBottom="8dp"/>
                 <androidx.recyclerview.widget.RecyclerView android:id="@+id/listQ3" android:layout_width="match_parent" android:layout_height="match_parent" />
             </LinearLayout>
 
-            <LinearLayout
-                android:layout_width="300dp"
-                android:layout_height="match_parent"
-                android:orientation="vertical">
+            <LinearLayout android:layout_width="300dp" android:layout_height="match_parent" android:orientation="vertical">
                 <TextView android:id="@+id/titleQ4View" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#0F172A" android:textSize="18sp" android:textStyle="bold" android:paddingBottom="8dp"/>
                 <androidx.recyclerview.widget.RecyclerView android:id="@+id/listQ4" android:layout_width="match_parent" android:layout_height="match_parent" />
             </LinearLayout>
-
         </LinearLayout>
     </HorizontalScrollView>
 </LinearLayout>
