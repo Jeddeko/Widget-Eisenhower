@@ -17,6 +17,7 @@ import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
+import android.widget.ImageButton
 import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
@@ -49,6 +50,7 @@ class QuickAddActivity : Activity() {
         val calendarCheck = findViewById<CheckBox>(R.id.quickCalendarCheck)
         val save = findViewById<Button>(R.id.quickSave)
         val titleText = findViewById<TextView>(R.id.quickTitle)
+        val btnDelete = findViewById<ImageButton>(R.id.btnDeleteTask)
 
         quadrantSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, listOf("Hazlo ya", "Planifica", "Delega", "Elimina"))
 
@@ -73,6 +75,16 @@ class QuickAddActivity : Activity() {
                 selectedDueAt = task.dueAt
                 save.text = "ACTUALIZAR TAREA"
                 calendarCheck.visibility = View.GONE 
+                
+                // MOSTRAMOS EL TACHO DE BASURA
+                btnDelete.visibility = View.VISIBLE
+                btnDelete.setOnClickListener {
+                    repo.deleteTask(taskId)
+                    CloudSync.uploadTasks(this)
+                    EisenhowerWidgetProvider.updateAllWidgets(this)
+                    finish()
+                    Toast.makeText(this, "Tarea eliminada", Toast.LENGTH_SHORT).show()
+                }
             }
         } else {
             quadrantSpinner.setSelection(incomingQuadrant.ordinal)
@@ -136,7 +148,7 @@ class QuickAddActivity : Activity() {
             }
 
             EisenhowerWidgetProvider.updateAllWidgets(this)
-            CloudSync.uploadTasks(this) // ESTA ES LA LÍNEA MÁGICA AÑADIDA
+            CloudSync.uploadTasks(this)
             finish()
         }
     }
