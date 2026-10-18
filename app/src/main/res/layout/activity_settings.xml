@@ -20,20 +20,120 @@
             android:textSize="24sp"
             android:textStyle="bold" />
 
-        <!-- BOTÓN DE GOOGLE AQUÍ -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnGoogleSync"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="Sincronizar con Google"
-            app:backgroundTint="#93C5FD"
-            android:textColor="#1E3A8A" />
-
-        <TextView
+        <!-- SECCIÓN DE SINCRONIZACIÓN (CORREO Y CONTRASEÑA) -->
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
+            app:cardBackgroundColor="#DBEAFE"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="0dp">
+            
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Sincronización en la Nube"
+                    android:textColor="#1E3A8A"
+                    android:textStyle="bold"
+                    android:textSize="16sp"/>
+
+                <!-- Campos de Login (se ocultan si ya está logueado) -->
+                <LinearLayout
+                    android:id="@+id/layoutLogin"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginTop="8dp">
+
+                    <EditText
+                        android:id="@+id/etEmail"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Correo electrónico"
+                        android:inputType="textEmailAddress"
+                        android:maxLines="1" />
+
+                    <EditText
+                        android:id="@+id/etPassword"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Contraseña (mín. 6 caracteres)"
+                        android:inputType="textPassword"
+                        android:maxLines="1" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginTop="8dp">
+
+                        <Button
+                            android:id="@+id/btnLogin"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Iniciar Sesión"
+                            android:backgroundTint="#2563EB"
+                            android:textColor="#FFFFFF"/>
+
+                        <Button
+                            android:id="@+id/btnRegister"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginStart="8dp"
+                            android:text="Registrarse"
+                            android:backgroundTint="#34A853"
+                            android:textColor="#FFFFFF"/>
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Botón de Sincronizar (se muestra si ya está logueado) -->
+                <LinearLayout
+                    android:id="@+id/layoutSync"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:id="@+id/tvUserEmail"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textColor="#1E3A8A"
+                        android:textSize="14sp"
+                        android:layout_marginBottom="8dp"/>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnSyncNow"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Sincronizar ahora"
+                        app:backgroundTint="#60A5FA"
+                        android:textColor="#1E3A8A" />
+                        
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnLogout"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Cerrar sesión" />
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- RESTO DE AJUSTES -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
             android:text="Nombres de los cuadrantes"
             android:textColor="#334155"
             android:textStyle="bold" />
