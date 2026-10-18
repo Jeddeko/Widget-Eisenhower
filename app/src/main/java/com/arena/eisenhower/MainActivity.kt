@@ -223,12 +223,13 @@ class MainActivity : Activity() {
                 }
             }
 
-            // AQUÍ ESTÁ EL ARREGLO DEL BUG: Obligamos a la vista a volver a su lugar
+            // AQUÍ ESTÁ EL ARREGLO DEFINITIVO DEL BUG
             override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
                 super.clearView(recyclerView, viewHolder)
                 
-                // Resetea la posición visual de la tarjeta
-                viewHolder.itemView.translationX = 0f 
+                // Forzar que la tarjeta vuelva a su estado normal y no se quede "trabada"
+                viewHolder.itemView.translationX = 0f
+                viewHolder.itemView.alpha = 1f
                 
                 if (selectedTaskIds.isEmpty()) {
                     for (i in activeTasks.indices) { repo.updateOrder(activeTasks[i].id, i + 1) }
@@ -241,8 +242,7 @@ class MainActivity : Activity() {
                 return selectedTaskIds.isEmpty()
             }
 
-            // Ajustamos el umbral (la cantidad que debes deslizar para borrar)
-            // 0.5 significa que debes deslizar más de la mitad de la pantalla para que se borre.
+            // Ajustamos el umbral: debes deslizar más de la mitad para borrar
             override fun getSwipeThreshold(viewHolder: RecyclerView.ViewHolder): Float {
                 return 0.5f 
             }
@@ -269,13 +269,9 @@ class MainActivity : Activity() {
                         deleteIcon.draw(c)
                     }
                 }
-                // Evitamos que el usuario deslice más de lo permitido para que no se vea feo
-                val maxTranslate = -itemView.width.toFloat() 
-                val translationX = Math.max(dX, maxTranslate)
-                itemView.translationX = translationX
-
-                // Llamamos al super dibujando el desplazamiento controlado
-                super.onChildDraw(c, recyclerView, viewHolder, translationX, dY, actionState, isCurrentlyActive)
+                
+                // Dejamos que el sistema maneje el movimiento de la tarjeta
+                super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive)
             }
         })
         itemTouchHelper.attachToRecyclerView(rv)
