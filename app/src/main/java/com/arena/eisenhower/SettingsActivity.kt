@@ -2,49 +2,113 @@ package com.arena.eisenhower
 
 import android.app.Activity
 import android.app.AlertDialog
-import android.content.Intent
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.text.SpannableString
 import android.text.Spanned
 import android.text.style.BackgroundColorSpan
+import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
+import android.widget.LinearLayout
 import android.widget.Spinner
+import android.widget.TextView
 import android.widget.Toast
-import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.auth.api.signin.GoogleSignInClient
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions
-import com.google.android.gms.common.api.ApiException
 import com.google.android.material.button.MaterialButton
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.GoogleAuthProvider
 
 class SettingsActivity : Activity() {
     private lateinit var settings: AppSettings
     private var currentColorQ1 = 0; private var currentColorQ2 = 0; private var currentColorQ3 = 0; private var currentColorQ4 = 0
 
     private lateinit var mAuth: FirebaseAuth
-    private lateinit var googleSignInClient: GoogleSignInClient
-    private val RC_SIGN_IN = 9001
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_settings)
         settings = AppSettings(this)
-
         mAuth = FirebaseAuth.getInstance()
-        val webClientId = "804130731802-pb8h26vf9g1l19p4psoquj0ig0ea6dii.apps.googleusercontent.com"
-        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestIdToken(webClientId)
-            .requestEmail()
-            .build()
-        googleSignInClient = GoogleSignIn.getClient(this, gso)
 
-        val btnGoogleSync = findViewById<MaterialButton>(R.id.btnGoogleSync)
+        // Referencias de Login
+        val layoutLogin = findViewById<LinearLayout>(R.id.layoutLogin)
+        val layoutSync = findViewById<LinearLayout>(R.id.layoutSync)
+        val etEmail = findViewById<EditText>(R.id.etEmail)
+        val etPassword = findViewById<EditText>(R.id.etPassword)
+        val btnLogin = findViewById<Button>(R.id.btnLogin)
+        val btnRegister = findViewById<Button>(R.id.btnRegister)
+        val btnSyncNow = findViewById<MaterialButton>(R.id.btnSyncNow)
+        val btnLogout = findViewById<MaterialButton>(R.id.btnLogout)
+        val tvUserEmail = findViewById<TextView>(R.id.tvUserEmail)
+
+        // Lógica de autenticación
+        fun updateAuthUI() {
+            if (mAuth.currentUser != null) {
+                layoutLogin.visibility = View.GONE
+                layoutSync.visibility = View.VISIBLE
+                tvUserEmail.text = "Conectado como: ${mAuth.currentUser?.email}"
+            } else {
+                layoutLogin.visibility = View.VISIBLE
+                layoutSync.visibility = View.GONE
+            }
+        }
+
+        btnRegister.setOnClickListener {
+            val email = etEmail.text.toString().trim()
+            val pass = etPassword.text.toString().trim()
+            if (email.isBlank() || pass.length < 6) {
+                Toast.makeText(this, "Correo válido y contraseña de mín. 6 caracteres", Toast.LENGTH_LONG).show()
+                return@setOnClickListener
+            }
+            mAuth.createUserWithEmailAndPassword(email, pass).addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    Toast.makeText(this, "Usuario registrado", Toast.LENGTH_SHORT).show()
+                    updateAuthUI()
+                    CloudSync.uploadTasks(this) // Sube las tareas locales al crear la cuenta
+                } else {
+                    Toast.makeText(this, "Error: ${task.exception?.message}", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+
+        btnLogin.setOnClickListener {
+            val email = etEmail.text.toString().trim()
+            val pass = etPassword.text.toString().trim()
+            if (email.isBlank() || pass.isBlank()) {
+                Toast.makeText(this, "Llena todos los campos", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            mAuth.signInWithEmailAndPassword(email, pass).addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    Toast.makeText(this, "Sesión iniciada", Toast.LENGTH_SHORT).show()
+                    updateAuthUI()
+                    CloudSync.downloadTasks(this) { // Descarga las tareas al iniciar sesión
+                        runOnUiThread { Toast.makeText(this, "Tareas sincronizadas", Toast.LENGTH_SHORT).show() }
+                    }
+                } else {
+                    Toast.makeText(this, "Error: ${task.exception?.message}", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+
+        btnSyncNow.setOnClickListener {
+            CloudSync.uploadTasks(this)
+            CloudSync.downloadTasks(this) {
+                runOnUiThread { Toast.makeText(this, "Sincronizado con la nube", Toast.LENGTH_SHORT).show() }
+            }
+        }
+
+        btnLogout.setOnClickListener {
+            mAuth.signOut()
+            updateAuthUI()
+            Toast.makeText(this, "Sesión cerrada", Toast.LENGTH_SHORT).show()
+        }
+
+        updateAuthUI() // Revisa si ya hay alguien logueado al abrir
+
+        // --- Resto de la lógica de Ajustes (colores, nombres, etc) ---
         val etTitleQ1 = findViewById<EditText>(R.id.etTitleQ1); val etTitleQ2 = findViewById<EditText>(R.id.etTitleQ2)
         val etTitleQ3 = findViewById<EditText>(R.id.etTitleQ3); val etTitleQ4 = findViewById<EditText>(R.id.etTitleQ4)
         val btnColorQ1 = findViewById<Button>(R.id.btnColorQ1); val btnColorQ2 = findViewById<Button>(R.id.btnColorQ2)
@@ -69,19 +133,6 @@ class SettingsActivity : Activity() {
         btnColorQ3.setOnClickListener { showColorPicker(currentColorQ3) { c -> currentColorQ3 = c; actualizarColorBoton(btnColorQ3, c) } }
         btnColorQ4.setOnClickListener { showColorPicker(currentColorQ4) { c -> currentColorQ4 = c; actualizarColorBoton(btnColorQ4, c) } }
 
-        // Lógica del botón de Google movida aquí
-        btnGoogleSync.setOnClickListener {
-            if (mAuth.currentUser == null) {
-                val signInIntent = googleSignInClient.signInIntent
-                startActivityForResult(signInIntent, RC_SIGN_IN)
-            } else {
-                CloudSync.uploadTasks(this)
-                CloudSync.downloadTasks(this) {
-                    runOnUiThread { Toast.makeText(this, "Sincronizado con la nube", Toast.LENGTH_SHORT).show() }
-                }
-            }
-        }
-
         btnTestNotify.setOnClickListener {
             val testTask = Task(id = -1L, title = "¡Prueba de notificación!", quadrant = Quadrant.DO_FIRST, dueAt = System.currentTimeMillis() + 3600000)
             NotificationHelper.showReminder(this, listOf(testTask), 0)
@@ -95,39 +146,6 @@ class SettingsActivity : Activity() {
             settings.quadrantOrder = orderValues[spinnerOrder.selectedItemPosition]; settings.showCompleted = showCompleted.isChecked
             EisenhowerWidgetProvider.updateAllWidgets(this)
             Toast.makeText(this, "Ajustes guardados", Toast.LENGTH_SHORT).show(); finish()
-        }
-
-        updateUIBasedOnAuth(btnGoogleSync)
-    }
-
-    private fun updateUIBasedOnAuth(btnGoogleSync: MaterialButton) {
-        if (mAuth.currentUser != null) {
-            btnGoogleSync.text = "Sincronizar ahora (${mAuth.currentUser?.email})"
-            CloudSync.downloadTasks(this) {} 
-        } else {
-            btnGoogleSync.text = "Iniciar sesión con Google"
-        }
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == RC_SIGN_IN) {
-            val task = GoogleSignIn.getSignedInAccountFromIntent(data)
-            try {
-                val account = task.getResult(ApiException::class.java)!!
-                val credential = GoogleAuthProvider.getCredential(account.idToken, null)
-                mAuth.signInWithCredential(credential).addOnCompleteListener { authTask ->
-                    if (authTask.isSuccessful) {
-                        Toast.makeText(this, "Sesión iniciada", Toast.LENGTH_SHORT).show()
-                        updateUIBasedOnAuth(findViewById(R.id.btnGoogleSync))
-                        CloudSync.uploadTasks(this)
-                    } else {
-                        Toast.makeText(this, "Error de autenticación", Toast.LENGTH_SHORT).show()
-                    }
-                }
-            } catch (e: ApiException) {
-                Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
-            }
         }
     }
 
