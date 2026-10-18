@@ -1,136 +1,143 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#F8FAFC"
-    android:orientation="vertical"
-    android:padding="16dp">
+    android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
+        android:orientation="vertical"
+        android:padding="16dp">
 
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/main_title"
-            android:textColor="#0F172A"
-            android:textSize="28sp"
-            android:textStyle="bold" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnSettings"
-            style="@style/Widget.Material3.Button.TonalButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:backgroundTint="#BFDBFE"
-            android:textColor="#1E3A8A"
-            android:text="@string/settings" />
-    </LinearLayout>
-
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnGoogleSync"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="Iniciar sesión con Google para Sincronizar"
-        android:backgroundTint="#34A853"
-        android:textColor="#FFFFFF" />
-
-    <com.google.android.material.card.MaterialCardView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:backgroundTint="#DBEAFE"
-        android:elevation="0dp">
-
+        <!-- Cabecera con Título y Ajustes -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="12dp">
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:layout_marginBottom="16dp">
 
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/main_title"
+                android:textColor="#0F172A"
+                android:textSize="28sp"
+                android:textStyle="bold" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSettings"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:backgroundTint="#BFDBFE"
+                android:textColor="#1E3A8A"
+                android:text="@string/settings" />
+        </LinearLayout>
+
+        <!-- CUADRANTE 1 -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardQ1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp">
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-
-                <EditText
-                    android:id="@+id/taskInput"
-                    android:layout_width="0dp"
+                android:orientation="vertical"
+                android:padding="12dp">
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:hint="@string/task_hint"
-                    android:inputType="textCapSentences"
-                    android:maxLines="1" />
-
-                <Spinner
-                    android:id="@+id/quadrantSpinner"
-                    android:layout_width="140dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp" />
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+                    <TextView android:id="@+id/titleQ1View" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textColor="#0F172A" android:textSize="18sp" android:textStyle="bold"/>
+                    <com.google.android.material.button.MaterialButton android:id="@+id/btnAddQ1" style="@style/Widget.Material3.Button.IconButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="+" android:textSize="24sp" android:textColor="#0F172A"/>
+                </LinearLayout>
+                <androidx.recyclerview.widget.RecyclerView android:id="@+id/listQ1" android:layout_width="match_parent" android:layout_height="wrap_content" android:nestedScrollingEnabled="false" android:layout_marginTop="8dp"/>
             </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
+        <!-- CUADRANTE 2 -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardQ2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp">
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:orientation="horizontal">
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/mainDateBtn"
-                    style="@style/Widget.Material3.Button.OutlinedButton"
-                    android:layout_width="0dp"
+                android:orientation="vertical"
+                android:padding="12dp">
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Sin recordatorio" />
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+                    <TextView android:id="@+id/titleQ2View" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textColor="#0F172A" android:textSize="18sp" android:textStyle="bold"/>
+                    <com.google.android.material.button.MaterialButton android:id="@+id/btnAddQ2" style="@style/Widget.Material3.Button.IconButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="+" android:textSize="24sp" android:textColor="#0F172A"/>
+                </LinearLayout>
+                <androidx.recyclerview.widget.RecyclerView android:id="@+id/listQ2" android:layout_width="match_parent" android:layout_height="wrap_content" android:nestedScrollingEnabled="false" android:layout_marginTop="8dp"/>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnAdd"
-                    android:layout_width="wrap_content"
+        <!-- CUADRANTE 3 -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardQ3"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="12dp">
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:text="@string/add" />
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+                    <TextView android:id="@+id/titleQ3View" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textColor="#0F172A" android:textSize="18sp" android:textStyle="bold"/>
+                    <com.google.android.material.button.MaterialButton android:id="@+id/btnAddQ3" style="@style/Widget.Material3.Button.IconButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="+" android:textSize="24sp" android:textColor="#0F172A"/>
+                </LinearLayout>
+                <androidx.recyclerview.widget.RecyclerView android:id="@+id/listQ3" android:layout_width="match_parent" android:layout_height="wrap_content" android:nestedScrollingEnabled="false" android:layout_marginTop="8dp"/>
             </LinearLayout>
-        </LinearLayout>
-    </com.google.android.material.card.MaterialCardView>
+        </com.google.android.material.card.MaterialCardView>
 
-    <HorizontalScrollView
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_marginTop="16dp"
-        android:layout_weight="1"
-        android:fillViewport="true">
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:orientation="horizontal">
-
-            <LinearLayout android:layout_width="300dp" android:layout_height="match_parent" android:layout_marginEnd="12dp" android:orientation="vertical">
-                <TextView android:id="@+id/titleQ1View" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#0F172A" android:textSize="18sp" android:textStyle="bold" android:paddingBottom="8dp"/>
-                <androidx.recyclerview.widget.RecyclerView android:id="@+id/listQ1" android:layout_width="match_parent" android:layout_height="match_parent" />
+        <!-- CUADRANTE 4 -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardQ4"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="12dp">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+                    <TextView android:id="@+id/titleQ4View" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textColor="#0F172A" android:textSize="18sp" android:textStyle="bold"/>
+                    <com.google.android.material.button.MaterialButton android:id="@+id/btnAddQ4" style="@style/Widget.Material3.Button.IconButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="+" android:textSize="24sp" android:textColor="#0F172A"/>
+                </LinearLayout>
+                <androidx.recyclerview.widget.RecyclerView android:id="@+id/listQ4" android:layout_width="match_parent" android:layout_height="wrap_content" android:nestedScrollingEnabled="false" android:layout_marginTop="8dp"/>
             </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
-            <LinearLayout android:layout_width="300dp" android:layout_height="match_parent" android:layout_marginEnd="12dp" android:orientation="vertical">
-                <TextView android:id="@+id/titleQ2View" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#0F172A" android:textSize="18sp" android:textStyle="bold" android:paddingBottom="8dp"/>
-                <androidx.recyclerview.widget.RecyclerView android:id="@+id/listQ2" android:layout_width="match_parent" android:layout_height="match_parent" />
-            </LinearLayout>
-
-            <LinearLayout android:layout_width="300dp" android:layout_height="match_parent" android:layout_marginEnd="12dp" android:orientation="vertical">
-                <TextView android:id="@+id/titleQ3View" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#0F172A" android:textSize="18sp" android:textStyle="bold" android:paddingBottom="8dp"/>
-                <androidx.recyclerview.widget.RecyclerView android:id="@+id/listQ3" android:layout_width="match_parent" android:layout_height="match_parent" />
-            </LinearLayout>
-
-            <LinearLayout android:layout_width="300dp" android:layout_height="match_parent" android:orientation="vertical">
-                <TextView android:id="@+id/titleQ4View" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#0F172A" android:textSize="18sp" android:textStyle="bold" android:paddingBottom="8dp"/>
-                <androidx.recyclerview.widget.RecyclerView android:id="@+id/listQ4" android:layout_width="match_parent" android:layout_height="match_parent" />
-            </LinearLayout>
-        </LinearLayout>
-    </HorizontalScrollView>
-</LinearLayout>
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>
