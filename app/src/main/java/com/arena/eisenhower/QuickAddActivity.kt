@@ -136,6 +136,7 @@ class QuickAddActivity : Activity() {
             }
 
             EisenhowerWidgetProvider.updateAllWidgets(this)
+            CloudSync.uploadTasks(this) // ESTA ES LA LÍNEA MÁGICA AÑADIDA
             finish()
         }
     }
