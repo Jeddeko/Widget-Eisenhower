@@ -2,6 +2,7 @@ package com.arena.eisenhower
 
 import android.app.Activity
 import android.app.AlertDialog
+import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
@@ -23,7 +24,6 @@ import com.google.firebase.auth.FirebaseAuth
 class SettingsActivity : Activity() {
     private lateinit var settings: AppSettings
     private var currentColorQ1 = 0; private var currentColorQ2 = 0; private var currentColorQ3 = 0; private var currentColorQ4 = 0
-
     private lateinit var mAuth: FirebaseAuth
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -31,6 +31,9 @@ class SettingsActivity : Activity() {
         setContentView(R.layout.activity_settings)
         settings = AppSettings(this)
         mAuth = FirebaseAuth.getInstance()
+
+        val isDark = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+        val textColor = if (isDark) Color.parseColor("#F8FAFC") else Color.parseColor("#0F172A")
 
         // Referencias de Login
         val layoutLogin = findViewById<LinearLayout>(R.id.layoutLogin)
@@ -43,7 +46,6 @@ class SettingsActivity : Activity() {
         val btnLogout = findViewById<MaterialButton>(R.id.btnLogout)
         val tvUserEmail = findViewById<TextView>(R.id.tvUserEmail)
 
-        // Lógica de autenticación
         fun updateAuthUI() {
             if (mAuth.currentUser != null) {
                 layoutLogin.visibility = View.GONE
@@ -66,7 +68,7 @@ class SettingsActivity : Activity() {
                 if (task.isSuccessful) {
                     Toast.makeText(this, "Usuario registrado", Toast.LENGTH_SHORT).show()
                     updateAuthUI()
-                    CloudSync.uploadTasks(this) // Sube las tareas locales al crear la cuenta
+                    CloudSync.uploadTasks(this)
                 } else {
                     Toast.makeText(this, "Error: ${task.exception?.message}", Toast.LENGTH_LONG).show()
                 }
@@ -84,7 +86,7 @@ class SettingsActivity : Activity() {
                 if (task.isSuccessful) {
                     Toast.makeText(this, "Sesión iniciada", Toast.LENGTH_SHORT).show()
                     updateAuthUI()
-                    CloudSync.downloadTasks(this) { // Descarga las tareas al iniciar sesión
+                    CloudSync.downloadTasks(this) {
                         runOnUiThread { Toast.makeText(this, "Tareas sincronizadas", Toast.LENGTH_SHORT).show() }
                     }
                 } else {
@@ -106,9 +108,9 @@ class SettingsActivity : Activity() {
             Toast.makeText(this, "Sesión cerrada", Toast.LENGTH_SHORT).show()
         }
 
-        updateAuthUI() // Revisa si ya hay alguien logueado al abrir
+        updateAuthUI()
 
-        // --- Resto de la lógica de Ajustes (colores, nombres, etc) ---
+        // --- Resto de la lógica de Ajustes ---
         val etTitleQ1 = findViewById<EditText>(R.id.etTitleQ1); val etTitleQ2 = findViewById<EditText>(R.id.etTitleQ2)
         val etTitleQ3 = findViewById<EditText>(R.id.etTitleQ3); val etTitleQ4 = findViewById<EditText>(R.id.etTitleQ4)
         val btnColorQ1 = findViewById<Button>(R.id.btnColorQ1); val btnColorQ2 = findViewById<Button>(R.id.btnColorQ2)
@@ -119,6 +121,16 @@ class SettingsActivity : Activity() {
         etTitleQ1.setText(settings.titleQ1); etTitleQ2.setText(settings.titleQ2); etTitleQ3.setText(settings.titleQ3); etTitleQ4.setText(settings.titleQ4)
         currentColorQ1 = settings.colorQ1; currentColorQ2 = settings.colorQ2; currentColorQ3 = settings.colorQ3; currentColorQ4 = settings.colorQ4
 
+        // Función para actualizar el botón y el color de su texto
+        fun actualizarColorBoton(button: Button, color: Int) {
+            val drawable = GradientDrawable().apply { setColor(color); cornerRadius = 16f }
+            button.background = drawable
+            
+            // Calcular si el color es oscuro para poner el texto blanco o negro
+            val darkness = (0.299 * Color.red(color) + 0.587 * Color.green(color) + 0.114 * Color.blue(color)) / 255
+            button.setTextColor(if (darkness < 0.5) Color.WHITE else Color.BLACK)
+        }
+
         actualizarColorBoton(btnColorQ1, currentColorQ1); actualizarColorBoton(btnColorQ2, currentColorQ2)
         actualizarColorBoton(btnColorQ3, currentColorQ3); actualizarColorBoton(btnColorQ4, currentColorQ4)
 
@@ -128,10 +140,11 @@ class SettingsActivity : Activity() {
         if (currentOrderIndex >= 0) spinnerOrder.setSelection(currentOrderIndex)
         showCompleted.isChecked = settings.showCompleted
 
-        btnColorQ1.setOnClickListener { showColorPicker(currentColorQ1) { c -> currentColorQ1 = c; actualizarColorBoton(btnColorQ1, c) } }
-        btnColorQ2.setOnClickListener { showColorPicker(currentColorQ2) { c -> currentColorQ2 = c; actualizarColorBoton(btnColorQ2, c) } }
-        btnColorQ3.setOnClickListener { showColorPicker(currentColorQ3) { c -> currentColorQ3 = c; actualizarColorBoton(btnColorQ3, c) } }
-        btnColorQ4.setOnClickListener { showColorPicker(currentColorQ4) { c -> currentColorQ4 = c; actualizarColorBoton(btnColorQ4, c) } }
+        // Paleta de colores dinámica
+        btnColorQ1.setOnClickListener { showColorPicker(currentColorQ1, isDark) { c -> currentColorQ1 = c; actualizarColorBoton(btnColorQ1, c) } }
+        btnColorQ2.setOnClickListener { showColorPicker(currentColorQ2, isDark) { c -> currentColorQ2 = c; actualizarColorBoton(btnColorQ2, c) } }
+        btnColorQ3.setOnClickListener { showColorPicker(currentColorQ3, isDark) { c -> currentColorQ3 = c; actualizarColorBoton(btnColorQ3, c) } }
+        btnColorQ4.setOnClickListener { showColorPicker(currentColorQ4, isDark) { c -> currentColorQ4 = c; actualizarColorBoton(btnColorQ4, c) } }
 
         btnTestNotify.setOnClickListener {
             val testTask = Task(id = -1L, title = "¡Prueba de notificación!", quadrant = Quadrant.DO_FIRST, dueAt = System.currentTimeMillis() + 3600000)
@@ -149,15 +162,44 @@ class SettingsActivity : Activity() {
         }
     }
 
-    private fun actualizarColorBoton(button: Button, color: Int) {
-        val drawable = GradientDrawable().apply { setColor(color); cornerRadius = 16f }
-        button.background = drawable
-    }
+    private fun showColorPicker(initialColor: Int, isDark: Boolean, onColorSelected: (Int) -> Unit) {
+        // La paleta cambia según el modo del sistema
+        val colors = if (isDark) {
+            arrayOf(
+                Color.parseColor("#7F1D1D"), // Rojo oscuro
+                Color.parseColor("#78350F"), // Naranja oscuro
+                Color.parseColor("#1E3A8A"), // Azul oscuro
+                Color.parseColor("#14532D"), // Verde oscuro
+                Color.parseColor("#312E81"), // Morado oscuro
+                Color.parseColor("#000000"), // Negro
+                Color.parseColor("#374151"), // Gris oscuro
+                Color.parseColor("#1F2937")  // Pizarra
+            )
+        } else {
+            arrayOf(
+                Color.parseColor("#DBEAFE"), // Azul claro
+                Color.parseColor("#BFDBFE"), // Azul medio
+                Color.parseColor("#93C5FD"), // Azul
+                Color.parseColor("#60A5FA"), // Azul fuerte
+                Color.parseColor("#FECACA"), // Rojo
+                Color.parseColor("#FED7AA"), // Naranja
+                Color.parseColor("#BBF7D0"), // Verde
+                Color.parseColor("#E5E7EB")  // Gris
+            )
+        }
+        
+        val colorNames = if (isDark) {
+            arrayOf("Rojo", "Naranja", "Azul", "Verde", "Morado", "Negro", "Gris", "Pizarra")
+        } else {
+            arrayOf("Azul Claro", "Azul Medio", "Azul", "Azul Fuerte", "Rojo", "Naranja", "Verde", "Gris")
+        }
 
-    private fun showColorPicker(initialColor: Int, onColorSelected: (Int) -> Unit) {
-        val colors = arrayOf(Color.parseColor("#DBEAFE"), Color.parseColor("#BFDBFE"), Color.parseColor("#93C5FD"), Color.parseColor("#60A5FA"), Color.parseColor("#FECACA"), Color.parseColor("#FED7AA"), Color.parseColor("#BBF7D0"), Color.parseColor("#E5E7EB"))
-        val colorNames = arrayOf("Azul Claro", "Azul Medio", "Azul", "Azul Fuerte", "Rojo", "Naranja", "Verde", "Gris")
-        val items = colorNames.mapIndexed { index, name -> SpannableString("   $name").apply { setSpan(BackgroundColorSpan(colors[index]), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE) } }.toTypedArray()
+        val items = colorNames.mapIndexed { index, name -> 
+            SpannableString("   $name").apply { 
+                setSpan(BackgroundColorSpan(colors[index]), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE) 
+            } 
+        }.toTypedArray()
+        
         AlertDialog.Builder(this).setTitle("Elige un color").setItems(items) { _, which -> onColorSelected(colors[which]) }.show()
     }
 }
