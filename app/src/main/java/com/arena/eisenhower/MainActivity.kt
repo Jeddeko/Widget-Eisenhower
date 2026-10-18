@@ -20,7 +20,13 @@ import android.widget.Toast
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInClient
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
 import com.google.android.material.button.MaterialButton
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.GoogleAuthProvider
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Collections
@@ -34,17 +40,32 @@ class MainActivity : Activity() {
     private lateinit var settings: AppSettings
     private var selectedDueAt: Long? = null
     private lateinit var mainDateBtn: MaterialButton
+    private lateinit var btnGoogleSync: MaterialButton
 
-    private lateinit var rvQ1: RecyclerView
-    private lateinit var rvQ2: RecyclerView
-    private lateinit var rvQ3: RecyclerView
-    private lateinit var rvQ4: RecyclerView
+    private lateinit var rvQ1: RecyclerView; private lateinit var rvQ2: RecyclerView
+    private lateinit var rvQ3: RecyclerView; private lateinit var rvQ4: RecyclerView
+
+    private lateinit var mAuth: FirebaseAuth
+    private lateinit var googleSignInClient: GoogleSignInClient
+    private val RC_SIGN_IN = 9001
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         repo = TaskRepository(this); settings = AppSettings(this)
 
+        mAuth = FirebaseAuth.getInstance()
+        
+        // AQUI ESTA TU ID REAL
+        val webClientId = "804130731802-pb8h26vf9g1l19p4psoquj0ig0ea6dii.apps.googleusercontent.com" 
+
+        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken(webClientId)
+            .requestEmail()
+            .build()
+        googleSignInClient = GoogleSignIn.getClient(this, gso)
+
+        btnGoogleSync = findViewById(R.id.btnGoogleSync)
         quadrantSpinner = findViewById(R.id.quadrantSpinner)
         taskInput = findViewById(R.id.taskInput)
         mainDateBtn = findViewById(R.id.mainDateBtn)
@@ -54,7 +75,21 @@ class MainActivity : Activity() {
 
         quadrantSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, listOf("Hazlo ya", "Planifica", "Delega", "Elimina"))
 
-        // Lógica del botón de fecha principal
+        btnGoogleSync.setOnClickListener {
+            if (mAuth.currentUser == null) {
+                val signInIntent = googleSignInClient.signInIntent
+                startActivityForResult(signInIntent, RC_SIGN_IN)
+            } else {
+                CloudSync.uploadTasks(this)
+                CloudSync.downloadTasks(this) {
+                    runOnUiThread {
+                        refreshTasks()
+                        Toast.makeText(this, "Sincronizado con la nube", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
+
         mainDateBtn.setOnClickListener {
             val cal = Calendar.getInstance()
             if (selectedDueAt != null) cal.timeInMillis = selectedDueAt!!
@@ -84,6 +119,41 @@ class MainActivity : Activity() {
         findViewById<Button>(R.id.btnAdd).setOnClickListener { addTask() }
         findViewById<Button>(R.id.btnSettings).setOnClickListener { startActivity(Intent(this, SettingsActivity::class.java)) }
         askPermissions()
+
+        updateUIBasedOnAuth()
+    }
+
+    private fun updateUIBasedOnAuth() {
+        if (mAuth.currentUser != null) {
+            btnGoogleSync.text = "Sincronizar ahora (${mAuth.currentUser?.email})"
+            CloudSync.downloadTasks(this) {
+                runOnUiThread { refreshTasks() }
+            }
+        } else {
+            btnGoogleSync.text = "Iniciar sesión con Google para Sincronizar"
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == RC_SIGN_IN) {
+            val task = GoogleSignIn.getSignedInAccountFromIntent(data)
+            try {
+                val account = task.getResult(ApiException::class.java)!!
+                val credential = GoogleAuthProvider.getCredential(account.idToken, null)
+                mAuth.signInWithCredential(credential).addOnCompleteListener { authTask ->
+                    if (authTask.isSuccessful) {
+                        Toast.makeText(this, "Sesión iniciada", Toast.LENGTH_SHORT).show()
+                        updateUIBasedOnAuth()
+                        CloudSync.uploadTasks(this)
+                    } else {
+                        Toast.makeText(this, "Error de autenticación", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } catch (e: ApiException) {
+                Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     private fun updateMainDateBtnText() {
@@ -107,9 +177,9 @@ class MainActivity : Activity() {
         
         val task = repo.addTask(title, quadrant, selectedDueAt, calendarId)
         
-        // Programar alarma exacta
         if (task != null) {
             ReminderScheduler.schedule(this, task)
+            CloudSync.uploadTasks(this)
         }
 
         taskInput.setText("")
@@ -147,7 +217,9 @@ class MainActivity : Activity() {
         val tasks = allTasks.filter { it.quadrant == quadrant }.sortedBy { it.order }.toMutableList()
         
         val adapter = TaskAdapter(tasks, color, 
-            onCheckClick = { task -> repo.toggleTask(task.id); refreshTasks(); EisenhowerWidgetProvider.updateAllWidgets(this) },
+            onCheckClick = { task -> 
+                repo.toggleTask(task.id); refreshTasks(); EisenhowerWidgetProvider.updateAllWidgets(this); CloudSync.uploadTasks(this) 
+            },
             onItemClick = { task -> 
                 val editIntent = Intent(this, QuickAddActivity::class.java).apply {
                     putExtra(EisenhowerWidgetProvider.EXTRA_TASK_ID, task.id)
@@ -179,6 +251,7 @@ class MainActivity : Activity() {
                     repo.updateOrder(tasks[i].id, i + 1)
                 }
                 EisenhowerWidgetProvider.updateAllWidgets(this@MainActivity)
+                CloudSync.uploadTasks(this@MainActivity)
             }
         })
         itemTouchHelper.attachToRecyclerView(rv)
