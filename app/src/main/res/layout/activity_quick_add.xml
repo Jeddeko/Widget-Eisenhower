@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="#FFFFFF"
+    android:background="@color/app_background"
     android:orientation="vertical"
     android:padding="20dp">
 
@@ -10,8 +10,8 @@
         android:id="@+id/quickTitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/quick_title"
-        android:textColor="#0F172A"
+        android:text="Captura rápida"
+        android:textColor="@color/text_primary"
         android:textSize="22sp"
         android:textStyle="bold" />
 
@@ -19,8 +19,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="2dp"
-        android:text="@string/quick_subtitle"
-        android:textColor="#64748B"
+        android:text="Se guarda desde el widget sin abrir la pantalla principal."
+        android:textColor="@color/text_secondary"
         android:textSize="12sp" />
 
     <EditText
@@ -28,7 +28,9 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="14dp"
-        android:hint="@string/quick_hint"
+        android:hint="¿Qué hay que hacer?"
+        android:textColorHint="@color/text_secondary"
+        android:textColor="@color/text_primary"
         android:inputType="textCapSentences|textMultiLine"
         android:maxLines="3"
         android:minHeight="48dp" />
@@ -39,7 +41,6 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp" />
 
-    <!-- Botón que abrirá el calendario y reloj -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/quickDateBtn"
         style="@style/Widget.Material3.Button.OutlinedButton"
@@ -54,12 +55,13 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:checked="true"
-        android:text="@string/calendar_sync" />
+        android:textColor="@color/text_primary"
+        android:text="Sincronizar con Calendario" />
 
     <Button
         android:id="@+id/quickSave"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="14dp"
-        android:text="@string/save_task" />
+        android:text="GUARDAR TAREA" />
 </LinearLayout>
