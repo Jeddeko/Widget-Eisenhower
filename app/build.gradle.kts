@@ -16,7 +16,7 @@ android {
         versionName = "1.0.0"
     }
 
-    // CONFIGURACIÓN DE LA FIRMA FIJA
+    // Usar el keystore JKS generado por el workflow
     signingConfigs {
         getByName("debug") {
             storeFile = file("debug.keystore")
