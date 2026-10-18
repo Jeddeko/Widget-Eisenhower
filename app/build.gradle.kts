@@ -16,10 +16,10 @@ android {
         versionName = "1.0.0"
     }
 
-    // Configuración para forzar la firma estándar
+    // Usar el keystore fijo que descargamos
     signingConfigs {
         getByName("debug") {
-            storeFile = file(System.getProperty("user.home") + "/.android/debug.keystore")
+            storeFile = file("debug.keystore")
             storePassword = "android"
             keyAlias = "androiddebugkey"
             keyPassword = "android"
