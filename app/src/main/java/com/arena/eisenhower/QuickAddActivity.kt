@@ -79,7 +79,6 @@ class QuickAddActivity : Activity() {
         }
         updateDateButtonText()
 
-        // Abrir calendario al tocar el botón
         dateBtn.setOnClickListener {
             val cal = Calendar.getInstance()
             if (selectedDueAt != null) cal.timeInMillis = selectedDueAt!!
@@ -100,7 +99,6 @@ class QuickAddActivity : Activity() {
                 timePicker.show()
             }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH))
             
-            // Botón para borrar la fecha si se arrepiente
             datePicker.setButton(android.app.Dialog.BUTTON_NEGATIVE, "Borrar") { _, _ ->
                 selectedDueAt = null
                 updateDateButtonText()
@@ -122,14 +120,19 @@ class QuickAddActivity : Activity() {
             if (taskId != -1L) {
                 val existingTask = repo.getAll().firstOrNull { it.id == taskId }
                 if (existingTask != null) {
-                    repo.updateTask(existingTask.copy(title = title, quadrant = quadrant, dueAt = selectedDueAt))
+                    val updatedTask = existingTask.copy(title = title, quadrant = quadrant, dueAt = selectedDueAt)
+                    repo.updateTask(updatedTask)
+                    ReminderScheduler.schedule(this, updatedTask)
                 }
             } else {
                 var calendarId: Long? = null
                 if (calendarCheck.isChecked && selectedDueAt != null) {
                     calendarId = insertCalendarEvent(title, selectedDueAt!!)
                 }
-                repo.addTask(title, quadrant, selectedDueAt, calendarId)
+                val newTask = repo.addTask(title, quadrant, selectedDueAt, calendarId)
+                if (newTask != null) {
+                    ReminderScheduler.schedule(this, newTask)
+                }
             }
 
             EisenhowerWidgetProvider.updateAllWidgets(this)
