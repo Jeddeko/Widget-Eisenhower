@@ -54,7 +54,8 @@ class TaskRepository(context: Context) {
     @Synchronized
     fun updateOrder(id: Long, newOrder: Int) { saveAll(getAll().map { if (it.id == id) it.copy(order = newOrder) else it }) }
 
-    private fun saveAll(tasks: List<Task>) {
+    // ESTA ES LA FUNCIÓN QUE CAMBIÓ (ya no es private)
+    fun saveAll(tasks: List<Task>) {
         val array = JSONArray()
         tasks.forEach { task ->
             val obj = JSONObject().put("id", task.id).put("title", task.title).put("quadrant", task.quadrant.key)
