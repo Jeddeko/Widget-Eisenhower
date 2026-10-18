@@ -5,8 +5,13 @@ import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
+import android.graphics.Paint
 import android.os.Build
 import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.widget.CheckBox
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -60,31 +65,64 @@ class MainActivity : Activity() {
         findViewById<TextView>(R.id.titleQ3View).text = settings.titleQ3
         findViewById<TextView>(R.id.titleQ4View).text = settings.titleQ4
 
-        // Pasamos Color.TRANSPARENT para que no pinte el cuadro blanco
-        setupRecyclerView(rvQ1, Quadrant.DO_FIRST, Color.TRANSPARENT, allTasks)
-        setupRecyclerView(rvQ2, Quadrant.SCHEDULE, Color.TRANSPARENT, allTasks)
-        setupRecyclerView(rvQ3, Quadrant.DELEGATE, Color.TRANSPARENT, allTasks)
-        setupRecyclerView(rvQ4, Quadrant.ELIMINATE, Color.TRANSPARENT, allTasks)
+        setupQuadrant(rvQ1, Quadrant.DO_FIRST, R.id.headerCompletedQ1, R.id.containerCompletedQ1, allTasks)
+        setupQuadrant(rvQ2, Quadrant.SCHEDULE, R.id.headerCompletedQ2, R.id.containerCompletedQ2, allTasks)
+        setupQuadrant(rvQ3, Quadrant.DELEGATE, R.id.headerCompletedQ3, R.id.containerCompletedQ3, allTasks)
+        setupQuadrant(rvQ4, Quadrant.ELIMINATE, R.id.headerCompletedQ4, R.id.containerCompletedQ4, allTasks)
     }
 
-    private fun setupRecyclerView(rv: RecyclerView, quadrant: Quadrant, color: Int, allTasks: List<Task>) {
-        val tasks = allTasks.filter { it.quadrant == quadrant }.sortedBy { it.order }.toMutableList()
-        
-        val adapter = TaskAdapter(tasks, color, 
-            onCheckClick = { task -> 
-                repo.toggleTask(task.id); refreshTasks(); EisenhowerWidgetProvider.updateAllWidgets(this); CloudSync.uploadTasks(this) 
-            },
-            onItemClick = { task -> 
-                val editIntent = Intent(this, QuickAddActivity::class.java).apply {
-                    putExtra(EisenhowerWidgetProvider.EXTRA_TASK_ID, task.id)
-                    putExtra(EisenhowerWidgetProvider.EXTRA_QUADRANT, task.quadrant.key)
-                }
-                startActivity(editIntent)
-            }
+    private fun setupQuadrant(rv: RecyclerView, quadrant: Quadrant, headerId: Int, containerId: Int, allTasks: List<Task>) {
+        val quadrantTasks = allTasks.filter { it.quadrant == quadrant }
+        val activeTasks = quadrantTasks.filter { !it.done }.sortedBy { it.order }.toMutableList()
+        val completedTasks = quadrantTasks.filter { it.done }.sortedByDescending { it.updatedAt }
+
+        val activeAdapter = TaskAdapter(activeTasks, Color.TRANSPARENT, 
+            onCheckClick = { task -> repo.toggleTask(task.id); refreshTasks(); EisenhowerWidgetProvider.updateAllWidgets(this); CloudSync.uploadTasks(this) },
+            onItemClick = { task -> openQuickAddEdit(task) }
         )
-        
         rv.layoutManager = LinearLayoutManager(this)
-        rv.adapter = adapter
+        rv.adapter = activeAdapter
+
+        val completedHeader = findViewById<TextView>(headerId)
+        val completedContainer = findViewById<LinearLayout>(containerId)
+
+        if (completedTasks.isEmpty()) {
+            completedHeader.visibility = View.GONE
+            completedContainer.visibility = View.GONE
+        } else {
+            completedHeader.visibility = View.VISIBLE
+            completedHeader.text = "Completadas (${completedTasks.size}) ▼"
+            completedContainer.visibility = View.GONE // Colapsado por defecto
+            
+            completedHeader.setOnClickListener {
+                if (completedContainer.visibility == View.GONE) {
+                    completedContainer.visibility = View.VISIBLE
+                    completedHeader.text = "Completadas (${completedTasks.size}) ▲"
+                } else {
+                    completedContainer.visibility = View.GONE
+                    completedHeader.text = "Completadas (${completedTasks.size}) ▼"
+                }
+            }
+
+            completedContainer.removeAllViews()
+            val inflater = LayoutInflater.from(this)
+            completedTasks.forEach { task ->
+                val row = inflater.inflate(R.layout.row_task_main, completedContainer, false)
+                val check = row.findViewById<CheckBox>(R.id.rowCheck)
+                val title = row.findViewById<TextView>(R.id.rowTitle)
+                val meta = row.findViewById<TextView>(R.id.rowMeta)
+                
+                check.isChecked = true
+                title.text = task.title
+                title.paintFlags = title.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
+                meta.text = DueDateUtils.format(task.dueAt)
+                
+                check.setOnClickListener { 
+                    repo.toggleTask(task.id); refreshTasks(); EisenhowerWidgetProvider.updateAllWidgets(this); CloudSync.uploadTasks(this) 
+                }
+                completedContainer.addView(row)
+            }
+        }
 
         val itemTouchHelper = ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(
             ItemTouchHelper.UP or ItemTouchHelper.DOWN, 0
@@ -92,19 +130,30 @@ class MainActivity : Activity() {
             override fun onMove(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder): Boolean {
                 val fromPos = viewHolder.adapterPosition
                 val toPos = target.adapterPosition
-                Collections.swap(tasks, fromPos, toPos)
-                adapter.notifyItemMoved(fromPos, toPos)
-                return true
+                if (fromPos < activeTasks.size && toPos < activeTasks.size) {
+                    Collections.swap(activeTasks, fromPos, toPos)
+                    activeAdapter.notifyItemMoved(fromPos, toPos)
+                    return true
+                }
+                return false
             }
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {}
             override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
                 super.clearView(recyclerView, viewHolder)
-                for (i in tasks.indices) { repo.updateOrder(tasks[i].id, i + 1) }
+                for (i in activeTasks.indices) { repo.updateOrder(activeTasks[i].id, i + 1) }
                 EisenhowerWidgetProvider.updateAllWidgets(this@MainActivity)
                 CloudSync.uploadTasks(this@MainActivity)
             }
         })
         itemTouchHelper.attachToRecyclerView(rv)
+    }
+
+    private fun openQuickAddEdit(task: Task) {
+        val intent = Intent(this, QuickAddActivity::class.java).apply {
+            putExtra(EisenhowerWidgetProvider.EXTRA_TASK_ID, task.id)
+            putExtra(EisenhowerWidgetProvider.EXTRA_QUADRANT, task.quadrant.key)
+        }
+        startActivity(intent)
     }
 
     private fun askPermissions() {
