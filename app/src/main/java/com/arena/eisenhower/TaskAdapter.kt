@@ -1,6 +1,6 @@
 package com.arena.eisenhower
 
-import android.graphics.drawable.GradientDrawable
+import android.graphics.Color
 import android.text.SpannableString
 import android.text.Spanned
 import android.text.style.StrikethroughSpan
@@ -33,16 +33,11 @@ class TaskAdapter(
     override fun onBindViewHolder(holder: TaskViewHolder, position: Int) {
         val task = tasks[position]
         
-        // Aplicar color de fondo con bordes redondeados
-        val drawable = GradientDrawable().apply {
-            setColor(backgroundColor)
-            cornerRadius = 12f
-        }
-        holder.itemView.background = drawable
+        // Hacemos el fondo transparente
+        holder.itemView.setBackgroundColor(Color.TRANSPARENT)
         
-        // Margen entre tarjetas
         val params = holder.itemView.layoutParams as RecyclerView.LayoutParams
-        params.setMargins(0, 0, 0, 8)
+        params.setMargins(0, 0, 0, 4)
         holder.itemView.layoutParams = params
 
         holder.check.isChecked = task.done
@@ -51,7 +46,7 @@ class TaskAdapter(
         
         holder.title.text = titleText
         holder.meta.text = "Orden: ${task.order} · ${DueDateUtils.format(task.dueAt)}"
-        holder.btnDelete.visibility = View.GONE // Ocultamos el botón de borrar para limpiar la vista
+        holder.btnDelete.visibility = View.GONE
 
         holder.check.setOnClickListener { onCheckClick(task) }
         holder.itemView.setOnClickListener { onItemClick(task) }
