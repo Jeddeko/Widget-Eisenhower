@@ -2,11 +2,10 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="6dp"
-    android:background="#FFFFFF"
     android:gravity="center_vertical"
     android:orientation="horizontal"
-    android:padding="8dp">
+    android:paddingTop="4dp"
+    android:paddingBottom="4dp">
 
     <CheckBox
         android:id="@+id/rowCheck"
@@ -32,7 +31,7 @@
             android:id="@+id/rowMeta"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="#64748B"
+            android:textColor="#475569"
             android:textSize="12sp" />
     </LinearLayout>
 
@@ -41,6 +40,6 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:minWidth="0dp"
-        android:text="×"
-        android:textSize="18sp" />
+        android:visibility="gone"
+        android:text="×" />
 </LinearLayout>
