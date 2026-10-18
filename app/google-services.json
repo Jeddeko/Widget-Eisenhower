@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "804130731802",
+    "project_id": "eisenhower-widget",
+    "storage_bucket": "eisenhower-widget.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:804130731802:android:8c0842b09bdaae8d721ea3",
+        "android_client_info": {
+          "package_name": "com.arena.eisenhower"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCDbgvbbrc7HeHslHNnSufuf0Hy3MIWTB4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
