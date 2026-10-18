@@ -39,15 +39,16 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.intent.action.CONFIGURATION_CHANGED" /> <!-- NUEVO -->
                 <action android:name="com.arena.eisenhower.ACTION_TOGGLE" />
                 <action android:name="com.arena.eisenhower.ACTION_REFRESH" />
             </intent-filter>
+
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/eisenhower_widget_info" />
         </receiver>
 
-        <!-- SERVICIO NUEVO PARA EL SCROLL -->
         <service
             android:name=".WidgetService"
             android:permission="android.permission.BIND_REMOTEVIEWS"
