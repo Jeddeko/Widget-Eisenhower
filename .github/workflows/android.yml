@@ -21,10 +21,15 @@ jobs:
         with:
           gradle-version: 8.7
 
-      # PASO CRUCIAL: Lee el archivo de los secretos y lo guarda en la carpeta app
-      - name: Decode Debug Keystore
+      # 1. Genera un keystore JKS fijo (evita el error PKCS12)
+      - name: Generate JKS Keystore
         run: |
-          echo "${{ secrets.DEBUG_KEYSTORE_BASE64 }}" | base64 --decode > app/debug.keystore
+          keytool -genkey -v -keystore app/debug.keystore -storepass android123 -alias androiddebugkey -keypass android123 -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US" -storetype JKS
+
+      # 2. Muestra el SHA-1 en los logs para que lo copies a Firebase
+      - name: Show SHA-1 Fingerprint
+        run: |
+          keytool -list -v -keystore app/debug.keystore -alias androiddebugkey -storepass android123 | grep "SHA1:"
 
       - name: Build debug APK
         run: gradle assembleDebug --no-daemon
