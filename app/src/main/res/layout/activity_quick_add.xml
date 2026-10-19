@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="@color/app_background">
@@ -56,7 +57,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:text="Fecha de vencimiento (Opcional)"
+            android:text="Fecha de vencimiento / Inicio"
             android:textColor="@color/text_primary"
             android:textSize="14sp"
             android:textStyle="bold"/>
@@ -67,9 +68,80 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="Sin fecha límite" />
+            android:text="Sin fecha" />
 
-        <!-- SECCIÓN DE MÚLTIPLES ALERTAS -->
+        <!-- SECCIÓN DE RECURRENCIA -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Repetición"
+            android:textColor="@color/text_primary"
+            android:textSize="14sp"
+            android:textStyle="bold"/>
+        <Spinner
+            android:id="@+id/spinnerRecurrence"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp" />
+
+        <!-- SECCIÓN DE EVENTO EN MATRIZ -->
+        <CheckBox
+            android:id="@+id/checkIsEvent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:textColor="@color/text_primary"
+            android:text="Es un evento. Ocultar en la matriz hasta que falten X días." />
+
+        <LinearLayout
+            android:id="@+id/layoutEventOptions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Días de antelación para aparecer en la matriz:"
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp"/>
+            <Spinner
+                android:id="@+id/spinnerAdvanceNotice"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Aparecer en el cuadrante (antes del evento):"
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp"/>
+            <Spinner
+                android:id="@+id/spinnerQuadrantBefore"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Mover al cuadrante (el día del evento):"
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp"/>
+            <Spinner
+                android:id="@+id/spinnerQuadrantOnDay"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp" />
+        </LinearLayout>
+
+        <!-- SECCIÓN DE ALERTAS -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -87,7 +159,6 @@
             android:layout_marginTop="4dp"
             android:text="+ Añadir Alerta" />
 
-        <!-- Aquí se inyectarán las alertas una por una -->
         <LinearLayout
             android:id="@+id/containerReminders"
             android:layout_width="match_parent"
@@ -102,13 +173,13 @@
             android:layout_marginTop="16dp"
             android:checked="true"
             android:textColor="@color/text_primary"
-            android:text="Sincronizar fecha límite con Calendario" />
+            android:text="Sincronizar con Calendario" />
 
         <Button
             android:id="@+id/quickSave"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="GUARDAR TAREA" />
+            android:text="GUARDAR" />
     </LinearLayout>
 </ScrollView>
