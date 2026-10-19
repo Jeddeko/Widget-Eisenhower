@@ -42,6 +42,13 @@ class QuickAddActivity : Activity() {
         val input = findViewById<EditText>(R.id.quickInput)
         val quadrantSpinner = findViewById<Spinner>(R.id.quickQuadrant)
         val dateBtn = findViewById<MaterialButton>(R.id.quickDateBtn)
+        val spinnerRecurrence = findViewById<Spinner>(R.id.spinnerRecurrence)
+        val checkIsEvent = findViewById<CheckBox>(R.id.checkIsEvent)
+        val layoutEventOptions = findViewById<LinearLayout>(R.id.layoutEventOptions)
+        val spinnerAdvanceNotice = findViewById<Spinner>(R.id.spinnerAdvanceNotice)
+        val spinnerQuadrantBefore = findViewById<Spinner>(R.id.spinnerQuadrantBefore)
+        val spinnerQuadrantOnDay = findViewById<Spinner>(R.id.spinnerQuadrantOnDay)
+        
         val btnAddReminder = findViewById<MaterialButton>(R.id.btnAddReminder)
         val calendarCheck = findViewById<CheckBox>(R.id.quickCalendarCheck)
         val save = findViewById<Button>(R.id.quickSave)
@@ -49,16 +56,24 @@ class QuickAddActivity : Activity() {
         val btnDelete = findViewById<ImageButton>(R.id.btnDeleteTask)
         containerReminders = findViewById(R.id.containerReminders)
 
-        quadrantSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, listOf("Hazlo ya", "Planifica", "Delega", "Elimina"))
+        // Configurar Spinners
+        val quadrantLabels = listOf("Hazlo ya", "Planifica", "Delega", "Elimina")
+        quadrantSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, quadrantLabels)
+        spinnerQuadrantBefore.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, quadrantLabels)
+        spinnerQuadrantOnDay.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, quadrantLabels)
+        
+        spinnerRecurrence.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, listOf("No se repite", "Diario", "Semanal", "Mensual"))
+        spinnerAdvanceNotice.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, listOf("1 día", "2 días", "3 días", "4 días", "5 días", "7 días"))
+
+        checkIsEvent.setOnCheckedChangeListener { _, isChecked ->
+            layoutEventOptions.visibility = if (isChecked) View.VISIBLE else View.GONE
+        }
 
         val taskId = intent.getLongExtra(EisenhowerWidgetProvider.EXTRA_TASK_ID, -1L)
         val incomingQuadrant = Quadrant.fromKey(intent.getStringExtra(EisenhowerWidgetProvider.EXTRA_QUADRANT))
-        
-        // NUEVO: Leer fecha desde el Widget de Calendario
-        intent.getLongExtra(CalendarWidgetProvider.EXTRA_DUE_AT, -1L).takeIf { it > 0 }?.let { selectedDueAt = it }
 
         fun updateDateButtonText() {
-            if (selectedDueAt == null) dateBtn.text = "Sin fecha límite"
+            if (selectedDueAt == null) dateBtn.text = "Sin fecha"
             else {
                 val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
                 dateBtn.text = sdf.format(Date(selectedDueAt!!))
@@ -69,33 +84,11 @@ class QuickAddActivity : Activity() {
             containerReminders.removeAllViews()
             val sdf = SimpleDateFormat("dd/MM/yy HH:mm", Locale.getDefault())
             selectedReminders.sort()
-
             selectedReminders.forEach { time ->
-                val row = LinearLayout(this).apply {
-                    orientation = LinearLayout.HORIZONTAL
-                    gravity = Gravity.CENTER_VERTICAL
-                    setPadding(0, 8, 0, 8)
-                }
-
-                val tvTime = TextView(this).apply {
-                    text = "🔔 " + sdf.format(Date(time))
-                    setTextColor(ContextCompat.getColor(this@QuickAddActivity, R.color.text_primary))
-                    layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
-                }
-
-                val btnRemove = ImageButton(this).apply {
-                    setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
-                    background = null
-                    setColorFilter(Color.GRAY)
-                    setOnClickListener {
-                        selectedReminders.remove(time)
-                        renderReminders()
-                    }
-                }
-
-                row.addView(tvTime)
-                row.addView(btnRemove)
-                containerReminders.addView(row)
+                val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(0, 8, 0, 8) }
+                val tvTime = TextView(this).apply { text = "🔔 " + sdf.format(Date(time)); setTextColor(ContextCompat.getColor(this@QuickAddActivity, R.color.text_primary)); layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f) }
+                val btnRemove = ImageButton(this).apply { setImageResource(android.R.drawable.ic_menu_close_clear_cancel); background = null; setColorFilter(Color.GRAY); setOnClickListener { selectedReminders.remove(time); renderReminders() } }
+                row.addView(tvTime); row.addView(btnRemove); containerReminders.addView(row)
             }
         }
 
@@ -106,10 +99,15 @@ class QuickAddActivity : Activity() {
                 input.setText(task.title)
                 quadrantSpinner.setSelection(task.quadrant.ordinal)
                 selectedDueAt = task.dueAt
-                selectedReminders.clear()
-                selectedReminders.addAll(task.reminders)
-                save.text = "ACTUALIZAR TAREA"
+                selectedReminders.clear(); selectedReminders.addAll(task.reminders)
+                save.text = "ACTUALIZAR"
                 calendarCheck.visibility = View.GONE 
+                
+                checkIsEvent.isChecked = task.isEvent
+                spinnerAdvanceNotice.setSelection((task.advanceNoticeDays - 1).coerceIn(0, 5))
+                spinnerQuadrantBefore.setSelection(task.quadrantBeforeEvent?.ordinal ?: 0)
+                spinnerQuadrantOnDay.setSelection(task.quadrantOnEventDay?.ordinal ?: 0)
+                spinnerRecurrence.setSelection(task.recurrence.ordinal)
                 
                 btnDelete.visibility = View.VISIBLE
                 btnDelete.setOnClickListener {
@@ -117,13 +115,15 @@ class QuickAddActivity : Activity() {
                     ReminderScheduler.cancel(this, taskId)
                     CloudSync.uploadTasks(this)
                     EisenhowerWidgetProvider.updateAllWidgets(this)
-                    CalendarWidgetProvider.updateAllWidgets(this) // NUEVO
+                    CalendarWidgetProvider.updateAllWidgets(this)
                     finish()
                     Toast.makeText(this, "Tarea eliminada", Toast.LENGTH_SHORT).show()
                 }
             }
         } else {
             quadrantSpinner.setSelection(incomingQuadrant.ordinal)
+            spinnerQuadrantBefore.setSelection(incomingQuadrant.ordinal)
+            spinnerQuadrantOnDay.setSelection(Quadrant.DO_FIRST.ordinal) // Por defecto el día del evento va a Hazlo Ya
         }
         
         updateDateButtonText()
@@ -163,17 +163,32 @@ class QuickAddActivity : Activity() {
 
         save.setOnClickListener {
             val title = input.text.toString().trim()
-            if (title.isBlank()) {
-                Toast.makeText(this, "Escribe una tarea", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
+            if (title.isBlank()) { Toast.makeText(this, "Escribe una tarea", Toast.LENGTH_SHORT).show(); return@setOnClickListener }
 
             val quadrant = Quadrant.values()[quadrantSpinner.selectedItemPosition]
+            val isEvent = checkIsEvent.isChecked
+            val advanceNotice = spinnerAdvanceNotice.selectedItemPosition + 1
+            val quadBefore = Quadrant.values()[spinnerQuadrantBefore.selectedItemPosition]
+            val quadOnDay = Quadrant.values()[spinnerQuadrantOnDay.selectedItemPosition]
+            val recurrence = RecurrenceType.values()[spinnerRecurrence.selectedItemPosition]
             
+            var recDayOfWeek: Int? = null
+            var recDayOfMonth: Int? = null
+            if (selectedDueAt != null) {
+                val cal = Calendar.getInstance().apply { timeInMillis = selectedDueAt!! }
+                if (recurrence == RecurrenceType.WEEKLY) recDayOfWeek = cal.get(Calendar.DAY_OF_WEEK)
+                if (recurrence == RecurrenceType.MONTHLY) recDayOfMonth = cal.get(Calendar.DAY_OF_MONTH)
+            }
+
             if (taskId != -1L) {
                 val existingTask = repo.getAll().firstOrNull { it.id == taskId }
                 if (existingTask != null) {
-                    val updatedTask = existingTask.copy(title = title, quadrant = quadrant, dueAt = selectedDueAt, reminders = selectedReminders)
+                    val updatedTask = existingTask.copy(
+                        title = title, quadrant = quadrant, dueAt = selectedDueAt, reminders = selectedReminders,
+                        isEvent = isEvent, advanceNoticeDays = advanceNotice, 
+                        quadrantBeforeEvent = quadBefore, quadrantOnEventDay = quadOnDay,
+                        recurrence = recurrence, recurrenceDayOfWeek = recDayOfWeek, recurrenceDayOfMonth = recDayOfMonth
+                    )
                     repo.updateTask(updatedTask)
                     ReminderScheduler.schedule(this, updatedTask)
                 }
@@ -182,14 +197,17 @@ class QuickAddActivity : Activity() {
                 if (calendarCheck.isChecked && selectedDueAt != null) {
                     calendarId = insertCalendarEvent(title, selectedDueAt!!)
                 }
-                val newTask = repo.addTask(title, quadrant, selectedDueAt, calendarId, selectedReminders)
-                if (newTask != null) {
-                    ReminderScheduler.schedule(this, newTask)
-                }
+                val newTask = repo.addTask(Task(
+                    id = 0, title = title, quadrant = quadrant, dueAt = selectedDueAt, calendarEventId = calendarId,
+                    reminders = selectedReminders, isEvent = isEvent, advanceNoticeDays = advanceNotice,
+                    quadrantBeforeEvent = quadBefore, quadrantOnEventDay = quadOnDay,
+                    recurrence = recurrence, recurrenceDayOfWeek = recDayOfWeek, recurrenceDayOfMonth = recDayOfMonth
+                ))
+                if (newTask != null) ReminderScheduler.schedule(this, newTask)
             }
 
             EisenhowerWidgetProvider.updateAllWidgets(this)
-            CalendarWidgetProvider.updateAllWidgets(this) // NUEVO
+            CalendarWidgetProvider.updateAllWidgets(this)
             CloudSync.uploadTasks(this)
             finish()
         }
