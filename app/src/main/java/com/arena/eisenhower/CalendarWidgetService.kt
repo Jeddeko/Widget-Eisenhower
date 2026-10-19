@@ -28,10 +28,9 @@ class CalendarWidgetFactory(
     private val context: Context,
     private val year: Int,
     private val month: Int,
-    private val minCellHeight: Int // Recibimos la altura calculada
+    private val minCellHeight: Int
 ) : RemoteViewsService.RemoteViewsFactory {
 
-    // Estructura unificada para Tareas y Recordatorios
     private data class CalendarEventItem(
         val id: Long,
         val title: String,
@@ -83,7 +82,6 @@ class CalendarWidgetFactory(
                 Quadrant.ELIMINATE -> settings.colorQ4
             }
 
-            // 1. Agregar la Tarea en su fecha de vencimiento
             task.dueAt?.let { due ->
                 val date = Instant.ofEpochMilli(due).atZone(ZoneId.systemDefault()).toLocalDate()
                 itemsByDay.getOrPut(date) { mutableListOf() }.add(
@@ -91,7 +89,6 @@ class CalendarWidgetFactory(
                 )
             }
 
-            // 2. Agregar los Recordatorios en sus fechas correspondientes
             task.reminders.forEach { reminderTime ->
                 val remDate = Instant.ofEpochMilli(reminderTime).atZone(ZoneId.systemDefault()).toLocalDate()
                 val timeStr = timeFormat.format(Date(reminderTime))
@@ -129,7 +126,7 @@ class CalendarWidgetFactory(
             val cellId = context.resources.getIdentifier("cell_${i+1}", "id", context.packageName)
             val numId = context.resources.getIdentifier("day_${i+1}_number", "id", context.packageName)
 
-            // APLICAMOS LA ALTURA MÍNIMA CALCULADA PARA LLENAR EL ESPACIO VACÍO
+            // FORZAMOS LA ALTURA CALCULADA (Si el widget es grande, llenará el espacio)
             rv.setInt(cellId, "setMinimumHeight", minCellHeight)
 
             rv.setTextViewText(numId, cell.dayNumber.toString())
@@ -152,14 +149,12 @@ class CalendarWidgetFactory(
             }
             rv.setOnClickFillInIntent(cellId, addIntent)
 
-            // Renderizamos hasta 15 items (tareas o recordatorios)
             for (t in 1..15) {
                 val taskId = context.resources.getIdentifier("task_${i+1}_$t", "id", context.packageName)
                 if (t <= cell.items.size) {
                     val item = cell.items[t - 1]
                     rv.setViewVisibility(taskId, View.VISIBLE)
                     
-                    // AQUI SE CONSTRUYE EL TEXTO: Si es recordatorio muestra "🔔 HH:mm - Tarea", si es tarea solo "Tarea"
                     val displayText = if (item.isReminder) {
                         item.timePrefix + item.title
                     } else {
