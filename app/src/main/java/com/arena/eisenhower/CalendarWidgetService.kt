@@ -6,9 +6,12 @@ import android.graphics.Color
 import android.view.View
 import android.widget.RemoteViews
 import android.widget.RemoteViewsService
+import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import java.util.Date
+import java.util.Locale
 
 class CalendarWidgetService : RemoteViewsService() {
     override fun onGetViewFactory(intent: Intent): RemoteViewsFactory {
@@ -37,7 +40,8 @@ class CalendarWidgetFactory(
     private var weeks: List<List<DayCell>> = emptyList()
     private var textColor: Int = Color.BLACK
     private var mutedColor: Int = Color.GRAY
-    private var accentColor: Int = Color.BLUE
+    private var todayBgColor: Int = Color.LTGRAY
+    private var todayTextColor: Int = Color.BLUE
 
     private fun isColorDark(color: Int): Boolean {
         val darkness = 1.0 - (0.299 * Color.red(color) + 0.587 * Color.green(color) + 0.114 * Color.blue(color)) / 255
@@ -50,10 +54,13 @@ class CalendarWidgetFactory(
         val isDark = AppSettings(context).isDarkMode
         textColor = if (isDark) Color.parseColor("#F8FAFC") else Color.parseColor("#0F172A")
         mutedColor = if (isDark) Color.parseColor("#64748B") else Color.parseColor("#94A3B8")
-        accentColor = Color.parseColor("#2563EB")
+        
+        todayBgColor = if (isDark) Color.parseColor("#1E3A8A") else Color.parseColor("#DBEAFE")
+        todayTextColor = if (isDark) Color.parseColor("#60A5FA") else Color.parseColor("#2563EB")
 
         val today = LocalDate.now()
         val tasksByDay = mutableMapOf<LocalDate, MutableList<Task>>()
+        
         TaskRepository(context).getAll().forEach { task ->
             val due = task.dueAt ?: return@forEach
             if (task.done) return@forEach 
@@ -84,6 +91,7 @@ class CalendarWidgetFactory(
         val rv = RemoteViews(context.packageName, R.layout.calendar_week_row)
         val week = weeks[position]
         val settings = AppSettings(context)
+        val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
 
         for (i in 0 until 7) {
             val cell = week[i]
@@ -92,30 +100,36 @@ class CalendarWidgetFactory(
 
             rv.setTextViewText(numId, cell.dayNumber.toString())
             val dayNumColor = when {
-                cell.isToday -> accentColor
+                cell.isToday -> todayTextColor
                 !cell.isCurrentMonth -> mutedColor
                 else -> textColor
             }
             rv.setTextColor(numId, dayNumColor)
 
-            val bgRes = when {
-                cell.isToday -> R.drawable.bg_calendar_cell_today
-                !cell.isCurrentMonth -> R.drawable.bg_calendar_cell_outside
-                else -> R.drawable.bg_calendar_cell
+            if (cell.isToday) {
+                rv.setInt(cellId, "setBackgroundColor", todayBgColor)
+            } else {
+                val bgRes = if (!cell.isCurrentMonth) R.drawable.bg_calendar_cell_outside else R.drawable.bg_calendar_cell
+                rv.setInt(cellId, "setBackgroundResource", bgRes)
             }
-            rv.setInt(cellId, "setBackgroundResource", bgRes)
 
             val addIntent = Intent().apply {
                 putExtra(CalendarWidgetProvider.EXTRA_DUE_AT, cell.date.atTime(9, 0).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli())
             }
             rv.setOnClickFillInIntent(cellId, addIntent)
 
-            for (t in 1..3) {
+            // Bucle para las 15 tareas
+            for (t in 1..15) {
                 val taskId = context.resources.getIdentifier("task_${i+1}_$t", "id", context.packageName)
                 if (t <= cell.tasks.size) {
                     val task = cell.tasks[t - 1]
                     rv.setViewVisibility(taskId, View.VISIBLE)
-                    rv.setTextViewText(taskId, task.title)
+                    
+                    val reminderText = if (task.reminders.isNotEmpty()) {
+                        " (🔔 ${timeFormat.format(Date(task.reminders.first()))})"
+                    } else ""
+                    
+                    rv.setTextViewText(taskId, task.title + reminderText)
                     
                     val qColor = when (task.quadrant) {
                         Quadrant.DO_FIRST -> settings.colorQ1
