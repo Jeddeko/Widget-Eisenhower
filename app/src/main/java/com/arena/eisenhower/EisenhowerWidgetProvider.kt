@@ -88,10 +88,15 @@ class EisenhowerWidgetProvider : AppWidgetProvider() {
             val repo = TaskRepository(context)
             val isDark = settings.isDarkMode
             
-            // Color para los textos de la cabecera
+            // Colores dinámicos para el fondo y la cabecera
+            val bgColor = if (isDark) Color.parseColor("#121212") else Color.parseColor("#F8FAFC")
             val headerColor = if (isDark) Color.parseColor("#F8FAFC") else Color.parseColor("#0F172A")
 
             val views = RemoteViews(context.packageName, R.layout.eisenhower_widget)
+            
+            // AQUI ESTA LA MAGIA RESTAURADA: Pintamos el fondo del widget entero
+            views.setInt(R.id.widget_root, "setBackgroundColor", bgColor)
+            
             views.setTextColor(R.id.widget_header, headerColor)
             views.setTextColor(R.id.widget_sync, Color.parseColor("#2563EB"))
 
