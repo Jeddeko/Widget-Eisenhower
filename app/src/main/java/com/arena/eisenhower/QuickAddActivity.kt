@@ -53,6 +53,9 @@ class QuickAddActivity : Activity() {
 
         val taskId = intent.getLongExtra(EisenhowerWidgetProvider.EXTRA_TASK_ID, -1L)
         val incomingQuadrant = Quadrant.fromKey(intent.getStringExtra(EisenhowerWidgetProvider.EXTRA_QUADRANT))
+        
+        // NUEVO: Leer fecha desde el Widget de Calendario
+        intent.getLongExtra(CalendarWidgetProvider.EXTRA_DUE_AT, -1L).takeIf { it > 0 }?.let { selectedDueAt = it }
 
         fun updateDateButtonText() {
             if (selectedDueAt == null) dateBtn.text = "Sin fecha límite"
@@ -62,12 +65,9 @@ class QuickAddActivity : Activity() {
             }
         }
 
-        // Función para dibujar las alertas individuales
         fun renderReminders() {
             containerReminders.removeAllViews()
             val sdf = SimpleDateFormat("dd/MM/yy HH:mm", Locale.getDefault())
-            
-            // Ordenamos las alertas cronológicamente para que se vean bien
             selectedReminders.sort()
 
             selectedReminders.forEach { time ->
@@ -88,8 +88,8 @@ class QuickAddActivity : Activity() {
                     background = null
                     setColorFilter(Color.GRAY)
                     setOnClickListener {
-                        selectedReminders.remove(time) // Borra SOLO esta alerta
-                        renderReminders() // Vuelve a dibujar la lista
+                        selectedReminders.remove(time)
+                        renderReminders()
                     }
                 }
 
@@ -117,6 +117,7 @@ class QuickAddActivity : Activity() {
                     ReminderScheduler.cancel(this, taskId)
                     CloudSync.uploadTasks(this)
                     EisenhowerWidgetProvider.updateAllWidgets(this)
+                    CalendarWidgetProvider.updateAllWidgets(this) // NUEVO
                     finish()
                     Toast.makeText(this, "Tarea eliminada", Toast.LENGTH_SHORT).show()
                 }
@@ -188,6 +189,7 @@ class QuickAddActivity : Activity() {
             }
 
             EisenhowerWidgetProvider.updateAllWidgets(this)
+            CalendarWidgetProvider.updateAllWidgets(this) // NUEVO
             CloudSync.uploadTasks(this)
             finish()
         }
