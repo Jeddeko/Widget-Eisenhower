@@ -109,11 +109,10 @@ class CalendarWidgetProvider : AppWidgetProvider() {
             }
             views.setOnClickPendingIntent(R.id.btn_next_month, PendingIntent.getBroadcast(context, 200 + appWidgetId, nextIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
 
-            // --- CÁLCULO DE ALTURA CORREGIDO ---
+            // --- CÁLCULO DE ALTURA EXACTO ---
             val options = manager.getAppWidgetOptions(appWidgetId)
             val isPortrait = context.resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT
             
-            // En vertical (Portrait) la altura actual es MIN_HEIGHT. En horizontal es MAX_HEIGHT.
             val currentHeightDp = if (isPortrait) {
                 val h = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0)
                 if (h > 0) h else options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 250)
@@ -123,11 +122,15 @@ class CalendarWidgetProvider : AppWidgetProvider() {
             }
             
             val density = context.resources.displayMetrics.density
-            val headerHeightPx = (85 * density).toInt()
+            
+            // LA MAGIA ESTA AQUI: El header mide exactamente 64dp, no 85dp.
+            val headerHeightPx = (64 * density).toInt()
             val totalAvailablePx = ((currentHeightDp * density).toInt() - headerHeightPx).coerceAtLeast(0)
             
-            // Altura mínima por fila (sumamos 2px de margen para evitar huecos)
-            var minRowHeightPx = (totalAvailablePx / 6) + 2
+            // Calculamos el tamaño base y le sumamos 1 píxel de seguridad. 
+            // Esto garantiza que las 6 filas siempre midan un píxel más que el espacio disponible,
+            // forzando a Android a llenar todo y activando el scroll si sobra espacio, eliminando el hueco negro.
+            var minRowHeightPx = (totalAvailablePx / 6) + 1
             if (minRowHeightPx < (40 * density).toInt()) minRowHeightPx = (40 * density).toInt()
 
             val serviceIntent = Intent(context, CalendarWidgetService::class.java).apply {
