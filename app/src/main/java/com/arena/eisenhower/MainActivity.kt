@@ -9,6 +9,7 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
+import android.graphics.drawable.GradientDrawable
 import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -25,6 +26,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Collections
@@ -45,6 +47,7 @@ class MainActivity : Activity() {
     private lateinit var viewMatrix: View
     private lateinit var viewCalendar: View
     
+    // Variables del Calendario
     private var appCurrentMonth = Calendar.getInstance()
     private lateinit var tvAppCurrentMonth: TextView
     private lateinit var containerWeeksApp: LinearLayout
@@ -65,6 +68,7 @@ class MainActivity : Activity() {
         viewCalendar = findViewById(R.id.viewCalendar)
         val bottomNav = findViewById<BottomNavigationView>(R.id.bottomNavigation)
 
+        // Configuración del Calendario
         tvAppCurrentMonth = findViewById(R.id.tvAppCurrentMonth)
         containerWeeksApp = findViewById(R.id.containerWeeksApp)
         
@@ -77,6 +81,17 @@ class MainActivity : Activity() {
             renderAppCalendar()
         }
 
+        // Botón flotante para añadir tarea desde el calendario
+        findViewById<FloatingActionButton>(R.id.fabAddTaskCalendar).setOnClickListener {
+            val intent = Intent(this, QuickAddActivity::class.java)
+            val cal = Calendar.getInstance().apply {
+                set(Calendar.HOUR_OF_DAY, 9); set(Calendar.MINUTE, 0)
+            }
+            intent.putExtra(CalendarWidgetProvider.EXTRA_DUE_AT, cal.timeInMillis)
+            startActivity(intent)
+        }
+
+        // Menú Inferior
         bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.nav_matrix -> {
@@ -95,6 +110,7 @@ class MainActivity : Activity() {
             }
         }
 
+        // Botones de añadir en la Matriz
         findViewById<MaterialButton>(R.id.btnAddQ1).setOnClickListener { openQuickAdd(Quadrant.DO_FIRST) }
         findViewById<MaterialButton>(R.id.btnAddQ2).setOnClickListener { openQuickAdd(Quadrant.SCHEDULE) }
         findViewById<MaterialButton>(R.id.btnAddQ3).setOnClickListener { openQuickAdd(Quadrant.DELEGATE) }
@@ -102,6 +118,7 @@ class MainActivity : Activity() {
 
         findViewById<MaterialButton>(R.id.btnSettings).setOnClickListener { startActivity(Intent(this, SettingsActivity::class.java)) }
         
+        // Botón de eliminar seleccionados
         findViewById<ImageButton>(R.id.btnDeleteSelected).setOnClickListener {
             if (selectedTaskIds.isNotEmpty()) {
                 selectedTaskIds.forEach { id -> repo.deleteTask(id) }
@@ -211,11 +228,21 @@ class MainActivity : Activity() {
                     tvDayNumber.text = dayNumber.toString()
                     tvDayNumber.setTextColor(Color.parseColor(if (settings.isDarkMode) "#F8FAFC" else "#0F172A"))
 
+                    // Resaltar día de hoy con un círculo azul
                     val todayCal = Calendar.getInstance()
                     if (todayCal.get(Calendar.YEAR) == year && todayCal.get(Calendar.MONTH) == month && todayCal.get(Calendar.DAY_OF_MONTH) == dayNumber) {
-                        dayCellView.setBackgroundColor(Color.parseColor(if (settings.isDarkMode) "#1E3A8A" else "#DBEAFE"))
+                        val drawable = ContextCompat.getDrawable(this, R.drawable.bg_calendar_cell_today)
+                        tvDayNumber.background = drawable
+                        tvDayNumber.setTextColor(Color.WHITE)
                     } else {
-                        dayCellView.setBackgroundResource(R.drawable.bg_calendar_cell)
+                        tvDayNumber.background = null
+                    }
+
+                    // Fondo de la celda
+                    if (settings.isDarkMode) {
+                        dayCellView.setBackgroundColor(Color.parseColor("#1E293B"))
+                    } else {
+                        dayCellView.setBackgroundColor(Color.parseColor("#FFFFFF"))
                     }
 
                     dayCellView.setOnClickListener {
@@ -239,7 +266,13 @@ class MainActivity : Activity() {
                             Quadrant.DELEGATE -> settings.colorQ3
                             Quadrant.ELIMINATE -> settings.colorQ4
                         }
-                        eventView.setBackgroundColor(qColor)
+                        
+                        // Fondo redondeado para el evento
+                        val drawable = GradientDrawable().apply {
+                            setColor(qColor)
+                            cornerRadius = 8f
+                        }
+                        eventView.background = drawable
                         eventView.setTextColor(if (isColorDark(qColor)) Color.WHITE else Color.BLACK)
                         
                         eventView.setOnClickListener {
@@ -292,9 +325,8 @@ class MainActivity : Activity() {
                 if (selectedTaskIds.contains(task.id)) selectedTaskIds.remove(task.id) else selectedTaskIds.add(task.id)
                 updateSelectionHeader(); refreshTasks()
             },
-            onStartDrag = { viewHolder -> 
-                // Aquí está el parámetro que faltaba
-                // No hacemos nada con él en esta vista, pero el adaptador lo requiere.
+            onStartDrag = { 
+                // No hacemos nada aquí porque usamos el tirador visual
             }
         )
         rv.layoutManager = LinearLayoutManager(this)
