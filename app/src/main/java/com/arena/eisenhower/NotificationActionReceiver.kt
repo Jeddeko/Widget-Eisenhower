@@ -18,13 +18,30 @@ class NotificationActionReceiver : BroadcastReceiver() {
                 .orEmpty()
 
             if (title.isNotBlank()) {
-                TaskRepository(context).addTask(title, Quadrant.DO_FIRST)
+                // Usamos la nueva firma addTask(Task)
+                val newTask = repoAddTask(context, title)
+                if (newTask != null) {
+                    ReminderScheduler.schedule(context, newTask)
+                }
                 EisenhowerWidgetProvider.updateAllWidgets(context)
+                CalendarWidgetProvider.updateAllWidgets(context)
 
                 NotificationManagerCompat.from(context)
                     .cancel(NotificationHelper.NOTIFICATION_ID)
             }
         }
+    }
+
+    private fun repoAddTask(context: Context, title: String): Task? {
+        val repo = TaskRepository(context)
+        return repo.addTask(
+            Task(
+                id = 0, 
+                title = title, 
+                quadrant = Quadrant.DO_FIRST,
+                isEvent = false
+            )
+        )
     }
 
     companion object {
