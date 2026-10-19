@@ -30,6 +30,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Collections
+import java.util.Date
 import java.util.Locale
 
 class MainActivity : Activity() {
@@ -193,15 +194,28 @@ class MainActivity : Activity() {
         val monthEndMillis = monthStartMillis + (maxDays * 24 * 60 * 60 * 1000L)
         
         val allTasks = repo.getAll()
-        val eventsByDay = mutableMapOf<Int, MutableList<Task>>()
+        val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+        
+        // AHORA GUARDAMOS UN PAR: La Tarea y un Booleano (si es recordatorio o no)
+        val eventsByDay = mutableMapOf<Int, MutableList<Pair<Task, Boolean>>>()
         
         allTasks.forEach { task ->
+            // 1. Agregar la tarea principal en sus fechas de ocurrencia
             val occurrences = task.getOccurrences(monthStartMillis, monthEndMillis)
             occurrences.forEach { time ->
                 val cal = Calendar.getInstance().apply { timeInMillis = time }
                 if (cal.get(Calendar.MONTH) == month && cal.get(Calendar.YEAR) == year) {
                     val day = cal.get(Calendar.DAY_OF_MONTH)
-                    eventsByDay.getOrPut(day) { mutableListOf() }.add(task)
+                    eventsByDay.getOrPut(day) { mutableListOf() }.add(Pair(task, false))
+                }
+            }
+
+            // 2. Agregar los recordatorios en sus días correspondientes
+            task.reminders.forEach { reminderTime ->
+                val cal = Calendar.getInstance().apply { timeInMillis = reminderTime }
+                if (cal.get(Calendar.MONTH) == month && cal.get(Calendar.YEAR) == year) {
+                    val day = cal.get(Calendar.DAY_OF_MONTH)
+                    eventsByDay.getOrPut(day) { mutableListOf() }.add(Pair(task, true))
                 }
             }
         }
@@ -228,7 +242,7 @@ class MainActivity : Activity() {
                     tvDayNumber.text = dayNumber.toString()
                     tvDayNumber.setTextColor(Color.parseColor(if (settings.isDarkMode) "#F8FAFC" else "#0F172A"))
 
-                    // Resaltar día de hoy con un círculo azul
+                    // Resaltar día de hoy
                     val todayCal = Calendar.getInstance()
                     if (todayCal.get(Calendar.YEAR) == year && todayCal.get(Calendar.MONTH) == month && todayCal.get(Calendar.DAY_OF_MONTH) == dayNumber) {
                         val drawable = ContextCompat.getDrawable(this, R.drawable.bg_calendar_cell_today)
@@ -238,7 +252,6 @@ class MainActivity : Activity() {
                         tvDayNumber.background = null
                     }
 
-                    // Fondo de la celda
                     if (settings.isDarkMode) {
                         dayCellView.setBackgroundColor(Color.parseColor("#1E293B"))
                     } else {
@@ -256,9 +269,24 @@ class MainActivity : Activity() {
                     }
 
                     val dayEvents = eventsByDay[dayNumber] ?: emptyList()
-                    dayEvents.forEach { task ->
+                    // Ordenamos para que las tareas salgan primero y luego los recordatorios
+                    val sortedDayEvents = dayEvents.sortedBy { it.second }
+
+                    sortedDayEvents.forEach { pair ->
+                        val task = pair.first
+                        val isReminder = pair.second
                         val eventView = inflater.inflate(R.layout.app_calendar_event, eventsContainer, false) as TextView
-                        eventView.text = task.title
+                        
+                        if (isReminder) {
+                            // Buscamos la hora exacta del recordatorio para este día
+                            val remTime = task.reminders.firstOrNull { 
+                                val rCal = Calendar.getInstance().apply { timeInMillis = it }
+                                rCal.get(Calendar.MONTH) == month && rCal.get(Calendar.YEAR) == year && rCal.get(Calendar.DAY_OF_MONTH) == dayNumber
+                            } ?: 0L
+                            eventView.text = "🔔 ${timeFormat.format(Date(remTime))} - ${task.title}"
+                        } else {
+                            eventView.text = task.title
+                        }
                         
                         val qColor = when(task.quadrant) {
                             Quadrant.DO_FIRST -> settings.colorQ1
@@ -267,7 +295,6 @@ class MainActivity : Activity() {
                             Quadrant.ELIMINATE -> settings.colorQ4
                         }
                         
-                        // Fondo redondeado para el evento
                         val drawable = GradientDrawable().apply {
                             setColor(qColor)
                             cornerRadius = 8f
@@ -325,9 +352,7 @@ class MainActivity : Activity() {
                 if (selectedTaskIds.contains(task.id)) selectedTaskIds.remove(task.id) else selectedTaskIds.add(task.id)
                 updateSelectionHeader(); refreshTasks()
             },
-            onStartDrag = { 
-                // No hacemos nada aquí porque usamos el tirador visual
-            }
+            onStartDrag = { }
         )
         rv.layoutManager = LinearLayoutManager(this)
         rv.adapter = activeAdapter
