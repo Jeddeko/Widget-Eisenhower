@@ -26,8 +26,6 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import java.text.SimpleDateFormat
-import java.time.LocalDate
-import java.time.ZoneId
 import java.util.Calendar
 import java.util.Collections
 import java.util.Locale
@@ -47,7 +45,6 @@ class MainActivity : Activity() {
     private lateinit var viewMatrix: View
     private lateinit var viewCalendar: View
     
-    // Variables del Calendario en la App
     private var appCurrentMonth = Calendar.getInstance()
     private lateinit var tvAppCurrentMonth: TextView
     private lateinit var containerWeeksApp: LinearLayout
@@ -68,7 +65,6 @@ class MainActivity : Activity() {
         viewCalendar = findViewById(R.id.viewCalendar)
         val bottomNav = findViewById<BottomNavigationView>(R.id.bottomNavigation)
 
-        // Configuración del Calendario en App
         tvAppCurrentMonth = findViewById(R.id.tvAppCurrentMonth)
         containerWeeksApp = findViewById(R.id.containerWeeksApp)
         
@@ -160,9 +156,6 @@ class MainActivity : Activity() {
         setupQuadrantUI(Quadrant.ELIMINATE, R.id.cardQ4, R.id.titleQ4View, R.id.btnAddQ4, R.id.headerCompletedQ4, R.id.containerCompletedQ4, rvQ4, settings.colorQ4, settings.titleQ4, allTasks)
     }
 
-    // ... (El método setupQuadrantUI se queda EXACTAMENTE igual que en el mensaje anterior, omito para no duplicar tanto texto, pero PÉGALO TAL CUAL) ...
-
-    // METODO NUEVO: RENDERIZAR EL CALENDARIO DE LA APP
     private fun renderAppCalendar() {
         containerWeeksApp.removeAllViews()
         val monthFormat = SimpleDateFormat("MMMM yyyy", Locale.getDefault())
@@ -176,7 +169,6 @@ class MainActivity : Activity() {
         }
         val maxDays = firstOfMonth.getActualMaximum(Calendar.DAY_OF_MONTH)
         
-        // Calcular día de la semana del día 1 (1=Domingo, 2=Lunes, etc). Queremos Lunes como 0.
         val firstDayOfWeek = firstOfMonth.get(Calendar.DAY_OF_WEEK) - 2 
         val offset = if (firstDayOfWeek < 0) 6 else firstDayOfWeek
         
@@ -184,7 +176,6 @@ class MainActivity : Activity() {
         val monthEndMillis = monthStartMillis + (maxDays * 24 * 60 * 60 * 1000L)
         
         val allTasks = repo.getAll()
-        // Agrupar eventos por día del mes (1 al 31)
         val eventsByDay = mutableMapOf<Int, MutableList<Task>>()
         
         allTasks.forEach { task ->
@@ -213,7 +204,6 @@ class MainActivity : Activity() {
                 val cellLayout = weekView.findViewById<LinearLayout>(cellId)
                 
                 if (dayNumber in 1..maxDays) {
-                    // Es un día válido del mes actual
                     val dayCellView = inflater.inflate(R.layout.app_calendar_day_cell, cellLayout, false)
                     val tvDayNumber = dayCellView.findViewById<TextView>(R.id.tvDayNumber)
                     val eventsContainer = dayCellView.findViewById<LinearLayout>(R.id.eventsContainer)
@@ -221,7 +211,6 @@ class MainActivity : Activity() {
                     tvDayNumber.text = dayNumber.toString()
                     tvDayNumber.setTextColor(Color.parseColor(if (settings.isDarkMode) "#F8FAFC" else "#0F172A"))
 
-                    // Resaltar el día de hoy
                     val todayCal = Calendar.getInstance()
                     if (todayCal.get(Calendar.YEAR) == year && todayCal.get(Calendar.MONTH) == month && todayCal.get(Calendar.DAY_OF_MONTH) == dayNumber) {
                         dayCellView.setBackgroundColor(Color.parseColor(if (settings.isDarkMode) "#1E3A8A" else "#DBEAFE"))
@@ -229,7 +218,6 @@ class MainActivity : Activity() {
                         dayCellView.setBackgroundResource(R.drawable.bg_calendar_cell)
                     }
 
-                    // Tocar el día para añadir tarea
                     dayCellView.setOnClickListener {
                         val cal = Calendar.getInstance().apply {
                             set(Calendar.YEAR, year); set(Calendar.MONTH, month); set(Calendar.DAY_OF_MONTH, dayNumber)
@@ -240,7 +228,6 @@ class MainActivity : Activity() {
                         startActivity(intent)
                     }
 
-                    // Rellenar TODOS los eventos del día (sin límite)
                     val dayEvents = eventsByDay[dayNumber] ?: emptyList()
                     dayEvents.forEach { task ->
                         val eventView = inflater.inflate(R.layout.app_calendar_event, eventsContainer, false) as TextView
@@ -265,7 +252,6 @@ class MainActivity : Activity() {
                     
                     cellLayout.addView(dayCellView)
                 } else {
-                    // Día fuera del mes (vacío)
                     val emptyView = View(this)
                     cellLayout.addView(emptyView)
                 }
@@ -305,6 +291,10 @@ class MainActivity : Activity() {
             onItemLongClick = { task ->
                 if (selectedTaskIds.contains(task.id)) selectedTaskIds.remove(task.id) else selectedTaskIds.add(task.id)
                 updateSelectionHeader(); refreshTasks()
+            },
+            onStartDrag = { viewHolder -> 
+                // Aquí está el parámetro que faltaba
+                // No hacemos nada con él en esta vista, pero el adaptador lo requiere.
             }
         )
         rv.layoutManager = LinearLayoutManager(this)
