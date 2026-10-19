@@ -13,7 +13,6 @@ object ReminderScheduler {
         val now = System.currentTimeMillis()
         val wm = WorkManager.getInstance(context)
         
-        // Cancelar alarmas anteriores de esta tarea
         wm.cancelAllWorkByTag("task_${task.id}")
 
         // Creamos una lista con todos los recordatorios
