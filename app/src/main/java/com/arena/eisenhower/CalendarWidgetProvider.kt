@@ -12,7 +12,6 @@ import android.net.Uri
 import android.os.Bundle
 import android.widget.RemoteViews
 import java.util.Calendar
-import kotlin.math.ceil
 
 class CalendarWidgetProvider : AppWidgetProvider() {
 
@@ -110,31 +109,31 @@ class CalendarWidgetProvider : AppWidgetProvider() {
             }
             views.setOnClickPendingIntent(R.id.btn_next_month, PendingIntent.getBroadcast(context, 200 + appWidgetId, nextIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
 
-            // --- CÁLCULO DE ALTURA INTELIGENTE SEGÚN ORIENTACIÓN ---
+            // --- CÁLCULO DE ALTURA CORREGIDO ---
             val options = manager.getAppWidgetOptions(appWidgetId)
             val isPortrait = context.resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT
             
-            // En vertical, la altura actual es MAX_HEIGHT. En horizontal, es MIN_HEIGHT.
+            // En vertical (Portrait) la altura actual es MIN_HEIGHT. En horizontal es MAX_HEIGHT.
             val currentHeightDp = if (isPortrait) {
-                options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 250)
+                val h = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0)
+                if (h > 0) h else options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 250)
             } else {
-                options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 250)
+                val h = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 0)
+                if (h > 0) h else options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 250)
             }
             
             val density = context.resources.displayMetrics.density
-            
-            // Restamos 85dp exactos para la cabecera (más margen de seguridad) para evitar huecos
             val headerHeightPx = (85 * density).toInt()
             val totalAvailablePx = ((currentHeightDp * density).toInt() - headerHeightPx).coerceAtLeast(0)
             
-            // Dividimos entre 6 y redondeamos HACIA ARRIBA (ceil) para asegurar que siempre cubra el 100%
-            val minRowHeightPx = ceil(totalAvailablePx / 6.0).toInt()
+            // Altura mínima por fila (sumamos 2px de margen para evitar huecos)
+            var minRowHeightPx = (totalAvailablePx / 6) + 2
+            if (minRowHeightPx < (40 * density).toInt()) minRowHeightPx = (40 * density).toInt()
 
             val serviceIntent = Intent(context, CalendarWidgetService::class.java).apply {
                 putExtra("EXTRA_YEAR", year)
                 putExtra("EXTRA_MONTH", month)
                 putExtra(EXTRA_MIN_HEIGHT, minRowHeightPx) 
-                // Agregamos minRowHeightPx a la URL para romper la caché y forzar el redibujado
                 data = Uri.parse("eisenhower://calendar/$appWidgetId/$year/$month/$minRowHeightPx")
             }
             views.setRemoteAdapter(R.id.calendar_week_list, serviceIntent)
