@@ -10,6 +10,7 @@ import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
@@ -72,6 +73,10 @@ class CalendarWidgetFactory(
         val settings = AppSettings(context)
         val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
 
+        val firstOfMonth = LocalDate.of(year, month + 1, 1)
+        val monthStartMillis = firstOfMonth.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        val monthEndMillis = firstOfMonth.plusMonths(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli() - 1
+
         TaskRepository(context).getAll().forEach { task ->
             if (task.done) return@forEach 
             
@@ -82,23 +87,27 @@ class CalendarWidgetFactory(
                 Quadrant.ELIMINATE -> settings.colorQ4
             }
 
-            task.dueAt?.let { due ->
-                val date = Instant.ofEpochMilli(due).atZone(ZoneId.systemDefault()).toLocalDate()
+            // USAMOS getOccurrences PARA QUE SE REPITA EN EL WIDGET
+            val occurrences = task.getOccurrences(monthStartMillis, monthEndMillis)
+            occurrences.forEach { time ->
+                val date = Instant.ofEpochMilli(time).atZone(ZoneId.systemDefault()).toLocalDate()
                 itemsByDay.getOrPut(date) { mutableListOf() }.add(
                     CalendarEventItem(task.id, task.title, qColor, isReminder = false)
                 )
             }
 
+            // Agregar recordatorios
             task.reminders.forEach { reminderTime ->
-                val remDate = Instant.ofEpochMilli(reminderTime).atZone(ZoneId.systemDefault()).toLocalDate()
-                val timeStr = timeFormat.format(Date(reminderTime))
-                itemsByDay.getOrPut(remDate) { mutableListOf() }.add(
-                    CalendarEventItem(task.id, task.title, qColor, isReminder = true, timePrefix = "🔔 $timeStr - ")
-                )
+                if (reminderTime in monthStartMillis..monthEndMillis) {
+                    val remDate = Instant.ofEpochMilli(reminderTime).atZone(ZoneId.systemDefault()).toLocalDate()
+                    val timeStr = timeFormat.format(Date(reminderTime))
+                    itemsByDay.getOrPut(remDate) { mutableListOf() }.add(
+                        CalendarEventItem(task.id, task.title, qColor, isReminder = true, timePrefix = "🔔 $timeStr - ")
+                    )
+                }
             }
         }
 
-        val firstOfMonth = LocalDate.of(year, month + 1, 1)
         val cell0Date = firstOfMonth.minusDays((firstOfMonth.dayOfWeek.value - 1).toLong())
 
         val allCells = (0 until 42).map { i ->
@@ -121,7 +130,6 @@ class CalendarWidgetFactory(
         val rv = RemoteViews(context.packageName, R.layout.calendar_week_row)
         val week = weeks[position]
 
-        // Forzamos la altura exacta para llenar el widget
         rv.setInt(R.id.week_row, "setMinimumHeight", minRowHeight)
 
         for (i in 0 until 7) {
@@ -157,11 +165,7 @@ class CalendarWidgetFactory(
                     val item = cell.items[t - 1]
                     rv.setViewVisibility(taskId, View.VISIBLE)
                     
-                    val displayText = if (item.isReminder) {
-                        item.timePrefix + item.title
-                    } else {
-                        item.title
-                    }
+                    val displayText = if (item.isReminder) item.timePrefix + item.title else item.title
                     
                     rv.setTextViewText(taskId, displayText)
                     rv.setInt(taskId, "setBackgroundColor", item.color)
