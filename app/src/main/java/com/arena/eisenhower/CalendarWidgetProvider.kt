@@ -6,18 +6,12 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
-import android.view.View
 import android.widget.RemoteViews
-import java.text.SimpleDateFormat
-import java.time.Instant
-import java.time.LocalDate
-import java.time.ZoneId
 import java.util.Calendar
-import java.util.Date
-import java.util.Locale
 
 class CalendarWidgetProvider : AppWidgetProvider() {
 
@@ -63,6 +57,7 @@ class CalendarWidgetProvider : AppWidgetProvider() {
         const val ACTION_NEXT_MONTH = "com.arena.eisenhower.ACTION_CAL_NEXT_MONTH"
         const val ACTION_REFRESH = "com.arena.eisenhower.ACTION_CAL_REFRESH"
         const val EXTRA_DUE_AT = "EXTRA_DUE_AT"
+        const val EXTRA_MIN_HEIGHT = "EXTRA_MIN_HEIGHT"
         
         private val MONTHS = arrayOf("Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre")
 
@@ -88,21 +83,12 @@ class CalendarWidgetProvider : AppWidgetProvider() {
             ids.forEach { id -> updateWidget(context, manager, id) }
         }
 
-        private fun isColorDark(color: Int): Boolean {
-            val darkness = 1.0 - (0.299 * Color.red(color) + 0.587 * Color.green(color) + 0.114 * Color.blue(color)) / 255
-            return darkness > 0.5
-        }
-
         private fun updateWidget(context: Context, manager: AppWidgetManager, appWidgetId: Int) {
-            val settings = AppSettings(context)
-            val isDark = settings.isDarkMode
+            val isDark = AppSettings(context).isDarkMode
             val (year, month) = getMonthState(context, appWidgetId)
 
             val bgColor = if (isDark) Color.parseColor("#121212") else Color.parseColor("#F8FAFC")
             val textColor = if (isDark) Color.parseColor("#F8FAFC") else Color.parseColor("#0F172A")
-            val mutedColor = if (isDark) Color.parseColor("#64748B") else Color.parseColor("#94A3B8")
-            val todayBgColor = if (isDark) Color.parseColor("#1E3A8A") else Color.parseColor("#DBEAFE")
-            val todayTextColor = if (isDark) Color.parseColor("#60A5FA") else Color.parseColor("#2563EB")
 
             val views = RemoteViews(context.packageName, R.layout.calendar_widget)
             views.setInt(R.id.calendar_root, "setBackgroundColor", bgColor)
@@ -123,94 +109,44 @@ class CalendarWidgetProvider : AppWidgetProvider() {
             }
             views.setOnClickPendingIntent(R.id.btn_next_month, PendingIntent.getBroadcast(context, 200 + appWidgetId, nextIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
 
-            val today = LocalDate.now()
-            val itemsByDay = mutableMapOf<LocalDate, MutableList<Task>>()
-            TaskRepository(context).getAll().forEach { task ->
-                if (task.done) return@forEach
-                task.dueAt?.let { due ->
-                    val date = Instant.ofEpochMilli(due).atZone(ZoneId.systemDefault()).toLocalDate()
-                    itemsByDay.getOrPut(date) { mutableListOf() }.add(task)
-                }
-            }
-
-            val firstOfMonth = LocalDate.of(year, month + 1, 1)
-            val cell0Date = firstOfMonth.minusDays((firstOfMonth.dayOfWeek.value - 1).toLong())
+            // --- CÁLCULO DE ALTURA PARA EL SERVICE ---
+            val options = manager.getAppWidgetOptions(appWidgetId)
+            val isPortrait = context.resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT
             
-            views.removeAllViews(R.id.week_container)
-
-            for (w in 0 until 6) {
-                val weekView = RemoteViews(context.packageName, R.layout.calendar_week_row)
-                
-                for (d in 0 until 7) {
-                    val cellIndex = (w * 7) + d
-                    val date = cell0Date.plusDays(cellIndex.toLong())
-                    val isCurrentMonth = date.year == year && date.monthValue == (month + 1)
-                    val isToday = date == today
-                    
-                    val cellId = context.resources.getIdentifier("cell_${d+1}", "id", context.packageName)
-                    val numId = context.resources.getIdentifier("day_${d+1}_number", "id", context.packageName)
-                    
-                    weekView.setTextViewText(numId, date.dayOfMonth.toString())
-                    val dayNumColor = when {
-                        isToday -> todayTextColor
-                        !isCurrentMonth -> mutedColor
-                        else -> textColor
-                    }
-                    weekView.setTextColor(numId, dayNumColor)
-                    
-                    if (isToday) {
-                        weekView.setInt(cellId, "setBackgroundColor", todayBgColor)
-                    } else {
-                        val bgRes = if (!isCurrentMonth) R.drawable.bg_calendar_cell_outside else R.drawable.bg_calendar_cell
-                        weekView.setInt(cellId, "setBackgroundResource", bgRes)
-                    }
-                    
-                    // CLICK EN EL DÍA: Abrir QuickAdd con la fecha preseleccionada
-                    val addIntent = Intent(context, QuickAddActivity::class.java).apply {
-                        data = Uri.parse("eisenhower://add/${date.toString()}")
-                        putExtra(EXTRA_DUE_AT, date.atTime(9, 0).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli())
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                    }
-                    val addPi = PendingIntent.getActivity(context, date.hashCode(), addIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-                    weekView.setOnClickPendingIntent(cellId, addPi)
-
-                    val dayTasks = itemsByDay[date] ?: emptyList()
-                    // Límite de 5 tareas por día para no reventar la memoria del widget
-                    for (t in 1..5) {
-                        val taskIdView = context.resources.getIdentifier("task_${d+1}_$t", "id", context.packageName)
-                        if (t <= dayTasks.size) {
-                            val task = dayTasks[t - 1]
-                            weekView.setViewVisibility(taskIdView, View.VISIBLE)
-                            weekView.setTextViewText(taskIdView, task.title)
-                            
-                            val qColor = when (task.quadrant) {
-                                Quadrant.DO_FIRST -> settings.colorQ1
-                                Quadrant.SCHEDULE -> settings.colorQ2
-                                Quadrant.DELEGATE -> settings.colorQ3
-                                Quadrant.ELIMINATE -> settings.colorQ4
-                            }
-                            weekView.setInt(taskIdView, "setBackgroundColor", qColor)
-                            weekView.setTextColor(taskIdView, if (isColorDark(qColor)) Color.WHITE else Color.BLACK)
-                            
-                            // CLICK EN LA TAREA: Abrir QuickAdd para editarla
-                            val editIntent = Intent(context, QuickAddActivity::class.java).apply {
-                                data = Uri.parse("eisenhower://edit/${task.id}")
-                                putExtra(EisenhowerWidgetProvider.EXTRA_TASK_ID, task.id)
-                                putExtra(EisenhowerWidgetProvider.EXTRA_ACTION_TYPE, EisenhowerWidgetProvider.ACTION_EDIT)
-                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                            }
-                            val editPi = PendingIntent.getActivity(context, task.id.toInt(), editIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-                            weekView.setOnClickPendingIntent(taskIdView, editPi)
-                            
-                        } else {
-                            weekView.setViewVisibility(taskIdView, View.GONE)
-                        }
-                    }
-                }
-                views.addView(R.id.week_container, weekView)
+            val currentHeightDp = if (isPortrait) {
+                val h = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0)
+                if (h > 0) h else options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 250)
+            } else {
+                val h = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 0)
+                if (h > 0) h else options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 250)
             }
+            
+            val density = context.resources.displayMetrics.density
+            
+            // Restamos 70dp para la cabecera (un poco más de margen para que quepa bien)
+            val headerHeightPx = (70 * density).toInt()
+            val totalAvailablePx = ((currentHeightDp * density).toInt() - headerHeightPx).coerceAtLeast(0)
+            
+            // Dividimos entre 6 filas
+            var minRowHeightPx = totalAvailablePx / 6
+            if (minRowHeightPx < (40 * density).toInt()) minRowHeightPx = (40 * density).toInt()
+
+            val serviceIntent = Intent(context, CalendarWidgetService::class.java).apply {
+                putExtra("EXTRA_YEAR", year)
+                putExtra("EXTRA_MONTH", month)
+                putExtra(EXTRA_MIN_HEIGHT, minRowHeightPx) 
+                data = Uri.parse("eisenhower://calendar/$appWidgetId/$year/$month/$minRowHeightPx")
+            }
+            views.setRemoteAdapter(R.id.calendar_week_list, serviceIntent)
+
+            val templateIntent = Intent(context, QuickAddActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            }
+            val templatePi = PendingIntent.getActivity(context, 400 + appWidgetId, templateIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE)
+            views.setPendingIntentTemplate(R.id.calendar_week_list, templatePi)
 
             manager.updateAppWidget(appWidgetId, views)
+            manager.notifyAppWidgetViewDataChanged(appWidgetId, R.id.calendar_week_list)
         }
     }
 }
