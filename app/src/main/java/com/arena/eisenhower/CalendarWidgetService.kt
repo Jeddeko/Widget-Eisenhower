@@ -121,8 +121,8 @@ class CalendarWidgetFactory(
         val rv = RemoteViews(context.packageName, R.layout.calendar_week_row)
         val week = weeks[position]
 
-        // AQUI ESTA LA MAGIA: Le aplicamos la altura mínima a la fila entera (week_row)
-        // Si no tiene tareas, se estira exactamente al tamaño calculado. Si tiene tareas, crece.
+        // APLICAMOS LA ALTURA MÍNIMA A LA FILA COMPLETA (week_row)
+        // Esto obliga a las 6 filas a estirarse para llenar el widget o activar el scroll, eliminando el hueco.
         rv.setInt(R.id.week_row, "setMinimumHeight", minWeekHeight)
 
         for (i in 0 until 7) {
