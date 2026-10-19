@@ -27,10 +27,25 @@ class TaskRepository(context: Context) {
                     }
 
                     add(Task(
-                        id = obj.getLong("id"), title = obj.optString("title", ""), quadrant = Quadrant.fromKey(obj.optString("quadrant", "do")),
-                        done = obj.optBoolean("done", false), dueAt = due, createdAt = obj.optLong("createdAt", System.currentTimeMillis()),
-                        updatedAt = obj.optLong("updatedAt", System.currentTimeMillis()), calendarEventId = calId, order = obj.optInt("order", 0),
-                        reminders = remindersList
+                        id = obj.getLong("id"), 
+                        title = obj.optString("title", ""), 
+                        quadrant = Quadrant.fromKey(obj.optString("quadrant", "do")),
+                        done = obj.optBoolean("done", false), 
+                        dueAt = due, 
+                        createdAt = obj.optLong("createdAt", System.currentTimeMillis()),
+                        updatedAt = obj.optLong("updatedAt", System.currentTimeMillis()), 
+                        calendarEventId = calId, 
+                        order = obj.optInt("order", 0),
+                        reminders = remindersList,
+                        
+                        isEvent = obj.optBoolean("isEvent", false),
+                        advanceNoticeDays = obj.optInt("advanceNoticeDays", 0),
+                        quadrantBeforeEvent = obj.optString("quadrantBeforeEvent", "").let { if (it.isBlank()) null else Quadrant.fromKey(it) },
+                        quadrantOnEventDay = obj.optString("quadrantOnEventDay", "").let { if (it.isBlank()) null else Quadrant.fromKey(it) },
+                        
+                        recurrence = try { RecurrenceType.valueOf(obj.optString("recurrence", "NONE")) } catch(e: Exception) { RecurrenceType.NONE },
+                        recurrenceDayOfWeek = if (obj.has("recurrenceDayOfWeek") && !obj.isNull("recurrenceDayOfWeek")) obj.getInt("recurrenceDayOfWeek") else null,
+                        recurrenceDayOfMonth = if (obj.has("recurrenceDayOfMonth") && !obj.isNull("recurrenceDayOfMonth")) obj.getInt("recurrenceDayOfMonth") else null
                     ))
                 }
             }
@@ -38,28 +53,24 @@ class TaskRepository(context: Context) {
     }
 
     @Synchronized
-    fun addTask(title: String, quadrant: Quadrant, dueAt: Long? = null, calendarEventId: Long? = null, reminders: List<Long> = emptyList()): Task? {
-        val clean = title.trim(); if (clean.isBlank()) return null
+    fun addTask(task: Task): Task? {
+        val clean = task.title.trim(); if (clean.isBlank()) return null
         val all = getAll()
         val id = (all.maxOfOrNull { it.id } ?: 0L) + 1L
         val now = System.currentTimeMillis()
-        val newOrder = (all.filter { it.quadrant == quadrant }.maxOfOrNull { it.order } ?: 0) + 1
-        val task = Task(id, clean, quadrant, false, dueAt, now, now, calendarEventId, newOrder, reminders)
-        saveAll(all + task)
-        return task
+        
+        val newTask = task.copy(
+            id = id, title = clean, createdAt = now, updatedAt = now,
+            order = (all.filter { it.quadrant == task.quadrant }.maxOfOrNull { it.order } ?: 0) + 1
+        )
+        saveAll(all + newTask)
+        return newTask
     }
 
     @Synchronized
-    fun toggleTask(id: Long): Task? {
+    fun toggleTask(id: Long) {
         val now = System.currentTimeMillis()
-        var updatedTask: Task? = null
-        saveAll(getAll().map { 
-            if (it.id == id) { 
-                updatedTask = it.copy(done = !it.done, updatedAt = now)
-                updatedTask!!
-            } else it 
-        })
-        return updatedTask
+        saveAll(getAll().map { if (it.id == id) it.copy(done = !it.done, updatedAt = now) else it })
     }
 
     @Synchronized
@@ -74,10 +85,19 @@ class TaskRepository(context: Context) {
     fun saveAll(tasks: List<Task>) {
         val array = JSONArray()
         tasks.forEach { task ->
-            val obj = JSONObject().put("id", task.id).put("title", task.title).put("quadrant", task.quadrant.key)
-                .put("done", task.done).put("createdAt", task.createdAt).put("updatedAt", task.updatedAt).put("order", task.order)
+            val obj = JSONObject()
+                .put("id", task.id).put("title", task.title).put("quadrant", task.quadrant.key)
+                .put("done", task.done).put("createdAt", task.createdAt).put("updatedAt", task.updatedAt)
+                .put("order", task.order)
+                .put("isEvent", task.isEvent).put("advanceNoticeDays", task.advanceNoticeDays)
+                .put("quadrantBeforeEvent", task.quadrantBeforeEvent?.key ?: "")
+                .put("quadrantOnEventDay", task.quadrantOnEventDay?.key ?: "")
+                .put("recurrence", task.recurrence.name)
+
             obj.put("dueAt", if (task.dueAt == null) JSONObject.NULL else task.dueAt)
             obj.put("calendarEventId", if (task.calendarEventId == null) JSONObject.NULL else task.calendarEventId)
+            obj.put("recurrenceDayOfWeek", task.recurrenceDayOfWeek ?: JSONObject.NULL)
+            obj.put("recurrenceDayOfMonth", task.recurrenceDayOfMonth ?: JSONObject.NULL)
             
             val remArray = JSONArray()
             task.reminders.forEach { remArray.put(it) }
