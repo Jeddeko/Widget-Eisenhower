@@ -110,13 +110,13 @@ class CalendarWidgetProvider : AppWidgetProvider() {
 
             // --- CÁLCULO DE ALTURA REAL ---
             val options = manager.getAppWidgetOptions(appWidgetId)
-            // MIN_HEIGHT nos da la altura ACTUAL en vertical
-            val currentHeightDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 250)
+            // Usamos MAX_HEIGHT para que las celdas siempre sean lo suficientemente grandes como para llenar el widget o activar el scroll
+            val maxHeightDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 250)
             val density = context.resources.displayMetrics.density
             
             // Restamos 80dp (cabecera, días de la semana y márgenes)
             val headerHeightPx = (80 * density).toInt()
-            val totalAvailablePx = ((currentHeightDp * density).toInt() - headerHeightPx).coerceAtLeast(0)
+            val totalAvailablePx = ((maxHeightDp * density).toInt() - headerHeightPx).coerceAtLeast(0)
             
             // Dividimos entre 6 semanas para obtener el alto mínimo de cada fila
             val minWeekHeightPx = totalAvailablePx / 6
@@ -125,7 +125,7 @@ class CalendarWidgetProvider : AppWidgetProvider() {
                 putExtra("EXTRA_YEAR", year)
                 putExtra("EXTRA_MONTH", month)
                 putExtra(EXTRA_MIN_HEIGHT, minWeekHeightPx) 
-                // IMPORTANTE: Agregamos minWeekHeightPx al final de la URL para que Android sepa que el tamaño cambió y redibuje las filas
+                // IMPORTANTE: Agregamos minWeekHeightPx al final de la URL para forzar a Android a redibujar las filas si el tamaño cambia
                 data = Uri.parse("eisenhower://calendar/$appWidgetId/$year/$month/$minWeekHeightPx")
             }
             views.setRemoteAdapter(R.id.calendar_week_list, serviceIntent)
