@@ -45,7 +45,8 @@ data class Task(
                 set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0) 
             }.timeInMillis
             
-            while (cal.timeInMillis < today) {
+            var iterations = 0
+            while (cal.timeInMillis < today && iterations < 100) { // Límite de seguridad
                 when (recurrence) {
                     RecurrenceType.DAILY -> cal.add(Calendar.DAY_OF_YEAR, 1)
                     RecurrenceType.WEEKLY -> cal.add(Calendar.WEEK_OF_YEAR, 1)
@@ -58,6 +59,7 @@ data class Task(
                     }
                     else -> break
                 }
+                iterations++
             }
             targetDate = cal.timeInMillis
         }
@@ -83,7 +85,6 @@ data class Task(
         }
     }
 
-    // NUEVO: Calcula todas las fechas en las que este evento ocurre dentro de un rango (ej. un mes)
     fun getOccurrences(startMillis: Long, endMillis: Long): List<Long> {
         if (!isEvent || dueAt == null) {
             return if (dueAt != null && dueAt in startMillis..endMillis) listOf(dueAt) else emptyList()
@@ -91,8 +92,9 @@ data class Task(
         
         val occurrences = mutableListOf<Long>()
         val cal = Calendar.getInstance().apply { timeInMillis = dueAt }
+        var iterations = 0
 
-        while (cal.timeInMillis <= endMillis) {
+        while (cal.timeInMillis <= endMillis && iterations < 100) { // Límite de seguridad
             if (cal.timeInMillis >= startMillis) {
                 occurrences.add(cal.timeInMillis)
             }
@@ -108,6 +110,7 @@ data class Task(
                 }
                 else -> break
             }
+            iterations++
         }
         return occurrences
     }
