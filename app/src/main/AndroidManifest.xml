@@ -39,11 +39,10 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="android.intent.action.CONFIGURATION_CHANGED" /> <!-- NUEVO -->
+                <action android:name="android.intent.action.CONFIGURATION_CHANGED" />
                 <action android:name="com.arena.eisenhower.ACTION_TOGGLE" />
                 <action android:name="com.arena.eisenhower.ACTION_REFRESH" />
             </intent-filter>
-
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/eisenhower_widget_info" />
@@ -51,6 +50,28 @@
 
         <service
             android:name=".WidgetService"
+            android:permission="android.permission.BIND_REMOTEVIEWS"
+            android:exported="false" />
+
+        <!-- NUEVO: Receiver del widget Calendario -->
+        <receiver
+            android:name=".CalendarWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.intent.action.CONFIGURATION_CHANGED" />
+                <action android:name="com.arena.eisenhower.ACTION_CAL_PREV_MONTH" />
+                <action android:name="com.arena.eisenhower.ACTION_CAL_NEXT_MONTH" />
+                <action android:name="com.arena.eisenhower.ACTION_CAL_REFRESH" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/calendar_widget_info" />
+        </receiver>
+
+        <!-- NUEVO: Service del widget Calendario -->
+        <service
+            android:name=".CalendarWidgetService"
             android:permission="android.permission.BIND_REMOTEVIEWS"
             android:exported="false" />
 
