@@ -48,6 +48,7 @@ object CloudSync {
                         }
                         repo.saveAll(newTasks)
                         EisenhowerWidgetProvider.updateAllWidgets(context)
+                        CalendarWidgetProvider.updateAllWidgets(context) // NUEVO
                     }
                 }
                 onComplete()
