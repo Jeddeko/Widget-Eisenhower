@@ -1,85 +1,130 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@color/app_background"
-    android:orientation="vertical"
-    android:padding="20dp">
+    android:background="@color/app_background">
 
-    <RelativeLayout
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <TextView
+                android:id="@+id/quickTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:text="Captura rápida"
+                android:textColor="@color/text_primary"
+                android:textSize="22sp"
+                android:textStyle="bold" />
+            <ImageButton
+                android:id="@+id/btnDeleteTask"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@android:drawable/ic_menu_delete"
+                android:visibility="gone" />
+        </RelativeLayout>
+
+        <EditText
+            android:id="@+id/quickInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:hint="¿Qué hay que hacer?"
+            android:textColorHint="@color/text_secondary"
+            android:textColor="@color/text_primary"
+            android:inputType="textCapSentences|textMultiLine"
+            android:maxLines="3"
+            android:minHeight="48dp" />
+
+        <Spinner
+            android:id="@+id/quickQuadrant"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp" />
 
         <TextView
-            android:id="@+id/quickTitle"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_alignParentStart="true"
-            android:layout_centerVertical="true"
-            android:text="Captura rápida"
+            android:layout_marginTop="12dp"
+            android:text="Fecha de vencimiento (Opcional)"
             android:textColor="@color/text_primary"
-            android:textSize="22sp"
-            android:textStyle="bold" />
+            android:textSize="14sp"
+            android:textStyle="bold"/>
 
-        <!-- BOTÓN DE BORRAR (Oculto por defecto) -->
-        <ImageButton
-            android:id="@+id/btnDeleteTask"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_alignParentEnd="true"
-            android:layout_centerVertical="true"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@android:drawable/ic_menu_delete"
-            android:visibility="gone" />
-    </RelativeLayout>
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/quickDateBtn"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="Sin fecha límite" />
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
-        android:text="Se guarda desde el widget sin abrir la pantalla principal."
-        android:textColor="@color/text_secondary"
-        android:textSize="12sp" />
+        <!-- NUEVA SECCIÓN DE MÚLTIPLES ALERTAS -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Alertas / Recordatorios"
+            android:textColor="@color/text_primary"
+            android:textSize="14sp"
+            android:textStyle="bold"/>
 
-    <EditText
-        android:id="@+id/quickInput"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="14dp"
-        android:hint="¿Qué hay que hacer?"
-        android:textColorHint="@color/text_secondary"
-        android:textColor="@color/text_primary"
-        android:inputType="textCapSentences|textMultiLine"
-        android:maxLines="3"
-        android:minHeight="48dp" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="4dp">
 
-    <Spinner
-        android:id="@+id/quickQuadrant"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="10dp" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnAddReminder"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="+ Añadir Alerta" />
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/quickDateBtn"
-        style="@style/Widget.Material3.Button.OutlinedButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:text="Sin recordatorio" />
+            <Button
+                android:id="@+id/btnClearReminders"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="Borrar"
+                android:visibility="gone"/>
+        </LinearLayout>
 
-    <CheckBox
-        android:id="@+id/quickCalendarCheck"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:checked="true"
-        android:textColor="@color/text_primary"
-        android:text="Sincronizar con Calendario" />
+        <TextView
+            android:id="@+id/tvRemindersList"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Sin alertas adicionales"
+            android:textColor="@color/text_secondary"
+            android:textSize="14sp"/>
 
-    <Button
-        android:id="@+id/quickSave"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="14dp"
-        android:text="GUARDAR TAREA" />
-</LinearLayout>
+        <CheckBox
+            android:id="@+id/quickCalendarCheck"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:checked="true"
+            android:textColor="@color/text_primary"
+            android:text="Sincronizar fecha límite con Calendario" />
+
+        <Button
+            android:id="@+id/quickSave"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="GUARDAR TAREA" />
+    </LinearLayout>
+</ScrollView>
