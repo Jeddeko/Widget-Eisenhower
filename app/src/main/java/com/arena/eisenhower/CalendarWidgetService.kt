@@ -28,7 +28,7 @@ class CalendarWidgetFactory(
     private val context: Context,
     private val year: Int,
     private val month: Int,
-    private val minCellHeight: Int
+    private val minWeekHeight: Int
 ) : RemoteViewsService.RemoteViewsFactory {
 
     private data class CalendarEventItem(
@@ -121,13 +121,14 @@ class CalendarWidgetFactory(
         val rv = RemoteViews(context.packageName, R.layout.calendar_week_row)
         val week = weeks[position]
 
+        // AQUI ESTA LA MAGIA: Le aplicamos la altura mínima a la fila entera (week_row)
+        // Si no tiene tareas, se estira exactamente al tamaño calculado. Si tiene tareas, crece.
+        rv.setInt(R.id.week_row, "setMinimumHeight", minWeekHeight)
+
         for (i in 0 until 7) {
             val cell = week[i]
             val cellId = context.resources.getIdentifier("cell_${i+1}", "id", context.packageName)
             val numId = context.resources.getIdentifier("day_${i+1}_number", "id", context.packageName)
-
-            // FORZAMOS LA ALTURA CALCULADA (Si el widget es grande, llenará el espacio)
-            rv.setInt(cellId, "setMinimumHeight", minCellHeight)
 
             rv.setTextViewText(numId, cell.dayNumber.toString())
             val dayNumColor = when {
