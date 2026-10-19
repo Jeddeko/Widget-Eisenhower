@@ -30,8 +30,18 @@
     <string name="show_completed">Mostrar tareas completadas</string>
     <string name="save_settings">Guardar y actualizar widget</string>
     
-    <!-- Nuevos textos para Google Calendar -->
     <string name="calendar_sync">Sincronizar con Calendario</string>
     <string name="calendar_permission">Permiso de calendario necesario para leer y guardar eventos.</string>
     <string name="calendar_no_events">Sin eventos próximos en el calendario.</string>
+
+    <!-- Widget Calendario -->
+    <string name="calendar_widget_label">Calendario Eisenhower</string>
+    <string name="calendar_widget_description">Agenda mensual con tareas de colores.</string>
+    <string name="weekday_mon">L</string>
+    <string name="weekday_tue">M</string>
+    <string name="weekday_wed">X</string>
+    <string name="weekday_thu">J</string>
+    <string name="weekday_fri">V</string>
+    <string name="weekday_sat">S</string>
+    <string name="weekday_sun">D</string>
 </resources>
