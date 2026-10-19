@@ -25,7 +25,12 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
+import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.time.ZoneId
+import java.util.Calendar
 import java.util.Collections
+import java.util.Locale
 
 class MainActivity : Activity() {
     private lateinit var repo: TaskRepository
@@ -33,7 +38,6 @@ class MainActivity : Activity() {
 
     private lateinit var rvQ1: RecyclerView; private lateinit var rvQ2: RecyclerView
     private lateinit var rvQ3: RecyclerView; private lateinit var rvQ4: RecyclerView
-    private lateinit var rvCalendar: RecyclerView
 
     private val selectedTaskIds = mutableSetOf<Long>()
     private lateinit var selectionHeader: LinearLayout
@@ -42,6 +46,11 @@ class MainActivity : Activity() {
 
     private lateinit var viewMatrix: View
     private lateinit var viewCalendar: View
+    
+    // Variables del Calendario en la App
+    private var appCurrentMonth = Calendar.getInstance()
+    private lateinit var tvAppCurrentMonth: TextView
+    private lateinit var containerWeeksApp: LinearLayout
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -50,7 +59,6 @@ class MainActivity : Activity() {
 
         rvQ1 = findViewById(R.id.listQ1); rvQ2 = findViewById(R.id.listQ2)
         rvQ3 = findViewById(R.id.listQ3); rvQ4 = findViewById(R.id.listQ4)
-        rvCalendar = findViewById(R.id.recyclerCalendarEvents)
 
         selectionHeader = findViewById(R.id.selectionHeader)
         normalHeader = findViewById(R.id.normalHeader)
@@ -59,6 +67,19 @@ class MainActivity : Activity() {
         viewMatrix = findViewById(R.id.viewMatrix)
         viewCalendar = findViewById(R.id.viewCalendar)
         val bottomNav = findViewById<BottomNavigationView>(R.id.bottomNavigation)
+
+        // Configuración del Calendario en App
+        tvAppCurrentMonth = findViewById(R.id.tvAppCurrentMonth)
+        containerWeeksApp = findViewById(R.id.containerWeeksApp)
+        
+        findViewById<ImageButton>(R.id.btnAppPrevMonth).setOnClickListener {
+            appCurrentMonth.add(Calendar.MONTH, -1)
+            renderAppCalendar()
+        }
+        findViewById<ImageButton>(R.id.btnAppNextMonth).setOnClickListener {
+            appCurrentMonth.add(Calendar.MONTH, 1)
+            renderAppCalendar()
+        }
 
         bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
@@ -71,7 +92,7 @@ class MainActivity : Activity() {
                 R.id.nav_calendar -> {
                     viewMatrix.visibility = View.GONE
                     viewCalendar.visibility = View.VISIBLE
-                    refreshCalendarView()
+                    renderAppCalendar()
                     true
                 }
                 else -> false
@@ -111,6 +132,7 @@ class MainActivity : Activity() {
         super.onResume(); 
         refreshTasks(); 
         EisenhowerWidgetProvider.updateAllWidgets(this) 
+        if (viewCalendar.visibility == View.VISIBLE) renderAppCalendar()
     }
 
     private fun isColorDark(color: Int): Boolean {
@@ -138,6 +160,120 @@ class MainActivity : Activity() {
         setupQuadrantUI(Quadrant.ELIMINATE, R.id.cardQ4, R.id.titleQ4View, R.id.btnAddQ4, R.id.headerCompletedQ4, R.id.containerCompletedQ4, rvQ4, settings.colorQ4, settings.titleQ4, allTasks)
     }
 
+    // ... (El método setupQuadrantUI se queda EXACTAMENTE igual que en el mensaje anterior, omito para no duplicar tanto texto, pero PÉGALO TAL CUAL) ...
+
+    // METODO NUEVO: RENDERIZAR EL CALENDARIO DE LA APP
+    private fun renderAppCalendar() {
+        containerWeeksApp.removeAllViews()
+        val monthFormat = SimpleDateFormat("MMMM yyyy", Locale.getDefault())
+        tvAppCurrentMonth.text = monthFormat.format(appCurrentMonth.time).replaceFirstChar { it.uppercase() }
+
+        val year = appCurrentMonth.get(Calendar.YEAR)
+        val month = appCurrentMonth.get(Calendar.MONTH)
+        
+        val firstOfMonth = Calendar.getInstance().apply {
+            set(Calendar.YEAR, year); set(Calendar.MONTH, month); set(Calendar.DAY_OF_MONTH, 1)
+        }
+        val maxDays = firstOfMonth.getActualMaximum(Calendar.DAY_OF_MONTH)
+        
+        // Calcular día de la semana del día 1 (1=Domingo, 2=Lunes, etc). Queremos Lunes como 0.
+        val firstDayOfWeek = firstOfMonth.get(Calendar.DAY_OF_WEEK) - 2 
+        val offset = if (firstDayOfWeek < 0) 6 else firstDayOfWeek
+        
+        val monthStartMillis = firstOfMonth.timeInMillis
+        val monthEndMillis = monthStartMillis + (maxDays * 24 * 60 * 60 * 1000L)
+        
+        val allTasks = repo.getAll()
+        // Agrupar eventos por día del mes (1 al 31)
+        val eventsByDay = mutableMapOf<Int, MutableList<Task>>()
+        
+        allTasks.forEach { task ->
+            val occurrences = task.getOccurrences(monthStartMillis, monthEndMillis)
+            occurrences.forEach { time ->
+                val cal = Calendar.getInstance().apply { timeInMillis = time }
+                if (cal.get(Calendar.MONTH) == month && cal.get(Calendar.YEAR) == year) {
+                    val day = cal.get(Calendar.DAY_OF_MONTH)
+                    eventsByDay.getOrPut(day) { mutableListOf() }.add(task)
+                }
+            }
+        }
+
+        val inflater = LayoutInflater.from(this)
+        val totalCells = offset + maxDays
+        val totalWeeks = Math.ceil(totalCells / 7.0).toInt()
+
+        for (w in 0 until totalWeeks) {
+            val weekView = inflater.inflate(R.layout.app_calendar_week_row, containerWeeksApp, false)
+            
+            for (d in 0 until 7) {
+                val cellIndex = (w * 7) + d
+                val dayNumber = cellIndex - offset + 1
+                
+                val cellId = resources.getIdentifier("cell_${d+1}", "id", packageName)
+                val cellLayout = weekView.findViewById<LinearLayout>(cellId)
+                
+                if (dayNumber in 1..maxDays) {
+                    // Es un día válido del mes actual
+                    val dayCellView = inflater.inflate(R.layout.app_calendar_day_cell, cellLayout, false)
+                    val tvDayNumber = dayCellView.findViewById<TextView>(R.id.tvDayNumber)
+                    val eventsContainer = dayCellView.findViewById<LinearLayout>(R.id.eventsContainer)
+                    
+                    tvDayNumber.text = dayNumber.toString()
+                    tvDayNumber.setTextColor(Color.parseColor(if (settings.isDarkMode) "#F8FAFC" else "#0F172A"))
+
+                    // Resaltar el día de hoy
+                    val todayCal = Calendar.getInstance()
+                    if (todayCal.get(Calendar.YEAR) == year && todayCal.get(Calendar.MONTH) == month && todayCal.get(Calendar.DAY_OF_MONTH) == dayNumber) {
+                        dayCellView.setBackgroundColor(Color.parseColor(if (settings.isDarkMode) "#1E3A8A" else "#DBEAFE"))
+                    } else {
+                        dayCellView.setBackgroundResource(R.drawable.bg_calendar_cell)
+                    }
+
+                    // Tocar el día para añadir tarea
+                    dayCellView.setOnClickListener {
+                        val cal = Calendar.getInstance().apply {
+                            set(Calendar.YEAR, year); set(Calendar.MONTH, month); set(Calendar.DAY_OF_MONTH, dayNumber)
+                            set(Calendar.HOUR_OF_DAY, 9); set(Calendar.MINUTE, 0)
+                        }
+                        val intent = Intent(this, QuickAddActivity::class.java)
+                        intent.putExtra(CalendarWidgetProvider.EXTRA_DUE_AT, cal.timeInMillis)
+                        startActivity(intent)
+                    }
+
+                    // Rellenar TODOS los eventos del día (sin límite)
+                    val dayEvents = eventsByDay[dayNumber] ?: emptyList()
+                    dayEvents.forEach { task ->
+                        val eventView = inflater.inflate(R.layout.app_calendar_event, eventsContainer, false) as TextView
+                        eventView.text = task.title
+                        
+                        val qColor = when(task.quadrant) {
+                            Quadrant.DO_FIRST -> settings.colorQ1
+                            Quadrant.SCHEDULE -> settings.colorQ2
+                            Quadrant.DELEGATE -> settings.colorQ3
+                            Quadrant.ELIMINATE -> settings.colorQ4
+                        }
+                        eventView.setBackgroundColor(qColor)
+                        eventView.setTextColor(if (isColorDark(qColor)) Color.WHITE else Color.BLACK)
+                        
+                        eventView.setOnClickListener {
+                            val intent = Intent(this, QuickAddActivity::class.java)
+                            intent.putExtra(EisenhowerWidgetProvider.EXTRA_TASK_ID, task.id)
+                            startActivity(intent)
+                        }
+                        eventsContainer.addView(eventView)
+                    }
+                    
+                    cellLayout.addView(dayCellView)
+                } else {
+                    // Día fuera del mes (vacío)
+                    val emptyView = View(this)
+                    cellLayout.addView(emptyView)
+                }
+            }
+            containerWeeksApp.addView(weekView)
+        }
+    }
+
     private fun setupQuadrantUI(
         quadrant: Quadrant, cardId: Int, titleId: Int, btnAddId: Int, headerId: Int, containerId: Int,
         rv: RecyclerView, color: Int, titleStr: String, allTasks: List<Task>
@@ -150,7 +286,6 @@ class MainActivity : Activity() {
         findViewById<TextView>(titleId).apply { text = titleStr; setTextColor(mainTextColor) }
         findViewById<MaterialButton>(btnAddId).setTextColor(mainTextColor)
 
-        // FILTRO CLAVE: Usar getEffectiveQuadrant() en lugar de la propiedad quadrant directa
         val quadrantTasks = allTasks.filter { it.getEffectiveQuadrant() == quadrant }
         val activeTasks = quadrantTasks.filter { !it.done }.sortedBy { it.order }.toMutableList()
         val completedTasks = quadrantTasks.filter { it.done }.sortedByDescending { it.updatedAt }
@@ -161,18 +296,15 @@ class MainActivity : Activity() {
                 repo.toggleTask(task.id); refreshTasks(); EisenhowerWidgetProvider.updateAllWidgets(this); CloudSync.uploadTasks(this) 
             },
             onItemClick = { task -> 
-                if (selectedTaskIds.isEmpty()) {
-                    openQuickAddEdit(task) 
-                } else {
+                if (selectedTaskIds.isEmpty()) openQuickAddEdit(task)
+                else {
                     if (selectedTaskIds.contains(task.id)) selectedTaskIds.remove(task.id) else selectedTaskIds.add(task.id)
-                    updateSelectionHeader()
-                    refreshTasks()
+                    updateSelectionHeader(); refreshTasks()
                 }
             },
             onItemLongClick = { task ->
                 if (selectedTaskIds.contains(task.id)) selectedTaskIds.remove(task.id) else selectedTaskIds.add(task.id)
-                updateSelectionHeader()
-                refreshTasks()
+                updateSelectionHeader(); refreshTasks()
             }
         )
         rv.layoutManager = LinearLayoutManager(this)
@@ -213,7 +345,6 @@ class MainActivity : Activity() {
                 title.text = task.title
                 title.setTextColor(mainTextColor)
                 title.paintFlags = title.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
-                
                 meta.text = DueDateUtils.format(task.dueAt)
                 meta.setTextColor(secondaryTextColor)
                 
@@ -225,8 +356,7 @@ class MainActivity : Activity() {
         }
 
         val itemTouchHelper = ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(
-            ItemTouchHelper.UP or ItemTouchHelper.DOWN, 
-            ItemTouchHelper.LEFT 
+            ItemTouchHelper.UP or ItemTouchHelper.DOWN, ItemTouchHelper.LEFT 
         ) {
             override fun onMove(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder): Boolean {
                 val fromPos = viewHolder.adapterPosition
@@ -284,19 +414,6 @@ class MainActivity : Activity() {
             }
         })
         itemTouchHelper.attachToRecyclerView(rv)
-    }
-
-    private fun refreshCalendarView() {
-        val events = repo.getAll().filter { it.isEvent || it.dueAt != null }.sortedBy { it.dueAt }
-        
-        val adapter = TaskAdapter(
-            events.toMutableList(), settings.colorQ1, selectedTaskIds,
-            onCheckClick = { task -> repo.toggleTask(task.id); refreshCalendarView() },
-            onItemClick = { task -> openQuickAddEdit(task) },
-            onItemLongClick = { task -> openQuickAddEdit(task) }
-        )
-        rvCalendar.layoutManager = LinearLayoutManager(this)
-        rvCalendar.adapter = adapter
     }
 
     private fun openQuickAddEdit(task: Task) {
