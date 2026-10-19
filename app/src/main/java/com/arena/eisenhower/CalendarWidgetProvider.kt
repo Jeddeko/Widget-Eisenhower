@@ -6,6 +6,7 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
@@ -109,14 +110,21 @@ class CalendarWidgetProvider : AppWidgetProvider() {
             }
             views.setOnClickPendingIntent(R.id.btn_next_month, PendingIntent.getBroadcast(context, 200 + appWidgetId, nextIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
 
-            // --- CÁLCULO DE ALTURA REAL (MIN_HEIGHT) ---
+            // --- CÁLCULO DE ALTURA INTELIGENTE SEGÚN ORIENTACIÓN ---
             val options = manager.getAppWidgetOptions(appWidgetId)
-            // Usamos MIN_HEIGHT porque es la altura ACTUAL vertical del widget
-            val currentHeightDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 250)
+            val isPortrait = context.resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT
+            
+            // En vertical, la altura actual es MAX_HEIGHT. En horizontal, es MIN_HEIGHT.
+            val currentHeightDp = if (isPortrait) {
+                options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 250)
+            } else {
+                options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 250)
+            }
+            
             val density = context.resources.displayMetrics.density
             
-            // Restamos 68dp exactos (padding + textos de cabecera)
-            val headerHeightPx = (68 * density).toInt()
+            // Restamos 85dp exactos para la cabecera (más margen de seguridad) para evitar huecos
+            val headerHeightPx = (85 * density).toInt()
             val totalAvailablePx = ((currentHeightDp * density).toInt() - headerHeightPx).coerceAtLeast(0)
             
             // Dividimos entre 6 y redondeamos HACIA ARRIBA (ceil) para asegurar que siempre cubra el 100%
@@ -126,7 +134,7 @@ class CalendarWidgetProvider : AppWidgetProvider() {
                 putExtra("EXTRA_YEAR", year)
                 putExtra("EXTRA_MONTH", month)
                 putExtra(EXTRA_MIN_HEIGHT, minRowHeightPx) 
-                // IMPORTANTE: Agregamos minRowHeightPx a la URL para romper la caché de Android si cambia el tamaño
+                // Agregamos minRowHeightPx a la URL para romper la caché y forzar el redibujado
                 data = Uri.parse("eisenhower://calendar/$appWidgetId/$year/$month/$minRowHeightPx")
             }
             views.setRemoteAdapter(R.id.calendar_week_list, serviceIntent)
