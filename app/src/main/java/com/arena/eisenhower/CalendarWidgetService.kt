@@ -18,7 +18,8 @@ class CalendarWidgetService : RemoteViewsService() {
         return CalendarWidgetFactory(
             applicationContext,
             intent.getIntExtra("EXTRA_YEAR", 0),
-            intent.getIntExtra("EXTRA_MONTH", 0)
+            intent.getIntExtra("EXTRA_MONTH", 0),
+            intent.getIntExtra(CalendarWidgetProvider.EXTRA_MIN_HEIGHT, 0)
         )
     }
 }
@@ -26,15 +27,25 @@ class CalendarWidgetService : RemoteViewsService() {
 class CalendarWidgetFactory(
     private val context: Context,
     private val year: Int,
-    private val month: Int
+    private val month: Int,
+    private val minCellHeight: Int // Recibimos la altura calculada
 ) : RemoteViewsService.RemoteViewsFactory {
+
+    // Estructura unificada para Tareas y Recordatorios
+    private data class CalendarEventItem(
+        val id: Long,
+        val title: String,
+        val color: Int,
+        val isReminder: Boolean,
+        val timePrefix: String = ""
+    )
 
     private data class DayCell(
         val date: LocalDate,
         val dayNumber: Int,
         val isToday: Boolean,
         val isCurrentMonth: Boolean,
-        val tasks: List<Task>
+        val items: List<CalendarEventItem>
     )
 
     private var weeks: List<List<DayCell>> = emptyList()
@@ -54,18 +65,40 @@ class CalendarWidgetFactory(
         val isDark = AppSettings(context).isDarkMode
         textColor = if (isDark) Color.parseColor("#F8FAFC") else Color.parseColor("#0F172A")
         mutedColor = if (isDark) Color.parseColor("#64748B") else Color.parseColor("#94A3B8")
-        
         todayBgColor = if (isDark) Color.parseColor("#1E3A8A") else Color.parseColor("#DBEAFE")
         todayTextColor = if (isDark) Color.parseColor("#60A5FA") else Color.parseColor("#2563EB")
 
         val today = LocalDate.now()
-        val tasksByDay = mutableMapOf<LocalDate, MutableList<Task>>()
-        
+        val itemsByDay = mutableMapOf<LocalDate, MutableList<CalendarEventItem>>()
+        val settings = AppSettings(context)
+        val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+
         TaskRepository(context).getAll().forEach { task ->
-            val due = task.dueAt ?: return@forEach
             if (task.done) return@forEach 
-            val date = Instant.ofEpochMilli(due).atZone(ZoneId.systemDefault()).toLocalDate()
-            tasksByDay.getOrPut(date) { mutableListOf() }.add(task)
+            
+            val qColor = when (task.quadrant) {
+                Quadrant.DO_FIRST -> settings.colorQ1
+                Quadrant.SCHEDULE -> settings.colorQ2
+                Quadrant.DELEGATE -> settings.colorQ3
+                Quadrant.ELIMINATE -> settings.colorQ4
+            }
+
+            // 1. Agregar la Tarea en su fecha de vencimiento
+            task.dueAt?.let { due ->
+                val date = Instant.ofEpochMilli(due).atZone(ZoneId.systemDefault()).toLocalDate()
+                itemsByDay.getOrPut(date) { mutableListOf() }.add(
+                    CalendarEventItem(task.id, task.title, qColor, isReminder = false)
+                )
+            }
+
+            // 2. Agregar los Recordatorios en sus fechas correspondientes
+            task.reminders.forEach { reminderTime ->
+                val remDate = Instant.ofEpochMilli(reminderTime).atZone(ZoneId.systemDefault()).toLocalDate()
+                val timeStr = timeFormat.format(Date(reminderTime))
+                itemsByDay.getOrPut(remDate) { mutableListOf() }.add(
+                    CalendarEventItem(task.id, task.title, qColor, isReminder = true, timePrefix = "🔔 $timeStr - ")
+                )
+            }
         }
 
         val firstOfMonth = LocalDate.of(year, month + 1, 1)
@@ -78,7 +111,7 @@ class CalendarWidgetFactory(
                 dayNumber = date.dayOfMonth,
                 isToday = date == today,
                 isCurrentMonth = date.year == year && date.monthValue == (month + 1),
-                tasks = tasksByDay[date]?.sortedBy { it.order } ?: emptyList()
+                items = itemsByDay[date]?.sortedBy { it.timePrefix } ?: emptyList()
             )
         }
         weeks = allCells.chunked(7)
@@ -90,13 +123,14 @@ class CalendarWidgetFactory(
     override fun getViewAt(position: Int): RemoteViews {
         val rv = RemoteViews(context.packageName, R.layout.calendar_week_row)
         val week = weeks[position]
-        val settings = AppSettings(context)
-        val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
 
         for (i in 0 until 7) {
             val cell = week[i]
             val cellId = context.resources.getIdentifier("cell_${i+1}", "id", context.packageName)
             val numId = context.resources.getIdentifier("day_${i+1}_number", "id", context.packageName)
+
+            // APLICAMOS LA ALTURA MÍNIMA CALCULADA PARA LLENAR EL ESPACIO VACÍO
+            rv.setInt(cellId, "setMinimumHeight", minCellHeight)
 
             rv.setTextViewText(numId, cell.dayNumber.toString())
             val dayNumColor = when {
@@ -118,30 +152,26 @@ class CalendarWidgetFactory(
             }
             rv.setOnClickFillInIntent(cellId, addIntent)
 
-            // Bucle para las 15 tareas
+            // Renderizamos hasta 15 items (tareas o recordatorios)
             for (t in 1..15) {
                 val taskId = context.resources.getIdentifier("task_${i+1}_$t", "id", context.packageName)
-                if (t <= cell.tasks.size) {
-                    val task = cell.tasks[t - 1]
+                if (t <= cell.items.size) {
+                    val item = cell.items[t - 1]
                     rv.setViewVisibility(taskId, View.VISIBLE)
                     
-                    val reminderText = if (task.reminders.isNotEmpty()) {
-                        " (🔔 ${timeFormat.format(Date(task.reminders.first()))})"
-                    } else ""
-                    
-                    rv.setTextViewText(taskId, task.title + reminderText)
-                    
-                    val qColor = when (task.quadrant) {
-                        Quadrant.DO_FIRST -> settings.colorQ1
-                        Quadrant.SCHEDULE -> settings.colorQ2
-                        Quadrant.DELEGATE -> settings.colorQ3
-                        Quadrant.ELIMINATE -> settings.colorQ4
+                    // AQUI SE CONSTRUYE EL TEXTO: Si es recordatorio muestra "🔔 HH:mm - Tarea", si es tarea solo "Tarea"
+                    val displayText = if (item.isReminder) {
+                        item.timePrefix + item.title
+                    } else {
+                        item.title
                     }
-                    rv.setInt(taskId, "setBackgroundColor", qColor)
-                    rv.setTextColor(taskId, if (isColorDark(qColor)) Color.WHITE else Color.BLACK)
+                    
+                    rv.setTextViewText(taskId, displayText)
+                    rv.setInt(taskId, "setBackgroundColor", item.color)
+                    rv.setTextColor(taskId, if (isColorDark(item.color)) Color.WHITE else Color.BLACK)
 
                     val editIntent = Intent().apply {
-                        putExtra(EisenhowerWidgetProvider.EXTRA_TASK_ID, task.id)
+                        putExtra(EisenhowerWidgetProvider.EXTRA_TASK_ID, item.id)
                         putExtra(EisenhowerWidgetProvider.EXTRA_ACTION_TYPE, EisenhowerWidgetProvider.ACTION_EDIT)
                     }
                     rv.setOnClickFillInIntent(taskId, editIntent)
