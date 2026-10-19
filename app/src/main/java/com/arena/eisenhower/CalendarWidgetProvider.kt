@@ -11,6 +11,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.widget.RemoteViews
 import java.util.Calendar
+import kotlin.math.ceil
 
 class CalendarWidgetProvider : AppWidgetProvider() {
 
@@ -108,25 +109,25 @@ class CalendarWidgetProvider : AppWidgetProvider() {
             }
             views.setOnClickPendingIntent(R.id.btn_next_month, PendingIntent.getBroadcast(context, 200 + appWidgetId, nextIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
 
-            // --- CÁLCULO DE ALTURA REAL ---
+            // --- CÁLCULO DE ALTURA REAL (MIN_HEIGHT) ---
             val options = manager.getAppWidgetOptions(appWidgetId)
-            // Usamos MAX_HEIGHT para que las celdas siempre sean lo suficientemente grandes como para llenar el widget o activar el scroll
-            val maxHeightDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 250)
+            // Usamos MIN_HEIGHT porque es la altura ACTUAL vertical del widget
+            val currentHeightDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 250)
             val density = context.resources.displayMetrics.density
             
-            // Restamos 80dp (cabecera, días de la semana y márgenes)
-            val headerHeightPx = (80 * density).toInt()
-            val totalAvailablePx = ((maxHeightDp * density).toInt() - headerHeightPx).coerceAtLeast(0)
+            // Restamos 68dp exactos (padding + textos de cabecera)
+            val headerHeightPx = (68 * density).toInt()
+            val totalAvailablePx = ((currentHeightDp * density).toInt() - headerHeightPx).coerceAtLeast(0)
             
-            // Dividimos entre 6 semanas para obtener el alto mínimo de cada fila
-            val minWeekHeightPx = totalAvailablePx / 6
+            // Dividimos entre 6 y redondeamos HACIA ARRIBA (ceil) para asegurar que siempre cubra el 100%
+            val minRowHeightPx = ceil(totalAvailablePx / 6.0).toInt()
 
             val serviceIntent = Intent(context, CalendarWidgetService::class.java).apply {
                 putExtra("EXTRA_YEAR", year)
                 putExtra("EXTRA_MONTH", month)
-                putExtra(EXTRA_MIN_HEIGHT, minWeekHeightPx) 
-                // IMPORTANTE: Agregamos minWeekHeightPx al final de la URL para forzar a Android a redibujar las filas si el tamaño cambia
-                data = Uri.parse("eisenhower://calendar/$appWidgetId/$year/$month/$minWeekHeightPx")
+                putExtra(EXTRA_MIN_HEIGHT, minRowHeightPx) 
+                // IMPORTANTE: Agregamos minRowHeightPx a la URL para romper la caché de Android si cambia el tamaño
+                data = Uri.parse("eisenhower://calendar/$appWidgetId/$year/$month/$minRowHeightPx")
             }
             views.setRemoteAdapter(R.id.calendar_week_list, serviceIntent)
 
