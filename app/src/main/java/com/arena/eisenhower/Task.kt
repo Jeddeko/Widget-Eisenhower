@@ -10,9 +10,7 @@ enum class Quadrant(val key: String) {
     }
 }
 
-enum class RecurrenceType {
-    NONE, DAILY, WEEKLY, MONTHLY
-}
+enum class RecurrenceType { NONE, DAILY, WEEKLY, MONTHLY }
 
 data class Task(
     val id: Long,
@@ -26,22 +24,20 @@ data class Task(
     val order: Int = 0,
     val reminders: List<Long> = emptyList(),
     
-    // Campos de Eventos y Recurrencia
     val isEvent: Boolean = false,
     val advanceNoticeDays: Int = 0,
     val quadrantBeforeEvent: Quadrant? = null,
     val quadrantOnEventDay: Quadrant? = null,
     
     val recurrence: RecurrenceType = RecurrenceType.NONE,
-    val recurrenceDayOfWeek: Int? = null, // 1 = Domingo, 2 = Lunes, etc.
-    val recurrenceDayOfMonth: Int? = null // 1 al 31
+    val recurrenceDayOfWeek: Int? = null,
+    val recurrenceDayOfMonth: Int? = null
 ) {
     fun getEffectiveQuadrant(): Quadrant? {
         if (!isEvent) return quadrant
         
         if (dueAt == null && recurrence == RecurrenceType.NONE) return quadrant
 
-        // Calcular la próxima fecha real si hay recurrencia
         var targetDate = dueAt
         if (recurrence != RecurrenceType.NONE && dueAt != null) {
             val cal = Calendar.getInstance().apply { timeInMillis = dueAt }
@@ -49,7 +45,6 @@ data class Task(
                 set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0) 
             }.timeInMillis
             
-            // Avanzar hasta el presente/futuro
             while (cal.timeInMillis < today) {
                 when (recurrence) {
                     RecurrenceType.DAILY -> cal.add(Calendar.DAY_OF_YEAR, 1)
@@ -84,7 +79,36 @@ data class Task(
         return when {
             daysUntil <= 0 -> quadrantOnEventDay ?: quadrant
             daysUntil <= advanceNoticeDays -> quadrantBeforeEvent ?: quadrant
-            else -> null // No se muestra en la matriz todavía
+            else -> null
         }
+    }
+
+    // NUEVO: Calcula todas las fechas en las que este evento ocurre dentro de un rango (ej. un mes)
+    fun getOccurrences(startMillis: Long, endMillis: Long): List<Long> {
+        if (!isEvent || dueAt == null) {
+            return if (dueAt != null && dueAt in startMillis..endMillis) listOf(dueAt) else emptyList()
+        }
+        
+        val occurrences = mutableListOf<Long>()
+        val cal = Calendar.getInstance().apply { timeInMillis = dueAt }
+
+        while (cal.timeInMillis <= endMillis) {
+            if (cal.timeInMillis >= startMillis) {
+                occurrences.add(cal.timeInMillis)
+            }
+            when (recurrence) {
+                RecurrenceType.DAILY -> cal.add(Calendar.DAY_OF_YEAR, 1)
+                RecurrenceType.WEEKLY -> cal.add(Calendar.WEEK_OF_YEAR, 1)
+                RecurrenceType.MONTHLY -> {
+                    cal.add(Calendar.MONTH, 1)
+                    if (recurrenceDayOfMonth != null) {
+                        val maxDay = cal.getActualMaximum(Calendar.DAY_OF_MONTH)
+                        cal.set(Calendar.DAY_OF_MONTH, minOf(recurrenceDayOfMonth, maxDay))
+                    }
+                }
+                else -> break
+            }
+        }
+        return occurrences
     }
 }
