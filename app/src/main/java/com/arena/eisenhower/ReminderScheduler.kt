@@ -2,29 +2,34 @@ package com.arena.eisenhower
 
 import android.content.Context
 import androidx.work.Data
-import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import java.util.concurrent.TimeUnit
 
 object ReminderScheduler {
     fun schedule(context: Context, task: Task) {
-        if (task.dueAt == null || task.done) return
+        if (task.done) return
+        val now = System.currentTimeMillis()
+        val wm = WorkManager.getInstance(context)
         
-        val delay = task.dueAt - System.currentTimeMillis()
-        if (delay > 0) {
-            val data = Data.Builder().putLong("TASK_ID", task.id).build()
-            val request = OneTimeWorkRequestBuilder<ReminderWorker>()
-                .setInitialDelay(delay, TimeUnit.MILLISECONDS)
-                .setInputData(data)
-                .build()
+        // Cancelar alarmas anteriores de esta tarea
+        wm.cancelAllWorkByTag("task_${task.id}")
 
-            // Reemplaza cualquier alarma anterior para esta misma tarea
-            WorkManager.getInstance(context).enqueueUniqueWork(
-                "reminder_${task.id}",
-                ExistingWorkPolicy.REPLACE,
-                request
-            )
+        // Programar cada recordatorio de la lista
+        task.reminders.forEach { time ->
+            if (time > now) {
+                val data = Data.Builder().putLong("TASK_ID", task.id).build()
+                val request = OneTimeWorkRequestBuilder<ReminderWorker>()
+                    .setInitialDelay(time - now, TimeUnit.MILLISECONDS)
+                    .setInputData(data)
+                    .addTag("task_${task.id}")
+                    .build()
+                wm.enqueue(request)
+            }
         }
+    }
+
+    fun cancel(context: Context, taskId: Long) {
+        WorkManager.getInstance(context).cancelAllWorkByTag("task_$taskId")
     }
 }
