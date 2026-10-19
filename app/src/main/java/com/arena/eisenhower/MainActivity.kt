@@ -33,7 +33,6 @@ class MainActivity : Activity() {
     private lateinit var rvQ1: RecyclerView; private lateinit var rvQ2: RecyclerView
     private lateinit var rvQ3: RecyclerView; private lateinit var rvQ4: RecyclerView
 
-    // Variables para la selección múltiple
     private val selectedTaskIds = mutableSetOf<Long>()
     private lateinit var selectionHeader: LinearLayout
     private lateinit var normalHeader: LinearLayout
@@ -58,7 +57,6 @@ class MainActivity : Activity() {
 
         findViewById<MaterialButton>(R.id.btnSettings).setOnClickListener { startActivity(Intent(this, SettingsActivity::class.java)) }
         
-        // Botón para borrar las tareas seleccionadas
         findViewById<ImageButton>(R.id.btnDeleteSelected).setOnClickListener {
             if (selectedTaskIds.isNotEmpty()) {
                 selectedTaskIds.forEach { id -> repo.deleteTask(id) }
@@ -127,6 +125,82 @@ class MainActivity : Activity() {
         val activeTasks = quadrantTasks.filter { !it.done }.sortedBy { it.order }.toMutableList()
         val completedTasks = quadrantTasks.filter { it.done }.sortedByDescending { it.updatedAt }
 
+        val itemTouchHelper = ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(
+            ItemTouchHelper.UP or ItemTouchHelper.DOWN, 
+            ItemTouchHelper.LEFT 
+        ) {
+            override fun onMove(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder): Boolean {
+                val fromPos = viewHolder.adapterPosition
+                val toPos = target.adapterPosition
+                if (fromPos < activeTasks.size && toPos < activeTasks.size && selectedTaskIds.isEmpty()) {
+                    Collections.swap(activeTasks, fromPos, toPos)
+                    rv.adapter?.notifyItemMoved(fromPos, toPos)
+                    return true
+                }
+                return false
+            }
+
+            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
+                val position = viewHolder.adapterPosition
+                if (position != RecyclerView.NO_POSITION && direction == ItemTouchHelper.LEFT) {
+                    val taskToDelete = activeTasks[position]
+                    repo.deleteTask(taskToDelete.id)
+                    CloudSync.uploadTasks(this@MainActivity)
+                    refreshTasks()
+                    EisenhowerWidgetProvider.updateAllWidgets(this@MainActivity)
+                    Toast.makeText(this@MainActivity, "Tarea eliminada", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
+                super.clearView(recyclerView, viewHolder)
+                // ARREGLO DEL BUG: Forzar a la vista a volver a su estado normal
+                viewHolder.itemView.translationX = 0f
+                viewHolder.itemView.alpha = 1f
+                viewHolder.itemView.requestLayout() // Obliga a redibujar
+                
+                if (selectedTaskIds.isEmpty()) {
+                    for (i in activeTasks.indices) { repo.updateOrder(activeTasks[i].id, i + 1) }
+                    EisenhowerWidgetProvider.updateAllWidgets(this@MainActivity)
+                    CloudSync.uploadTasks(this@MainActivity)
+                }
+            }
+
+            // DESACTIVAMOS EL LONG PRESS PARA ARRASTRAR (Era el causante del bug)
+            override fun isLongPressDragEnabled(): Boolean {
+                return false 
+            }
+
+            override fun getSwipeThreshold(viewHolder: RecyclerView.ViewHolder): Float {
+                return 0.5f 
+            }
+
+            override fun onChildDraw(c: Canvas, recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, dX: Float, dY: Float, actionState: Int, isCurrentlyActive: Boolean) {
+                val itemView = viewHolder.itemView
+                val background = ColorDrawable(Color.parseColor("#EF4444"))
+                val deleteIcon: Drawable? = ContextCompat.getDrawable(this@MainActivity, android.R.drawable.ic_menu_delete)
+                
+                if (actionState == ItemTouchHelper.ACTION_STATE_SWIPE && dX < 0) {
+                    background.setBounds(itemView.right + dX.toInt(), itemView.top, itemView.right, itemView.bottom)
+                    background.draw(c)
+                    
+                    if (deleteIcon != null) {
+                        val iconMargin = (itemView.height - deleteIcon.intrinsicHeight) / 2
+                        deleteIcon.setBounds(
+                            itemView.right - iconMargin - deleteIcon.intrinsicWidth,
+                            itemView.top + iconMargin,
+                            itemView.right - iconMargin,
+                            itemView.bottom - iconMargin
+                        )
+                        deleteIcon.setTint(Color.WHITE)
+                        deleteIcon.draw(c)
+                    }
+                }
+                super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive)
+            }
+        })
+        itemTouchHelper.attachToRecyclerView(rv)
+
         val activeAdapter = TaskAdapter(
             activeTasks, color, selectedTaskIds,
             onCheckClick = { task -> 
@@ -145,6 +219,11 @@ class MainActivity : Activity() {
                 if (selectedTaskIds.contains(task.id)) selectedTaskIds.remove(task.id) else selectedTaskIds.add(task.id)
                 updateSelectionHeader()
                 refreshTasks()
+            },
+            onStartDrag = { viewHolder ->
+                if (selectedTaskIds.isEmpty()) {
+                    itemTouchHelper.startDrag(viewHolder)
+                }
             }
         )
         rv.layoutManager = LinearLayoutManager(this)
@@ -195,86 +274,6 @@ class MainActivity : Activity() {
                 completedContainer.addView(row)
             }
         }
-
-        val itemTouchHelper = ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(
-            ItemTouchHelper.UP or ItemTouchHelper.DOWN, 
-            ItemTouchHelper.LEFT 
-        ) {
-            override fun onMove(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder): Boolean {
-                val fromPos = viewHolder.adapterPosition
-                val toPos = target.adapterPosition
-                if (fromPos < activeTasks.size && toPos < activeTasks.size && selectedTaskIds.isEmpty()) {
-                    Collections.swap(activeTasks, fromPos, toPos)
-                    activeAdapter.notifyItemMoved(fromPos, toPos)
-                    return true
-                }
-                return false
-            }
-
-            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
-                val position = viewHolder.adapterPosition
-                if (position != RecyclerView.NO_POSITION && direction == ItemTouchHelper.LEFT) {
-                    val taskToDelete = activeTasks[position]
-                    repo.deleteTask(taskToDelete.id)
-                    CloudSync.uploadTasks(this@MainActivity)
-                    refreshTasks()
-                    EisenhowerWidgetProvider.updateAllWidgets(this@MainActivity)
-                    Toast.makeText(this@MainActivity, "Tarea eliminada", Toast.LENGTH_SHORT).show()
-                }
-            }
-
-            // AQUÍ ESTÁ EL ARREGLO DEFINITIVO DEL BUG
-            override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
-                super.clearView(recyclerView, viewHolder)
-                
-                // Forzar que la tarjeta vuelva a su estado normal y no se quede "trabada"
-                viewHolder.itemView.translationX = 0f
-                viewHolder.itemView.alpha = 1f
-                
-                if (selectedTaskIds.isEmpty()) {
-                    for (i in activeTasks.indices) { repo.updateOrder(activeTasks[i].id, i + 1) }
-                    EisenhowerWidgetProvider.updateAllWidgets(this@MainActivity)
-                    CloudSync.uploadTasks(this@MainActivity)
-                }
-            }
-
-            override fun isLongPressDragEnabled(): Boolean {
-                return selectedTaskIds.isEmpty()
-            }
-
-            // Ajustamos el umbral: debes deslizar más de la mitad para borrar
-            override fun getSwipeThreshold(viewHolder: RecyclerView.ViewHolder): Float {
-                return 0.5f 
-            }
-
-            // Pintar el fondo rojo con basurero al deslizar
-            override fun onChildDraw(c: Canvas, recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, dX: Float, dY: Float, actionState: Int, isCurrentlyActive: Boolean) {
-                val itemView = viewHolder.itemView
-                val background = ColorDrawable(Color.parseColor("#EF4444"))
-                val deleteIcon: Drawable? = ContextCompat.getDrawable(this@MainActivity, android.R.drawable.ic_menu_delete)
-                
-                if (actionState == ItemTouchHelper.ACTION_STATE_SWIPE && dX < 0) {
-                    background.setBounds(itemView.right + dX.toInt(), itemView.top, itemView.right, itemView.bottom)
-                    background.draw(c)
-                    
-                    if (deleteIcon != null) {
-                        val iconMargin = (itemView.height - deleteIcon.intrinsicHeight) / 2
-                        deleteIcon.setBounds(
-                            itemView.right - iconMargin - deleteIcon.intrinsicWidth,
-                            itemView.top + iconMargin,
-                            itemView.right - iconMargin,
-                            itemView.bottom - iconMargin
-                        )
-                        deleteIcon.setTint(Color.WHITE)
-                        deleteIcon.draw(c)
-                    }
-                }
-                
-                // Dejamos que el sistema maneje el movimiento de la tarjeta
-                super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive)
-            }
-        })
-        itemTouchHelper.attachToRecyclerView(rv)
     }
 
     private fun openQuickAddEdit(task: Task) {
