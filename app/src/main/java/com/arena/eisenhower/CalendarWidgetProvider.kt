@@ -108,17 +108,23 @@ class CalendarWidgetProvider : AppWidgetProvider() {
             }
             views.setOnClickPendingIntent(R.id.btn_next_month, PendingIntent.getBroadcast(context, 200 + appWidgetId, nextIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
 
-            // CÁLCULO DE ALTURA DINÁMICA PARA LLENAR EL ESPACIO
+            // --- CÁLCULO DE ALTURA REAL ---
             val options = manager.getAppWidgetOptions(appWidgetId)
-            val minHeightDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 250)
+            // Usamos MAX_HEIGHT para saber cuánto espacio real hay cuando lo agrandas al máximo
+            val maxHeightDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 250)
             val density = context.resources.displayMetrics.density
-            val availableHeightPx = ((minHeightDp - 80) * density).toInt().coerceAtLeast(0)
-            val minCellHeightPx = availableHeightPx / 6 // Altura para cada una de las 6 semanas
+            
+            // Restamos aprox 75dp que es lo que ocupa la cabecera (Mes + Días de la semana)
+            val headerHeightPx = (75 * density).toInt()
+            val totalAvailablePx = ((maxHeightDp * density).toInt() - headerHeightPx).coerceAtLeast(0)
+            
+            // Dividimos entre 6 semanas para obtener el alto mínimo de cada celda
+            val minCellHeightPx = totalAvailablePx / 6
 
             val serviceIntent = Intent(context, CalendarWidgetService::class.java).apply {
                 putExtra("EXTRA_YEAR", year)
                 putExtra("EXTRA_MONTH", month)
-                putExtra(EXTRA_MIN_HEIGHT, minCellHeightPx) // Enviamos la altura calculada
+                putExtra(EXTRA_MIN_HEIGHT, minCellHeightPx) 
                 data = Uri.parse("eisenhower://calendar/$appWidgetId/$year/$month")
             }
             views.setRemoteAdapter(R.id.calendar_week_list, serviceIntent)
