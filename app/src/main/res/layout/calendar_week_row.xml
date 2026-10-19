@@ -2,7 +2,8 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/week_row"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="0dp"
+    android:layout_weight="1"
     android:orientation="horizontal"
     android:baselineAligned="false"
     android:paddingBottom="2dp">
@@ -10,140 +11,70 @@
     <!-- DÍA 1 -->
     <LinearLayout android:id="@+id/cell_1" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:padding="2dp" android:background="@drawable/bg_calendar_cell">
         <TextView android:id="@+id/day_1_number" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:textSize="12sp" android:textStyle="bold" android:paddingBottom="2dp" />
-        <TextView android:id="@+id/task_1_1" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_1_2" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_1_3" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_1_4" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_1_5" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_1_6" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_1_7" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_1_8" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_1_9" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_1_10" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_1_11" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_1_12" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_1_13" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_1_14" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_1_15" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:visibility="gone" />
+        <TextView android:id="@+id/task_1_1" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="7sp" android:maxLines="1" android:ellipsize="end" android:padding="1dp" android:layout_marginBottom="1dp" android:visibility="gone" />
+        <TextView android:id="@+id/task_1_2" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="7sp" android:maxLines="1" android:ellipsize="end" android:padding="1dp" android:layout_marginBottom="1dp" android:visibility="gone" />
+        <TextView android:id="@+id/task_1_3" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="7sp" android:maxLines="1" android:ellipsize="end" android:padding="1dp" android:layout_marginBottom="1dp" android:visibility="gone" />
+        <TextView android:id="@+id/task_1_4" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="7sp" android:maxLines="1" android:ellipsize="end" android:padding="1dp" android:layout_marginBottom="1dp" android:visibility="gone" />
+        <TextView android:id="@+id/task_1_5" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="7sp" android:maxLines="1" android:ellipsize="end" android:padding="1dp" android:visibility="gone" />
     </LinearLayout>
 
     <!-- DÍA 2 -->
     <LinearLayout android:id="@+id/cell_2" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:padding="2dp" android:background="@drawable/bg_calendar_cell">
         <TextView android:id="@+id/day_2_number" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:textSize="12sp" android:textStyle="bold" android:paddingBottom="2dp" />
-        <TextView android:id="@+id/task_2_1" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_2_2" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_2_3" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_2_4" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_2_5" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_2_6" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_2_7" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_2_8" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_2_9" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_2_10" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_2_11" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_2_12" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_2_13" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_2_14" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_2_15" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:visibility="gone" />
+        <TextView android:id="@+id/task_2_1" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="7sp" android:maxLines="1" android:ellipsize="end" android:padding="1dp" android:layout_marginBottom="1dp" android:visibility="gone" />
+        <TextView android:id="@+id/task_2_2" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="7sp" android:maxLines="1" android:ellipsize="end" android:padding="1dp" android:layout_marginBottom="1dp" android:visibility="gone" />
+        <TextView android:id="@+id/task_2_3" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="7sp" android:maxLines="1" android:ellipsize="end" android:padding="1dp" android:layout_marginBottom="1dp" android:visibility="gone" />
+        <TextView android:id="@+id/task_2_4" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="7sp" android:maxLines="1" android:ellipsize="end" android:padding="1dp" android:layout_marginBottom="1dp" android:visibility="gone" />
+        <TextView android:id="@+id/task_2_5" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="7sp" android:maxLines="1" android:ellipsize="end" android:padding="1dp" android:visibility="gone" />
     </LinearLayout>
 
     <!-- DÍA 3 -->
     <LinearLayout android:id="@+id/cell_3" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:padding="2dp" android:background="@drawable/bg_calendar_cell">
         <TextView android:id="@+id/day_3_number" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:textSize="12sp" android:textStyle="bold" android:paddingBottom="2dp" />
-        <TextView android:id="@+id/task_3_1" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_3_2" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_3_3" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_3_4" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_3_5" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_3_6" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_3_7" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_3_8" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_3_9" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_3_10" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_3_11" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_3_12" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_3_13" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_3_14" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_3_15" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:visibility="gone" />
+        <TextView android:id="@+id/task_3_1" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="7sp" android:maxLines="1" android:ellipsize="end" android:padding="1dp" android:layout_marginBottom="1dp" android:visibility="gone" />
+        <TextView android:id="@+id/task_3_2" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="7sp" android:maxLines="1" android:ellipsize="end" android:padding="1dp" android:layout_marginBottom="1dp" android:visibility="gone" />
+        <TextView android:id="@+id/task_3_3" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="7sp" android:maxLines="1" android:ellipsize="end" android:padding="1dp" android:layout_marginBottom="1dp" android:visibility="gone" />
+        <TextView android:id="@+id/task_3_4" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="7sp" android:maxLines="1" android:ellipsize="end" android:padding="1dp" android:layout_marginBottom="1dp" android:visibility="gone" />
+        <TextView android:id="@+id/task_3_5" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="7sp" android:maxLines="1" android:ellipsize="end" android:padding="1dp" android:visibility="gone" />
     </LinearLayout>
 
     <!-- DÍA 4 -->
     <LinearLayout android:id="@+id/cell_4" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:padding="2dp" android:background="@drawable/bg_calendar_cell">
         <TextView android:id="@+id/day_4_number" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:textSize="12sp" android:textStyle="bold" android:paddingBottom="2dp" />
-        <TextView android:id="@+id/task_4_1" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_4_2" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_4_3" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_4_4" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_4_5" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_4_6" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_4_7" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_4_8" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_4_9" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_4_10" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_4_11" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_4_12" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_4_13" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_4_14" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_4_15" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:visibility="gone" />
+        <TextView android:id="@+id/task_4_1" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="7sp" android:maxLines="1" android:ellipsize="end" android:padding="1dp" android:layout_marginBottom="1dp" android:visibility="gone" />
+        <TextView android:id="@+id/task_4_2" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="7sp" android:maxLines="1" android:ellipsize="end" android:padding="1dp" android:layout_marginBottom="1dp" android:visibility="gone" />
+        <TextView android:id="@+id/task_4_3" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="7sp" android:maxLines="1" android:ellipsize="end" android:padding="1dp" android:layout_marginBottom="1dp" android:visibility="gone" />
+        <TextView android:id="@+id/task_4_4" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="7sp" android:maxLines="1" android:ellipsize="end" android:padding="1dp" android:layout_marginBottom="1dp" android:visibility="gone" />
+        <TextView android:id="@+id/task_4_5" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="7sp" android:maxLines="1" android:ellipsize="end" android:padding="1dp" android:visibility="gone" />
     </LinearLayout>
 
     <!-- DÍA 5 -->
     <LinearLayout android:id="@+id/cell_5" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:padding="2dp" android:background="@drawable/bg_calendar_cell">
         <TextView android:id="@+id/day_5_number" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:textSize="12sp" android:textStyle="bold" android:paddingBottom="2dp" />
-        <TextView android:id="@+id/task_5_1" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_5_2" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_5_3" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_5_4" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_5_5" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_5_6" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_5_7" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_5_8" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_5_9" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_5_10" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_5_11" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_5_12" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_5_13" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_5_14" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_5_15" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:visibility="gone" />
+        <TextView android:id="@+id/task_5_1" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="7sp" android:maxLines="1" android:ellipsize="end" android:padding="1dp" android:layout_marginBottom="1dp" android:visibility="gone" />
+        <TextView android:id="@+id/task_5_2" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="7sp" android:maxLines="1" android:ellipsize="end" android:padding="1dp" android:layout_marginBottom="1dp" android:visibility="gone" />
+        <TextView android:id="@+id/task_5_3" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="7sp" android:maxLines="1" android:ellipsize="end" android:padding="1dp" android:layout_marginBottom="1dp" android:visibility="gone" />
+        <TextView android:id="@+id/task_5_4" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="7sp" android:maxLines="1" android:ellipsize="end" android:padding="1dp" android:layout_marginBottom="1dp" android:visibility="gone" />
+        <TextView android:id="@+id/task_5_5" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="7sp" android:maxLines="1" android:ellipsize="end" android:padding="1dp" android:visibility="gone" />
     </LinearLayout>
 
     <!-- DÍA 6 -->
     <LinearLayout android:id="@+id/cell_6" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:padding="2dp" android:background="@drawable/bg_calendar_cell">
         <TextView android:id="@+id/day_6_number" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:textSize="12sp" android:textStyle="bold" android:paddingBottom="2dp" />
-        <TextView android:id="@+id/task_6_1" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_6_2" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_6_3" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_6_4" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_6_5" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_6_6" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_6_7" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_6_8" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_6_9" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_6_10" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_6_11" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_6_12" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_6_13" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_6_14" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_6_15" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:visibility="gone" />
+        <TextView android:id="@+id/task_6_1" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="7sp" android:maxLines="1" android:ellipsize="end" android:padding="1dp" android:layout_marginBottom="1dp" android:visibility="gone" />
+        <TextView android:id="@+id/task_6_2" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="7sp" android:maxLines="1" android:ellipsize="end" android:padding="1dp" android:layout_marginBottom="1dp" android:visibility="gone" />
+        <TextView android:id="@+id/task_6_3" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="7sp" android:maxLines="1" android:ellipsize="end" android:padding="1dp" android:layout_marginBottom="1dp" android:visibility="gone" />
+        <TextView android:id="@+id/task_6_4" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="7sp" android:maxLines="1" android:ellipsize="end" android:padding="1dp" android:layout_marginBottom="1dp" android:visibility="gone" />
+        <TextView android:id="@+id/task_6_5" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="7sp" android:maxLines="1" android:ellipsize="end" android:padding="1dp" android:visibility="gone" />
     </LinearLayout>
 
     <!-- DÍA 7 -->
     <LinearLayout android:id="@+id/cell_7" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:padding="2dp" android:background="@drawable/bg_calendar_cell">
         <TextView android:id="@+id/day_7_number" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:textSize="12sp" android:textStyle="bold" android:paddingBottom="2dp" />
-        <TextView android:id="@+id/task_7_1" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_7_2" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_7_3" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_7_4" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_7_5" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_7_6" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_7_7" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_7_8" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_7_9" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_7_10" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_7_11" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_7_12" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_7_13" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_7_14" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:layout_marginBottom="2dp" android:visibility="gone" />
-        <TextView android:id="@+id/task_7_15" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="8sp" android:padding="2dp" android:visibility="gone" />
+        <TextView android:id="@+id/task_7_1" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="7sp" android:maxLines="1" android:ellipsize="end" android:padding="1dp" android:layout_marginBottom="1dp" android:visibility="gone" />
+        <TextView android:id="@+id/task_7_2" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="7sp" android:maxLines="1" android:ellipsize="end" android:padding="1dp" android:layout_marginBottom="1dp" android:visibility="gone" />
+        <TextView android:id="@+id/task_7_3" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="7sp" android:maxLines="1" android:ellipsize="end" android:padding="1dp" android:layout_marginBottom="1dp" android:visibility="gone" />
+        <TextView android:id="@+id/task_7_4" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="7sp" android:maxLines="1" android:ellipsize="end" android:padding="1dp" android:layout_marginBottom="1dp" android:visibility="gone" />
+        <TextView android:id="@+id/task_7_5" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="7sp" android:maxLines="1" android:ellipsize="end" android:padding="1dp" android:visibility="gone" />
     </LinearLayout>
 </LinearLayout>
