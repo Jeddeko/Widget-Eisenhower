@@ -34,7 +34,10 @@ class WidgetFactory(private val context: Context, private val quadrant: Quadrant
             Quadrant.ELIMINATE -> settings.colorQ4
         }
 
-        tasks = repo.getAll().filter { it.quadrant == quadrant && !it.done }.sortedBy { it.order }
+        // AQUI ESTA EL ARREGLO: Usamos getEffectiveQuadrant() en lugar de la propiedad fija
+        tasks = repo.getAll()
+            .filter { it.getEffectiveQuadrant() == quadrant && !it.done }
+            .sortedBy { it.order }
     }
     override fun onDestroy() {}
     override fun getCount(): Int = tasks.size
