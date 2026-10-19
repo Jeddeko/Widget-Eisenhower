@@ -5,19 +5,18 @@
     android:orientation="horizontal"
     android:baselineAligned="false">
 
-    <!-- Se inflarán 7 celdas de día en el código -->
     <LinearLayout
-        android:id="@+id/cell_1" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:background="@drawable/bg_calendar_cell" android:padding="2dp" android:layout_margin="1dp"/>
+        android:id="@+id/cell_1" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:background="@drawable/bg_calendar_cell" android:padding="2dp" android:layout_margin="1dp"/>
     <LinearLayout
-        android:id="@+id/cell_2" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:background="@drawable/bg_calendar_cell" android:padding="2dp" android:layout_margin="1dp"/>
+        android:id="@+id/cell_2" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:background="@drawable/bg_calendar_cell" android:padding="2dp" android:layout_margin="1dp"/>
     <LinearLayout
-        android:id="@+id/cell_3" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:background="@drawable/bg_calendar_cell" android:padding="2dp" android:layout_margin="1dp"/>
+        android:id="@+id/cell_3" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:background="@drawable/bg_calendar_cell" android:padding="2dp" android:layout_margin="1dp"/>
     <LinearLayout
-        android:id="@+id/cell_4" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:background="@drawable/bg_calendar_cell" android:padding="2dp" android:layout_margin="1dp"/>
+        android:id="@+id/cell_4" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:background="@drawable/bg_calendar_cell" android:padding="2dp" android:layout_margin="1dp"/>
     <LinearLayout
-        android:id="@+id/cell_5" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:background="@drawable/bg_calendar_cell" android:padding="2dp" android:layout_margin="1dp"/>
+        android:id="@+id/cell_5" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:background="@drawable/bg_calendar_cell" android:padding="2dp" android:layout_margin="1dp"/>
     <LinearLayout
-        android:id="@+id/cell_6" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:background="@drawable/bg_calendar_cell" android:padding="2dp" android:layout_margin="1dp"/>
+        android:id="@+id/cell_6" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:background="@drawable/bg_calendar_cell" android:padding="2dp" android:layout_margin="1dp"/>
     <LinearLayout
-        android:id="@+id/cell_7" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:background="@drawable/bg_calendar_cell" android:padding="2dp" android:layout_margin="1dp"/>
+        android:id="@+id/cell_7" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:background="@drawable/bg_calendar_cell" android:padding="2dp" android:layout_margin="1dp"/>
 </LinearLayout>
