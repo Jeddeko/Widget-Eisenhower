@@ -122,7 +122,6 @@ class CalendarWidgetFactory(
         val week = weeks[position]
 
         // APLICAMOS LA ALTURA MÍNIMA A LA FILA COMPLETA
-        // Al forzar la altura en la fila raíz, las celdas con "match_parent" se expanden obligatoriamente.
         rv.setInt(R.id.week_row, "setMinimumHeight", minRowHeight)
 
         for (i in 0 until 7) {
