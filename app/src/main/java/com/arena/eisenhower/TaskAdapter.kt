@@ -19,7 +19,8 @@ class TaskAdapter(
     private val selectedTaskIds: MutableSet<Long>,
     private val onCheckClick: (Task) -> Unit,
     private val onItemClick: (Task) -> Unit,
-    private val onItemLongClick: (Task) -> Unit
+    private val onItemLongClick: (Task) -> Unit,
+    private val onStartDrag: (RecyclerView.ViewHolder) -> Unit // NUEVO: Para el arrastre
 ) : RecyclerView.Adapter<TaskAdapter.TaskViewHolder>() {
 
     class TaskViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -27,6 +28,7 @@ class TaskAdapter(
         val title: TextView = view.findViewById(R.id.rowTitle)
         val meta: TextView = view.findViewById(R.id.rowMeta)
         val btnDelete: View = view.findViewById(R.id.btnDelete)
+        val dragHandle: View = view.findViewById(R.id.dragHandle) // NUEVO
         val root: View = view
     }
 
@@ -49,7 +51,6 @@ class TaskAdapter(
         val subTextColor = if (isDark) Color.parseColor("#D1D5DB") else Color.parseColor("#4B5563")
         val checkColor = if (isDark) Color.WHITE else Color.BLACK
 
-        // Si está seleccionada, le ponemos un fondo ligeramente opaco
         if (isSelected) {
             holder.root.background = GradientDrawable().apply { 
                 setColor(if (isDark) Color.parseColor("#55FFFFFF") else Color.parseColor("#33000000")) 
@@ -72,11 +73,22 @@ class TaskAdapter(
         holder.meta.text = "Orden: ${task.order} · ${DueDateUtils.format(task.dueAt)}"
         holder.btnDelete.visibility = View.GONE
 
+        // Color del tirador adaptado al tema
+        (holder.dragHandle as TextView).setTextColor(if (isDark) Color.parseColor("#94A3B8") else Color.parseColor("#64748B"))
+
         holder.check.setOnClickListener { onCheckClick(task) }
         holder.itemView.setOnClickListener { onItemClick(task) }
         holder.itemView.setOnLongClickListener { 
             onItemLongClick(task)
             true 
+        }
+
+        // Iniciar el arrastre solo si tocas el tirador
+        holder.dragHandle.setOnTouchListener { v, event ->
+            if (event.actionMasked == android.view.MotionEvent.ACTION_DOWN) {
+                onStartDrag(holder)
+            }
+            false
         }
     }
 
