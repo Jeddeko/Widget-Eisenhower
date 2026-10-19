@@ -8,6 +8,7 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.net.Uri
+import android.os.Bundle
 import android.widget.RemoteViews
 import java.util.Calendar
 
@@ -17,7 +18,7 @@ class CalendarWidgetProvider : AppWidgetProvider() {
         appWidgetIds.forEach { id -> updateWidget(context, manager, id) }
     }
 
-    override fun onAppWidgetOptionsChanged(context: Context, manager: AppWidgetManager, appWidgetId: Int, newOptions: android.os.Bundle) {
+    override fun onAppWidgetOptionsChanged(context: Context, manager: AppWidgetManager, appWidgetId: Int, newOptions: Bundle) {
         updateWidget(context, manager, appWidgetId)
     }
 
@@ -55,6 +56,8 @@ class CalendarWidgetProvider : AppWidgetProvider() {
         const val ACTION_NEXT_MONTH = "com.arena.eisenhower.ACTION_CAL_NEXT_MONTH"
         const val ACTION_REFRESH = "com.arena.eisenhower.ACTION_CAL_REFRESH"
         const val EXTRA_DUE_AT = "EXTRA_DUE_AT"
+        const val EXTRA_MIN_HEIGHT = "EXTRA_MIN_HEIGHT"
+        
         private val MONTHS = arrayOf("Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre")
 
         private fun getMonthState(context: Context, appWidgetId: Int): Pair<Int, Int> {
@@ -105,9 +108,17 @@ class CalendarWidgetProvider : AppWidgetProvider() {
             }
             views.setOnClickPendingIntent(R.id.btn_next_month, PendingIntent.getBroadcast(context, 200 + appWidgetId, nextIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
 
+            // CÁLCULO DE ALTURA DINÁMICA PARA LLENAR EL ESPACIO
+            val options = manager.getAppWidgetOptions(appWidgetId)
+            val minHeightDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 250)
+            val density = context.resources.displayMetrics.density
+            val availableHeightPx = ((minHeightDp - 80) * density).toInt().coerceAtLeast(0)
+            val minCellHeightPx = availableHeightPx / 6 // Altura para cada una de las 6 semanas
+
             val serviceIntent = Intent(context, CalendarWidgetService::class.java).apply {
                 putExtra("EXTRA_YEAR", year)
                 putExtra("EXTRA_MONTH", month)
+                putExtra(EXTRA_MIN_HEIGHT, minCellHeightPx) // Enviamos la altura calculada
                 data = Uri.parse("eisenhower://calendar/$appWidgetId/$year/$month")
             }
             views.setRemoteAdapter(R.id.calendar_week_list, serviceIntent)
