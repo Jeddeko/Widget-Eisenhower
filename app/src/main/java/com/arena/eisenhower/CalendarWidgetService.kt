@@ -28,7 +28,7 @@ class CalendarWidgetFactory(
     private val context: Context,
     private val year: Int,
     private val month: Int,
-    private val minWeekHeight: Int
+    private val minRowHeight: Int
 ) : RemoteViewsService.RemoteViewsFactory {
 
     private data class CalendarEventItem(
@@ -121,9 +121,9 @@ class CalendarWidgetFactory(
         val rv = RemoteViews(context.packageName, R.layout.calendar_week_row)
         val week = weeks[position]
 
-        // APLICAMOS LA ALTURA MÍNIMA A LA FILA COMPLETA (week_row)
-        // Esto obliga a las 6 filas a estirarse para llenar el widget o activar el scroll, eliminando el hueco.
-        rv.setInt(R.id.week_row, "setMinimumHeight", minWeekHeight)
+        // APLICAMOS LA ALTURA MÍNIMA A LA FILA COMPLETA
+        // Al forzar la altura en la fila raíz, las celdas con "match_parent" se expanden obligatoriamente.
+        rv.setInt(R.id.week_row, "setMinimumHeight", minRowHeight)
 
         for (i in 0 until 7) {
             val cell = week[i]
