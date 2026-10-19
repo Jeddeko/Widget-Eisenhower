@@ -1,125 +1,174 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/app_background"
-    android:fillViewport="true">
+    android:orientation="vertical">
 
-    <LinearLayout
+    <!-- Contenedor Principal que cambia de vista -->
+    <FrameLayout
+        android:id="@+id/mainContentFrame"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp">
+        android:layout_height="0dp"
+        android:layout_weight="1">
 
-        <!-- BARRA DE SELECCIÓN (Oculta por defecto) -->
-        <LinearLayout
-            android:id="@+id/selectionHeader"
+        <!-- Vista de la Matriz -->
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/viewMatrix"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="#2563EB"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:padding="8dp"
-            android:layout_marginBottom="16dp"
+            android:layout_height="match_parent"
+            android:fillViewport="true">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <!-- BARRA DE SELECCIÓN (Oculta por defecto) -->
+                <LinearLayout
+                    android:id="@+id/selectionHeader"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="#2563EB"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="8dp"
+                    android:layout_marginBottom="16dp"
+                    android:visibility="gone">
+                    <TextView
+                        android:id="@+id/tvSelectionCount"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="1 seleccionada"
+                        android:textColor="#FFFFFF"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+                    <ImageButton
+                        android:id="@+id/btnDeleteSelected"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:src="@android:drawable/ic_menu_delete"
+                        app:tint="#FFFFFF" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/normalHeader"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="16dp">
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Eisenhower"
+                        android:textColor="@color/text_primary"
+                        android:textSize="28sp"
+                        android:textStyle="bold" />
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnSettings"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        app:backgroundTint="@color/card_background"
+                        android:textColor="@color/text_primary"
+                        android:text="Ajustes" />
+                </LinearLayout>
+
+                <!-- Cuadrante 1 -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardQ1" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="12dp" app:cardCornerRadius="16dp" app:cardElevation="0dp">
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="12dp">
+                        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
+                            <TextView android:id="@+id/titleQ1View" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textColor="@color/text_primary" android:textSize="18sp" android:textStyle="bold"/>
+                            <com.google.android.material.button.MaterialButton android:id="@+id/btnAddQ1" style="@style/Widget.Material3.Button.IconButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="+" android:textSize="24sp" android:textColor="@color/text_primary"/>
+                        </LinearLayout>
+                        <androidx.recyclerview.widget.RecyclerView android:id="@+id/listQ1" android:layout_width="match_parent" android:layout_height="wrap_content" android:nestedScrollingEnabled="false" android:layout_marginTop="8dp"/>
+                        <TextView android:id="@+id/headerCompletedQ1" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="Completadas ▼" android:textColor="@color/text_secondary" android:textSize="14sp" android:visibility="gone"/>
+                        <LinearLayout android:id="@+id/containerCompletedQ1" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone"/>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Cuadrante 2 -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardQ2" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="12dp" app:cardCornerRadius="16dp" app:cardElevation="0dp">
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="12dp">
+                        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
+                            <TextView android:id="@+id/titleQ2View" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textColor="@color/text_primary" android:textSize="18sp" android:textStyle="bold"/>
+                            <com.google.android.material.button.MaterialButton android:id="@+id/btnAddQ2" style="@style/Widget.Material3.Button.IconButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="+" android:textSize="24sp" android:textColor="@color/text_primary"/>
+                        </LinearLayout>
+                        <androidx.recyclerview.widget.RecyclerView android:id="@+id/listQ2" android:layout_width="match_parent" android:layout_height="wrap_content" android:nestedScrollingEnabled="false" android:layout_marginTop="8dp"/>
+                        <TextView android:id="@+id/headerCompletedQ2" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="Completadas ▼" android:textColor="@color/text_secondary" android:textSize="14sp" android:visibility="gone"/>
+                        <LinearLayout android:id="@+id/containerCompletedQ2" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone"/>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Cuadrante 3 -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardQ3" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="12dp" app:cardCornerRadius="16dp" app:cardElevation="0dp">
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="12dp">
+                        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
+                            <TextView android:id="@+id/titleQ3View" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textColor="@color/text_primary" android:textSize="18sp" android:textStyle="bold"/>
+                            <com.google.android.material.button.MaterialButton android:id="@+id/btnAddQ3" style="@style/Widget.Material3.Button.IconButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="+" android:textSize="24sp" android:textColor="@color/text_primary"/>
+                        </LinearLayout>
+                        <androidx.recyclerview.widget.RecyclerView android:id="@+id/listQ3" android:layout_width="match_parent" android:layout_height="wrap_content" android:nestedScrollingEnabled="false" android:layout_marginTop="8dp"/>
+                        <TextView android:id="@+id/headerCompletedQ3" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="Completadas ▼" android:textColor="@color/text_secondary" android:textSize="14sp" android:visibility="gone"/>
+                        <LinearLayout android:id="@+id/containerCompletedQ3" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone"/>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Cuadrante 4 -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardQ4" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="12dp" app:cardCornerRadius="16dp" app:cardElevation="0dp">
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="12dp">
+                        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
+                            <TextView android:id="@+id/titleQ4View" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textColor="@color/text_primary" android:textSize="18sp" android:textStyle="bold"/>
+                            <com.google.android.material.button.MaterialButton android:id="@+id/btnAddQ4" style="@style/Widget.Material3.Button.IconButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="+" android:textSize="24sp" android:textColor="@color/text_primary"/>
+                        </LinearLayout>
+                        <androidx.recyclerview.widget.RecyclerView android:id="@+id/listQ4" android:layout_width="match_parent" android:layout_height="wrap_content" android:nestedScrollingEnabled="false" android:layout_marginTop="8dp"/>
+                        <TextView android:id="@+id/headerCompletedQ4" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="Completadas ▼" android:textColor="@color/text_secondary" android:textSize="14sp" android:visibility="gone"/>
+                        <LinearLayout android:id="@+id/containerCompletedQ4" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone"/>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+
+        <!-- Vista de Calendario (Simple lista de eventos) -->
+        <LinearLayout
+            android:id="@+id/viewCalendar"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:padding="16dp"
             android:visibility="gone">
+            
             <TextView
-                android:id="@+id/tvSelectionCount"
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="1 seleccionada"
-                android:textColor="#FFFFFF"
-                android:textSize="18sp"
-                android:textStyle="bold" />
-            <ImageButton
-                android:id="@+id/btnDeleteSelected"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@android:drawable/ic_menu_delete"
-                app:tint="#FFFFFF" />
-        </LinearLayout>
-
-        <!-- CABECERA NORMAL -->
-        <LinearLayout
-            android:id="@+id/normalHeader"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:layout_marginBottom="16dp">
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Eisenhower"
+                android:text="Próximos Eventos"
                 android:textColor="@color/text_primary"
                 android:textSize="28sp"
-                android:textStyle="bold" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnSettings"
-                style="@style/Widget.Material3.Button.TonalButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:backgroundTint="@color/card_background"
-                android:textColor="@color/text_primary"
-                android:text="Ajustes" />
+                android:textStyle="bold"
+                android:layout_marginBottom="16dp"/>
+                
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerCalendarEvents"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
         </LinearLayout>
+    </FrameLayout>
 
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/cardQ1" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="12dp" app:cardCornerRadius="16dp" app:cardElevation="0dp">
-            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="12dp">
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
-                    <TextView android:id="@+id/titleQ1View" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textColor="@color/text_primary" android:textSize="18sp" android:textStyle="bold"/>
-                    <com.google.android.material.button.MaterialButton android:id="@+id/btnAddQ1" style="@style/Widget.Material3.Button.IconButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="+" android:textSize="24sp" android:textColor="@color/text_primary"/>
-                </LinearLayout>
-                <androidx.recyclerview.widget.RecyclerView android:id="@+id/listQ1" android:layout_width="match_parent" android:layout_height="wrap_content" android:nestedScrollingEnabled="false" android:layout_marginTop="8dp"/>
-                <TextView android:id="@+id/headerCompletedQ1" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="Completadas ▼" android:textColor="@color/text_secondary" android:textSize="14sp" android:visibility="gone"/>
-                <LinearLayout android:id="@+id/containerCompletedQ1" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone"/>
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/cardQ2" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="12dp" app:cardCornerRadius="16dp" app:cardElevation="0dp">
-            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="12dp">
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
-                    <TextView android:id="@+id/titleQ2View" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textColor="@color/text_primary" android:textSize="18sp" android:textStyle="bold"/>
-                    <com.google.android.material.button.MaterialButton android:id="@+id/btnAddQ2" style="@style/Widget.Material3.Button.IconButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="+" android:textSize="24sp" android:textColor="@color/text_primary"/>
-                </LinearLayout>
-                <androidx.recyclerview.widget.RecyclerView android:id="@+id/listQ2" android:layout_width="match_parent" android:layout_height="wrap_content" android:nestedScrollingEnabled="false" android:layout_marginTop="8dp"/>
-                <TextView android:id="@+id/headerCompletedQ2" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="Completadas ▼" android:textColor="@color/text_secondary" android:textSize="14sp" android:visibility="gone"/>
-                <LinearLayout android:id="@+id/containerCompletedQ2" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone"/>
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/cardQ3" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="12dp" app:cardCornerRadius="16dp" app:cardElevation="0dp">
-            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="12dp">
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
-                    <TextView android:id="@+id/titleQ3View" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textColor="@color/text_primary" android:textSize="18sp" android:textStyle="bold"/>
-                    <com.google.android.material.button.MaterialButton android:id="@+id/btnAddQ3" style="@style/Widget.Material3.Button.IconButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="+" android:textSize="24sp" android:textColor="@color/text_primary"/>
-                </LinearLayout>
-                <androidx.recyclerview.widget.RecyclerView android:id="@+id/listQ3" android:layout_width="match_parent" android:layout_height="wrap_content" android:nestedScrollingEnabled="false" android:layout_marginTop="8dp"/>
-                <TextView android:id="@+id/headerCompletedQ3" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="Completadas ▼" android:textColor="@color/text_secondary" android:textSize="14sp" android:visibility="gone"/>
-                <LinearLayout android:id="@+id/containerCompletedQ3" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone"/>
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/cardQ4" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="12dp" app:cardCornerRadius="16dp" app:cardElevation="0dp">
-            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="12dp">
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
-                    <TextView android:id="@+id/titleQ4View" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textColor="@color/text_primary" android:textSize="18sp" android:textStyle="bold"/>
-                    <com.google.android.material.button.MaterialButton android:id="@+id/btnAddQ4" style="@style/Widget.Material3.Button.IconButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="+" android:textSize="24sp" android:textColor="@color/text_primary"/>
-                </LinearLayout>
-                <androidx.recyclerview.widget.RecyclerView android:id="@+id/listQ4" android:layout_width="match_parent" android:layout_height="wrap_content" android:nestedScrollingEnabled="false" android:layout_marginTop="8dp"/>
-                <TextView android:id="@+id/headerCompletedQ4" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="Completadas ▼" android:textColor="@color/text_secondary" android:textSize="14sp" android:visibility="gone"/>
-                <LinearLayout android:id="@+id/containerCompletedQ4" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone"/>
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-    </LinearLayout>
-</androidx.core.widget.NestedScrollView>
+    <!-- Menú de Navegación Inferior -->
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottomNavigation"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?android:attr/windowBackground"
+        app:menu="@menu/bottom_nav_menu" />
+</LinearLayout>
