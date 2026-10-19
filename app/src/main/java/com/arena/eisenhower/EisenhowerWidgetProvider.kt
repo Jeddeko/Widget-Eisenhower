@@ -10,7 +10,6 @@ import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.widget.RemoteViews
-import java.util.Calendar
 
 class EisenhowerWidgetProvider : AppWidgetProvider() {
 
@@ -26,16 +25,6 @@ class EisenhowerWidgetProvider : AppWidgetProvider() {
 
     override fun onAppWidgetOptionsChanged(context: Context, manager: AppWidgetManager, appWidgetId: Int, newOptions: Bundle) {
         updateWidget(context, manager, appWidgetId)
-    }
-
-    override fun onDeleted(context: Context, appWidgetIds: IntArray) {
-        val prefs = context.getSharedPreferences("eisenhower_settings", Context.MODE_PRIVATE)
-        val editor = prefs.edit()
-        appWidgetIds.forEach { id ->
-            editor.remove("cal_year_$id")
-            editor.remove("cal_month_$id")
-        }
-        editor.apply()
     }
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -97,10 +86,16 @@ class EisenhowerWidgetProvider : AppWidgetProvider() {
         private fun updateWidget(context: Context, manager: AppWidgetManager, appWidgetId: Int) {
             val settings = AppSettings(context)
             val repo = TaskRepository(context)
+            val isDark = settings.isDarkMode
             
+            // Colores dinámicos para el fondo del widget
+            val bgColor = if (isDark) Color.parseColor("#121212") else Color.parseColor("#F8FAFC")
+            val headerColor = if (isDark) Color.parseColor("#F8FAFC") else Color.parseColor("#0F172A")
+
             val views = RemoteViews(context.packageName, R.layout.eisenhower_widget)
-            views.setTextColor(R.id.widget_header, android.graphics.Color.parseColor("#0F172A"))
-            views.setTextColor(R.id.widget_sync, android.graphics.Color.parseColor("#2563EB"))
+            views.setInt(R.id.widget_root, "setBackgroundColor", bgColor)
+            views.setTextColor(R.id.widget_header, headerColor)
+            views.setTextColor(R.id.widget_sync, Color.parseColor("#2563EB"))
 
             val mainIntent = Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
             views.setOnClickPendingIntent(R.id.widget_header, PendingIntent.getActivity(context, 800, mainIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
@@ -146,10 +141,12 @@ class EisenhowerWidgetProvider : AppWidgetProvider() {
 
                 views.setInt(slot.cardId, "setBackgroundColor", color)
                 
-                // USAMOS getEffectiveQuadrant() PARA CONTAR LAS TAREAS
+                val isBgDark = isColorDark(color)
+                val textColor = if (isBgDark) Color.WHITE else Color.BLACK
+
                 val activeCount = repo.getAll().count { it.getEffectiveQuadrant() == quadrant && !it.done }
                 views.setTextViewText(slot.titleId, "$title · $activeCount")
-                views.setTextColor(slot.titleId, android.graphics.Color.parseColor("#0F172A"))
+                views.setTextColor(slot.titleId, textColor)
                 
                 val completedCount = repo.getAll().count { it.getEffectiveQuadrant() == quadrant && it.done }
                 if (completedCount > 0) {
@@ -157,7 +154,7 @@ class EisenhowerWidgetProvider : AppWidgetProvider() {
                 } else {
                     views.setTextViewText(slot.addId, "+ Añadir")
                 }
-                views.setTextColor(slot.addId, android.graphics.Color.parseColor("#0F172A"))
+                views.setTextColor(slot.addId, textColor)
 
                 val serviceIntent = Intent(context, WidgetService::class.java).apply {
                     putExtra("EXTRA_QUADRANT", quadrant.key)
