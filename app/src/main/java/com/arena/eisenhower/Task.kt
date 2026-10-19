@@ -8,8 +8,15 @@ enum class Quadrant(val key: String) {
 }
 
 data class Task(
-    val id: Long, val title: String, val quadrant: Quadrant,
-    val done: Boolean = false, val dueAt: Long? = null,
-    val createdAt: Long = System.currentTimeMillis(), val updatedAt: Long = System.currentTimeMillis(),
-    val calendarEventId: Long? = null, val order: Int = 0
+    val id: Long,
+    val title: String,
+    val quadrant: Quadrant,
+    val done: Boolean = false,
+    val dueAt: Long? = null,
+    val createdAt: Long = System.currentTimeMillis(),
+    val updatedAt: Long = System.currentTimeMillis(),
+    val calendarEventId: Long? = null,
+    val order: Int = 0,
+    // NUEVO: Lista de alertas programadas
+    val reminders: List<Long> = emptyList()
 )
