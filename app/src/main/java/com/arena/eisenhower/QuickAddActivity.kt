@@ -6,14 +6,17 @@ import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.content.ContentValues
 import android.content.pm.PackageManager
+import android.graphics.Color
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.CalendarContract
+import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.*
+import androidx.core.content.ContextCompat
 import com.google.android.material.button.MaterialButton
 import java.text.SimpleDateFormat
 import java.util.*
@@ -21,7 +24,8 @@ import java.util.*
 class QuickAddActivity : Activity() {
     private lateinit var repo: TaskRepository
     private var selectedDueAt: Long? = null
-    private val selectedReminders = mutableListOf<Long>() // Lista de alertas
+    private val selectedReminders = mutableListOf<Long>()
+    private lateinit var containerReminders: LinearLayout
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -39,12 +43,11 @@ class QuickAddActivity : Activity() {
         val quadrantSpinner = findViewById<Spinner>(R.id.quickQuadrant)
         val dateBtn = findViewById<MaterialButton>(R.id.quickDateBtn)
         val btnAddReminder = findViewById<MaterialButton>(R.id.btnAddReminder)
-        val btnClearReminders = findViewById<Button>(R.id.btnClearReminders)
-        val tvRemindersList = findViewById<TextView>(R.id.tvRemindersList)
         val calendarCheck = findViewById<CheckBox>(R.id.quickCalendarCheck)
         val save = findViewById<Button>(R.id.quickSave)
         val titleText = findViewById<TextView>(R.id.quickTitle)
         val btnDelete = findViewById<ImageButton>(R.id.btnDeleteTask)
+        containerReminders = findViewById(R.id.containerReminders)
 
         quadrantSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, listOf("Hazlo ya", "Planifica", "Delega", "Elimina"))
 
@@ -59,14 +62,40 @@ class QuickAddActivity : Activity() {
             }
         }
 
-        fun updateRemindersUI() {
-            if (selectedReminders.isEmpty()) {
-                tvRemindersList.text = "Sin alertas adicionales"
-                btnClearReminders.visibility = View.GONE
-            } else {
-                val sdf = SimpleDateFormat("dd/MM/yy HH:mm", Locale.getDefault())
-                tvRemindersList.text = selectedReminders.sorted().joinToString("\n") { "🔔 " + sdf.format(Date(it)) }
-                btnClearReminders.visibility = View.VISIBLE
+        // Función para dibujar las alertas individuales
+        fun renderReminders() {
+            containerReminders.removeAllViews()
+            val sdf = SimpleDateFormat("dd/MM/yy HH:mm", Locale.getDefault())
+            
+            // Ordenamos las alertas cronológicamente para que se vean bien
+            selectedReminders.sort()
+
+            selectedReminders.forEach { time ->
+                val row = LinearLayout(this).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER_VERTICAL
+                    setPadding(0, 8, 0, 8)
+                }
+
+                val tvTime = TextView(this).apply {
+                    text = "🔔 " + sdf.format(Date(time))
+                    setTextColor(ContextCompat.getColor(this@QuickAddActivity, R.color.text_primary))
+                    layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+                }
+
+                val btnRemove = ImageButton(this).apply {
+                    setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
+                    background = null
+                    setColorFilter(Color.GRAY)
+                    setOnClickListener {
+                        selectedReminders.remove(time) // Borra SOLO esta alerta
+                        renderReminders() // Vuelve a dibujar la lista
+                    }
+                }
+
+                row.addView(tvTime)
+                row.addView(btnRemove)
+                containerReminders.addView(row)
             }
         }
 
@@ -78,7 +107,7 @@ class QuickAddActivity : Activity() {
                 quadrantSpinner.setSelection(task.quadrant.ordinal)
                 selectedDueAt = task.dueAt
                 selectedReminders.clear()
-                selectedReminders.addAll(task.reminders) // Cargar alertas existentes
+                selectedReminders.addAll(task.reminders)
                 save.text = "ACTUALIZAR TAREA"
                 calendarCheck.visibility = View.GONE 
                 
@@ -97,7 +126,7 @@ class QuickAddActivity : Activity() {
         }
         
         updateDateButtonText()
-        updateRemindersUI()
+        renderReminders()
 
         dateBtn.setOnClickListener {
             val cal = Calendar.getInstance()
@@ -115,7 +144,6 @@ class QuickAddActivity : Activity() {
             datePicker.show()
         }
 
-        // Lógica de Añadir Alerta
         btnAddReminder.setOnClickListener {
             val cal = Calendar.getInstance()
             val datePicker = DatePickerDialog(this, { _, year, month, dayOfMonth ->
@@ -123,16 +151,11 @@ class QuickAddActivity : Activity() {
                 val timePicker = TimePickerDialog(this, { _, hourOfDay, minute ->
                     cal.set(Calendar.HOUR_OF_DAY, hourOfDay); cal.set(Calendar.MINUTE, minute); cal.set(Calendar.SECOND, 0)
                     selectedReminders.add(cal.timeInMillis)
-                    updateRemindersUI()
+                    renderReminders()
                 }, cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE), true)
                 timePicker.show()
             }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH))
             datePicker.show()
-        }
-
-        btnClearReminders.setOnClickListener {
-            selectedReminders.clear()
-            updateRemindersUI()
         }
 
         input.requestFocus()
