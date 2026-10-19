@@ -6,83 +6,32 @@
     android:background="@color/app_background"
     android:orientation="vertical">
 
-    <!-- Contenedor Principal que cambia de vista -->
     <FrameLayout
         android:id="@+id/mainContentFrame"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1">
 
-        <!-- Vista de la Matriz -->
+        <!-- VISTA 1: LA MATRIZ -->
         <androidx.core.widget.NestedScrollView
             android:id="@+id/viewMatrix"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:fillViewport="true">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <!-- BARRA DE SELECCIÓN (Oculta por defecto) -->
-                <LinearLayout
-                    android:id="@+id/selectionHeader"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="#2563EB"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:padding="8dp"
-                    android:layout_marginBottom="16dp"
-                    android:visibility="gone">
-                    <TextView
-                        android:id="@+id/tvSelectionCount"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="1 seleccionada"
-                        android:textColor="#FFFFFF"
-                        android:textSize="18sp"
-                        android:textStyle="bold" />
-                    <ImageButton
-                        android:id="@+id/btnDeleteSelected"
-                        android:layout_width="48dp"
-                        android:layout_height="48dp"
-                        android:background="?attr/selectableItemBackgroundBorderless"
-                        android:src="@android:drawable/ic_menu_delete"
-                        app:tint="#FFFFFF" />
+            <!-- ... (El código de la matriz se mantiene igual que en el mensaje anterior, omito para no hacerlo gigante, pero PÉGALO TAL CUAL ESTABA) ... -->
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
+                
+                <LinearLayout android:id="@+id/selectionHeader" android:layout_width="match_parent" android:layout_height="wrap_content" android:background="#2563EB" android:gravity="center_vertical" android:orientation="horizontal" android:padding="8dp" android:layout_marginBottom="16dp" android:visibility="gone">
+                    <TextView android:id="@+id/tvSelectionCount" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="1 seleccionada" android:textColor="#FFFFFF" android:textSize="18sp" android:textStyle="bold" />
+                    <ImageButton android:id="@+id/btnDeleteSelected" android:layout_width="48dp" android:layout_height="48dp" android:background="?attr/selectableItemBackgroundBorderless" android:src="@android:drawable/ic_menu_delete" app:tint="#FFFFFF" />
                 </LinearLayout>
 
-                <LinearLayout
-                    android:id="@+id/normalHeader"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:layout_marginBottom="16dp">
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Eisenhower"
-                        android:textColor="@color/text_primary"
-                        android:textSize="28sp"
-                        android:textStyle="bold" />
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnSettings"
-                        style="@style/Widget.Material3.Button.TonalButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        app:backgroundTint="@color/card_background"
-                        android:textColor="@color/text_primary"
-                        android:text="Ajustes" />
+                <LinearLayout android:id="@+id/normalHeader" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal" android:layout_marginBottom="16dp">
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Eisenhower" android:textColor="@color/text_primary" android:textSize="28sp" android:textStyle="bold" />
+                    <com.google.android.material.button.MaterialButton android:id="@+id/btnSettings" style="@style/Widget.Material3.Button.TonalButton" android:layout_width="wrap_content" android:layout_height="wrap_content" app:backgroundTint="@color/card_background" android:textColor="@color/text_primary" android:text="Ajustes" />
                 </LinearLayout>
 
-                <!-- Cuadrante 1 -->
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/cardQ1" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="12dp" app:cardCornerRadius="16dp" app:cardElevation="0dp">
+                <com.google.android.material.card.MaterialCardView android:id="@+id/cardQ1" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="12dp" app:cardCornerRadius="16dp" app:cardElevation="0dp">
                     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="12dp">
                         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
                             <TextView android:id="@+id/titleQ1View" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textColor="@color/text_primary" android:textSize="18sp" android:textStyle="bold"/>
@@ -94,9 +43,7 @@
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
-                <!-- Cuadrante 2 -->
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/cardQ2" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="12dp" app:cardCornerRadius="16dp" app:cardElevation="0dp">
+                <com.google.android.material.card.MaterialCardView android:id="@+id/cardQ2" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="12dp" app:cardCornerRadius="16dp" app:cardElevation="0dp">
                     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="12dp">
                         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
                             <TextView android:id="@+id/titleQ2View" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textColor="@color/text_primary" android:textSize="18sp" android:textStyle="bold"/>
@@ -108,9 +55,7 @@
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
-                <!-- Cuadrante 3 -->
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/cardQ3" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="12dp" app:cardCornerRadius="16dp" app:cardElevation="0dp">
+                <com.google.android.material.card.MaterialCardView android:id="@+id/cardQ3" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="12dp" app:cardCornerRadius="16dp" app:cardElevation="0dp">
                     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="12dp">
                         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
                             <TextView android:id="@+id/titleQ3View" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textColor="@color/text_primary" android:textSize="18sp" android:textStyle="bold"/>
@@ -122,9 +67,7 @@
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
-                <!-- Cuadrante 4 -->
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/cardQ4" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="12dp" app:cardCornerRadius="16dp" app:cardElevation="0dp">
+                <com.google.android.material.card.MaterialCardView android:id="@+id/cardQ4" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="12dp" app:cardCornerRadius="16dp" app:cardElevation="0dp">
                     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="12dp">
                         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
                             <TextView android:id="@+id/titleQ4View" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textColor="@color/text_primary" android:textSize="18sp" android:textStyle="bold"/>
@@ -139,28 +82,71 @@
             </LinearLayout>
         </androidx.core.widget.NestedScrollView>
 
-        <!-- Vista de Calendario (Simple lista de eventos) -->
+        <!-- VISTA 2: EL CALENDARIO REAL EN LA APP -->
         <LinearLayout
             android:id="@+id/viewCalendar"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical"
-            android:padding="16dp"
             android:visibility="gone">
             
-            <TextView
+            <!-- Cabecera del Calendario -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Próximos Eventos"
-                android:textColor="@color/text_primary"
-                android:textSize="28sp"
-                android:textStyle="bold"
-                android:layout_marginBottom="16dp"/>
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:padding="16dp">
                 
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/recyclerCalendarEvents"
+                <ImageButton
+                    android:id="@+id/btnAppPrevMonth"
+                    android:layout_width="48dp" android:layout_height="48dp"
+                    android:src="@android:drawable/ic_media_previous"
+                    android:background="?attr/selectableItemBackgroundBorderless" />
+                
+                <TextView
+                    android:id="@+id/tvAppCurrentMonth"
+                    android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="Octubre 2026"
+                    android:textColor="@color/text_primary"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+                
+                <ImageButton
+                    android:id="@+id/btnAppNextMonth"
+                    android:layout_width="48dp" android:layout_height="48dp"
+                    android:src="@android:drawable/ic_media_next"
+                    android:background="?attr/selectableItemBackgroundBorderless" />
+            </LinearLayout>
+
+            <!-- Días de la semana -->
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent" />
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingHorizontal="8dp">
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="L" android:textColor="@color/text_secondary" android:textStyle="bold"/>
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="M" android:textColor="@color/text_secondary" android:textStyle="bold"/>
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="M" android:textColor="@color/text_secondary" android:textStyle="bold"/>
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="J" android:textColor="@color/text_secondary" android:textStyle="bold"/>
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="V" android:textColor="@color/text_secondary" android:textStyle="bold"/>
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="S" android:textColor="@color/text_secondary" android:textStyle="bold"/>
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="D" android:textColor="@color/text_secondary" android:textStyle="bold"/>
+            </LinearLayout>
+
+            <!-- Contenedor de las semanas (aquí se inyectan las 6 semanas con TODOS los eventos) -->
+            <ScrollView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:padding="8dp">
+                <LinearLayout
+                    android:id="@+id/containerWeeksApp"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+            </ScrollView>
         </LinearLayout>
     </FrameLayout>
 
