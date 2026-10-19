@@ -121,13 +121,16 @@ class CalendarWidgetFactory(
         val rv = RemoteViews(context.packageName, R.layout.calendar_week_row)
         val week = weeks[position]
 
-        // APLICAMOS LA ALTURA MÍNIMA A LA FILA COMPLETA
+        // TRUCO DEFINITIVO: Aplicar la altura mínima a la fila Y a cada una de las 7 celdas.
         rv.setInt(R.id.week_row, "setMinimumHeight", minRowHeight)
 
         for (i in 0 until 7) {
             val cell = week[i]
             val cellId = context.resources.getIdentifier("cell_${i+1}", "id", context.packageName)
             val numId = context.resources.getIdentifier("day_${i+1}_number", "id", context.packageName)
+
+            // Forzamos la altura en cada celda individual
+            rv.setInt(cellId, "setMinimumHeight", minRowHeight)
 
             rv.setTextViewText(numId, cell.dayNumber.toString())
             val dayNumColor = when {
