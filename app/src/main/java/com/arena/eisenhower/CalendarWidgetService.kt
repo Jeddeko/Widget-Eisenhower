@@ -53,6 +53,19 @@ class CalendarWidgetFactory(
     private var todayBgColor: Int = Color.LTGRAY
     private var todayTextColor: Int = Color.BLUE
 
+    // CACHE DE IDs ESTÁTICOS PARA EVITAR EL COLAPSO POR RENDIMIENTO
+    private val cellIds = intArrayOf(R.id.cell_1, R.id.cell_2, R.id.cell_3, R.id.cell_4, R.id.cell_5, R.id.cell_6, R.id.cell_7)
+    private val numIds = intArrayOf(R.id.day_1_number, R.id.day_2_number, R.id.day_3_number, R.id.day_4_number, R.id.day_5_number, R.id.day_6_number, R.id.day_7_number)
+    private val taskIds = arrayOf(
+        intArrayOf(R.id.task_1_1, R.id.task_1_2, R.id.task_1_3, R.id.task_1_4, R.id.task_1_5, R.id.task_1_6, R.id.task_1_7, R.id.task_1_8, R.id.task_1_9, R.id.task_1_10, R.id.task_1_11, R.id.task_1_12, R.id.task_1_13, R.id.task_1_14, R.id.task_1_15),
+        intArrayOf(R.id.task_2_1, R.id.task_2_2, R.id.task_2_3, R.id.task_2_4, R.id.task_2_5, R.id.task_2_6, R.id.task_2_7, R.id.task_2_8, R.id.task_2_9, R.id.task_2_10, R.id.task_2_11, R.id.task_2_12, R.id.task_2_13, R.id.task_2_14, R.id.task_2_15),
+        intArrayOf(R.id.task_3_1, R.id.task_3_2, R.id.task_3_3, R.id.task_3_4, R.id.task_3_5, R.id.task_3_6, R.id.task_3_7, R.id.task_3_8, R.id.task_3_9, R.id.task_3_10, R.id.task_3_11, R.id.task_3_12, R.id.task_3_13, R.id.task_3_14, R.id.task_3_15),
+        intArrayOf(R.id.task_4_1, R.id.task_4_2, R.id.task_4_3, R.id.task_4_4, R.id.task_4_5, R.id.task_4_6, R.id.task_4_7, R.id.task_4_8, R.id.task_4_9, R.id.task_4_10, R.id.task_4_11, R.id.task_4_12, R.id.task_4_13, R.id.task_4_14, R.id.task_4_15),
+        intArrayOf(R.id.task_5_1, R.id.task_5_2, R.id.task_5_3, R.id.task_5_4, R.id.task_5_5, R.id.task_5_6, R.id.task_5_7, R.id.task_5_8, R.id.task_5_9, R.id.task_5_10, R.id.task_5_11, R.id.task_5_12, R.id.task_5_13, R.id.task_5_14, R.id.task_5_15),
+        intArrayOf(R.id.task_6_1, R.id.task_6_2, R.id.task_6_3, R.id.task_6_4, R.id.task_6_5, R.id.task_6_6, R.id.task_6_7, R.id.task_6_8, R.id.task_6_9, R.id.task_6_10, R.id.task_6_11, R.id.task_6_12, R.id.task_6_13, R.id.task_6_14, R.id.task_6_15),
+        intArrayOf(R.id.task_7_1, R.id.task_7_2, R.id.task_7_3, R.id.task_7_4, R.id.task_7_5, R.id.task_7_6, R.id.task_7_7, R.id.task_7_8, R.id.task_7_9, R.id.task_7_10, R.id.task_7_11, R.id.task_7_12, R.id.task_7_13, R.id.task_7_14, R.id.task_7_15)
+    )
+
     private fun isColorDark(color: Int): Boolean {
         val darkness = 1.0 - (0.299 * Color.red(color) + 0.587 * Color.green(color) + 0.114 * Color.blue(color)) / 255
         return darkness > 0.5
@@ -68,6 +81,8 @@ class CalendarWidgetFactory(
         todayTextColor = if (isDark) Color.parseColor("#60A5FA") else Color.parseColor("#2563EB")
 
         val today = LocalDate.now()
+        val todayStart = today.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        
         val itemsByDay = mutableMapOf<LocalDate, MutableList<CalendarEventItem>>()
         val settings = AppSettings(context)
         val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
@@ -76,7 +91,9 @@ class CalendarWidgetFactory(
         val monthStartMillis = firstOfMonth.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
         val monthEndMillis = firstOfMonth.plusMonths(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli() - 1
 
-        TaskRepository(context).getAll().forEach { task ->
+        val allTasks = TaskRepository(context).getAll()
+
+        allTasks.forEach { task ->
             if (task.done) return@forEach 
             
             val qColor = when (task.quadrant) {
@@ -95,7 +112,8 @@ class CalendarWidgetFactory(
             }
 
             task.reminders.forEach { reminderTime ->
-                if (reminderTime in monthStartMillis..monthEndMillis) {
+                // ARREGLO: Solo agregamos el recordatorio si es de hoy en adelante
+                if (reminderTime in monthStartMillis..monthEndMillis && reminderTime >= todayStart) {
                     val remDate = Instant.ofEpochMilli(reminderTime).atZone(ZoneId.systemDefault()).toLocalDate()
                     val timeStr = timeFormat.format(Date(reminderTime))
                     itemsByDay.getOrPut(remDate) { mutableListOf() }.add(
@@ -131,8 +149,8 @@ class CalendarWidgetFactory(
 
         for (i in 0 until 7) {
             val cell = week[i]
-            val cellId = context.resources.getIdentifier("cell_${i+1}", "id", context.packageName)
-            val numId = context.resources.getIdentifier("day_${i+1}_number", "id", context.packageName)
+            val cellId = cellIds[i]
+            val numId = numIds[i]
 
             rv.setInt(cellId, "setMinimumHeight", minRowHeight)
 
@@ -156,11 +174,11 @@ class CalendarWidgetFactory(
             }
             rv.setOnClickFillInIntent(cellId, addIntent)
 
-            // Mostramos hasta 15 tareas (el límite del diseño XML)
-            for (t in 1..15) {
-                val taskId = context.resources.getIdentifier("task_${i+1}_$t", "id", context.packageName)
-                if (t <= cell.items.size) {
-                    val item = cell.items[t - 1]
+            // USAMOS LOS IDs PRECALCULADOS (SÚPER RÁPIDO)
+            for (t in 0 until 15) {
+                val taskId = taskIds[i][t]
+                if (t < cell.items.size) {
+                    val item = cell.items[t]
                     rv.setViewVisibility(taskId, View.VISIBLE)
                     
                     val displayText = if (item.isReminder) item.timePrefix + item.title else item.title
@@ -173,7 +191,6 @@ class CalendarWidgetFactory(
                         putExtra(EisenhowerWidgetProvider.EXTRA_TASK_ID, item.id)
                         putExtra(EisenhowerWidgetProvider.EXTRA_ACTION_TYPE, EisenhowerWidgetProvider.ACTION_EDIT)
                     }
-                    // LA LÍNEA CORREGIDA AQUÍ:
                     rv.setOnClickFillInIntent(taskId, editIntent)
                 } else {
                     rv.setViewVisibility(taskId, View.GONE)
