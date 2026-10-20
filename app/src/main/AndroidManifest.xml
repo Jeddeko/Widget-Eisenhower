@@ -23,7 +23,6 @@
             </intent-filter>
         </activity>
 
-        <!-- AQUI ESTA EL ARREGLO DEL TECLADO -->
         <activity
             android:name=".QuickAddActivity"
             android:excludeFromRecents="true"
