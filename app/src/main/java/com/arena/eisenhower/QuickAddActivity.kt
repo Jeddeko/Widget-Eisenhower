@@ -20,6 +20,7 @@ import androidx.core.content.ContextCompat
 import com.google.android.material.button.MaterialButton
 import java.text.SimpleDateFormat
 import java.util.*
+import java.util.concurrent.TimeUnit
 
 class QuickAddActivity : Activity() {
     private lateinit var repo: TaskRepository
@@ -40,14 +41,24 @@ class QuickAddActivity : Activity() {
         repo = TaskRepository(this)
 
         val input = findViewById<EditText>(R.id.quickInput)
+        val layoutBaseQuadrant = findViewById<LinearLayout>(R.id.layoutBaseQuadrant)
         val quadrantSpinner = findViewById<Spinner>(R.id.quickQuadrant)
         val dateBtn = findViewById<MaterialButton>(R.id.quickDateBtn)
         val spinnerRecurrence = findViewById<Spinner>(R.id.spinnerRecurrence)
         val checkIsEvent = findViewById<CheckBox>(R.id.checkIsEvent)
         val layoutEventOptions = findViewById<LinearLayout>(R.id.layoutEventOptions)
-        val spinnerAdvanceNotice = findViewById<Spinner>(R.id.spinnerAdvanceNotice)
-        val spinnerQuadrantBefore = findViewById<Spinner>(R.id.spinnerQuadrantBefore)
-        val spinnerQuadrantOnDay = findViewById<Spinner>(R.id.spinnerQuadrantOnDay)
+        
+        val etDaysPhase1 = findViewById<EditText>(R.id.etDaysPhase1)
+        val btnCalPhase1 = findViewById<ImageButton>(R.id.btnCalPhase1)
+        val spinnerPhase1Quadrant = findViewById<Spinner>(R.id.spinnerPhase1Quadrant)
+        
+        val etDaysPhase2 = findViewById<EditText>(R.id.etDaysPhase2)
+        val btnCalPhase2 = findViewById<ImageButton>(R.id.btnCalPhase2)
+        val spinnerPhase2Quadrant = findViewById<Spinner>(R.id.spinnerPhase2Quadrant)
+        
+        val etDaysPhase3 = findViewById<EditText>(R.id.etDaysPhase3)
+        val btnCalPhase3 = findViewById<ImageButton>(R.id.btnCalPhase3)
+        val spinnerPhase3Quadrant = findViewById<Spinner>(R.id.spinnerPhase3Quadrant)
         
         val btnAddReminder = findViewById<MaterialButton>(R.id.btnAddReminder)
         val calendarCheck = findViewById<CheckBox>(R.id.quickCalendarCheck)
@@ -56,17 +67,17 @@ class QuickAddActivity : Activity() {
         val btnDelete = findViewById<ImageButton>(R.id.btnDeleteTask)
         containerReminders = findViewById(R.id.containerReminders)
 
-        // Configurar Spinners
         val quadrantLabels = listOf("Hazlo ya", "Planifica", "Delega", "Elimina")
         quadrantSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, quadrantLabels)
-        spinnerQuadrantBefore.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, quadrantLabels)
-        spinnerQuadrantOnDay.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, quadrantLabels)
+        spinnerPhase1Quadrant.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, quadrantLabels)
+        spinnerPhase2Quadrant.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, quadrantLabels)
+        spinnerPhase3Quadrant.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, quadrantLabels)
         
         spinnerRecurrence.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, listOf("No se repite", "Diario", "Semanal", "Mensual"))
-        spinnerAdvanceNotice.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, listOf("1 día", "2 días", "3 días", "4 días", "5 días", "7 días"))
 
         checkIsEvent.setOnCheckedChangeListener { _, isChecked ->
             layoutEventOptions.visibility = if (isChecked) View.VISIBLE else View.GONE
+            layoutBaseQuadrant.visibility = if (isChecked) View.GONE else View.VISIBLE
         }
 
         val taskId = intent.getLongExtra(EisenhowerWidgetProvider.EXTRA_TASK_ID, -1L)
@@ -92,6 +103,41 @@ class QuickAddActivity : Activity() {
             }
         }
 
+        // Función reutilizable para elegir fecha exacta y convertir a días
+        fun showCalendarForPhase(editText: EditText) {
+            if (selectedDueAt == null) {
+                Toast.makeText(this, "Primero selecciona la fecha del evento principal", Toast.LENGTH_SHORT).show()
+                return
+            }
+            val cal = Calendar.getInstance()
+            val datePicker = DatePickerDialog(this, { _, year, month, dayOfMonth ->
+                val chosenCal = Calendar.getInstance().apply {
+                    set(Calendar.YEAR, year); set(Calendar.MONTH, month); set(Calendar.DAY_OF_MONTH, dayOfMonth)
+                    set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+                }
+                
+                // Convertimos la fecha del evento a las 00:00 para calcular días exactos
+                val eventCal = Calendar.getInstance().apply {
+                    timeInMillis = selectedDueAt!!
+                    set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+                }
+                
+                val diffMillis = eventCal.timeInMillis - chosenCal.timeInMillis
+                val days = TimeUnit.MILLISECONDS.toDays(diffMillis).toInt()
+                
+                if (days < 0) {
+                    Toast.makeText(this, "La fecha debe ser antes del evento", Toast.LENGTH_SHORT).show()
+                } else {
+                    editText.setText(days.toString())
+                }
+            }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH))
+            datePicker.show()
+        }
+
+        btnCalPhase1.setOnClickListener { showCalendarForPhase(etDaysPhase1) }
+        btnCalPhase2.setOnClickListener { showCalendarForPhase(etDaysPhase2) }
+        btnCalPhase3.setOnClickListener { showCalendarForPhase(etDaysPhase3) }
+
         if (taskId != -1L) {
             val task = repo.getAll().firstOrNull { it.id == taskId }
             if (task != null) {
@@ -104,9 +150,13 @@ class QuickAddActivity : Activity() {
                 calendarCheck.visibility = View.GONE 
                 
                 checkIsEvent.isChecked = task.isEvent
-                spinnerAdvanceNotice.setSelection((task.advanceNoticeDays - 1).coerceIn(0, 5))
-                spinnerQuadrantBefore.setSelection(task.quadrantBeforeEvent?.ordinal ?: 0)
-                spinnerQuadrantOnDay.setSelection(task.quadrantOnEventDay?.ordinal ?: 0)
+                etDaysPhase1.setText(task.advanceNoticeDays1.toString())
+                spinnerPhase1Quadrant.setSelection(task.quadrantPhase1.ordinal)
+                etDaysPhase2.setText(task.advanceNoticeDays2.toString())
+                spinnerPhase2Quadrant.setSelection(task.quadrantPhase2.ordinal)
+                etDaysPhase3.setText(task.advanceNoticeDays3.toString())
+                spinnerPhase3Quadrant.setSelection(task.quadrantPhase3.ordinal)
+                
                 spinnerRecurrence.setSelection(task.recurrence.ordinal)
                 
                 btnDelete.visibility = View.VISIBLE
@@ -122,8 +172,9 @@ class QuickAddActivity : Activity() {
             }
         } else {
             quadrantSpinner.setSelection(incomingQuadrant.ordinal)
-            spinnerQuadrantBefore.setSelection(incomingQuadrant.ordinal)
-            spinnerQuadrantOnDay.setSelection(Quadrant.DO_FIRST.ordinal) // Por defecto el día del evento va a Hazlo Ya
+            spinnerPhase1Quadrant.setSelection(Quadrant.DELEGATE.ordinal)
+            spinnerPhase2Quadrant.setSelection(Quadrant.SCHEDULE.ordinal)
+            spinnerPhase3Quadrant.setSelection(Quadrant.DO_FIRST.ordinal)
         }
         
         updateDateButtonText()
@@ -147,6 +198,7 @@ class QuickAddActivity : Activity() {
 
         btnAddReminder.setOnClickListener {
             val cal = Calendar.getInstance()
+            if (selectedDueAt != null) cal.timeInMillis = selectedDueAt!!
             val datePicker = DatePickerDialog(this, { _, year, month, dayOfMonth ->
                 cal.set(Calendar.YEAR, year); cal.set(Calendar.MONTH, month); cal.set(Calendar.DAY_OF_MONTH, dayOfMonth)
                 val timePicker = TimePickerDialog(this, { _, hourOfDay, minute ->
@@ -167,9 +219,14 @@ class QuickAddActivity : Activity() {
 
             val quadrant = Quadrant.values()[quadrantSpinner.selectedItemPosition]
             val isEvent = checkIsEvent.isChecked
-            val advanceNotice = spinnerAdvanceNotice.selectedItemPosition + 1
-            val quadBefore = Quadrant.values()[spinnerQuadrantBefore.selectedItemPosition]
-            val quadOnDay = Quadrant.values()[spinnerQuadrantOnDay.selectedItemPosition]
+            
+            val days1 = etDaysPhase1.text.toString().toIntOrNull() ?: 30
+            val quad1 = Quadrant.values()[spinnerPhase1Quadrant.selectedItemPosition]
+            val days2 = etDaysPhase2.text.toString().toIntOrNull() ?: 7
+            val quad2 = Quadrant.values()[spinnerPhase2Quadrant.selectedItemPosition]
+            val days3 = etDaysPhase3.text.toString().toIntOrNull() ?: 0
+            val quad3 = Quadrant.values()[spinnerPhase3Quadrant.selectedItemPosition]
+
             val recurrence = RecurrenceType.values()[spinnerRecurrence.selectedItemPosition]
             
             var recDayOfWeek: Int? = null
@@ -185,8 +242,10 @@ class QuickAddActivity : Activity() {
                 if (existingTask != null) {
                     val updatedTask = existingTask.copy(
                         title = title, quadrant = quadrant, dueAt = selectedDueAt, reminders = selectedReminders,
-                        isEvent = isEvent, advanceNoticeDays = advanceNotice, 
-                        quadrantBeforeEvent = quadBefore, quadrantOnEventDay = quadOnDay,
+                        isEvent = isEvent, 
+                        advanceNoticeDays1 = days1, quadrantPhase1 = quad1,
+                        advanceNoticeDays2 = days2, quadrantPhase2 = quad2,
+                        advanceNoticeDays3 = days3, quadrantPhase3 = quad3,
                         recurrence = recurrence, recurrenceDayOfWeek = recDayOfWeek, recurrenceDayOfMonth = recDayOfMonth
                     )
                     repo.updateTask(updatedTask)
@@ -199,8 +258,10 @@ class QuickAddActivity : Activity() {
                 }
                 val newTask = repo.addTask(Task(
                     id = 0, title = title, quadrant = quadrant, dueAt = selectedDueAt, calendarEventId = calendarId,
-                    reminders = selectedReminders, isEvent = isEvent, advanceNoticeDays = advanceNotice,
-                    quadrantBeforeEvent = quadBefore, quadrantOnEventDay = quadOnDay,
+                    reminders = selectedReminders, isEvent = isEvent, 
+                    advanceNoticeDays1 = days1, quadrantPhase1 = quad1,
+                    advanceNoticeDays2 = days2, quadrantPhase2 = quad2,
+                    advanceNoticeDays3 = days3, quadrantPhase3 = quad3,
                     recurrence = recurrence, recurrenceDayOfWeek = recDayOfWeek, recurrenceDayOfMonth = recDayOfMonth
                 ))
                 if (newTask != null) ReminderScheduler.schedule(this, newTask)
