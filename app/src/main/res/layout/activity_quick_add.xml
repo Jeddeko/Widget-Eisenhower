@@ -95,13 +95,14 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp" />
 
+        <!-- TEXTO CAMBIADO AQUI -->
         <CheckBox
             android:id="@+id/checkIsEvent"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:textColor="@color/text_primary"
-            android:text="Es un evento. Ocultar en la matriz hasta que falten X días." />
+            android:text="Planificación por fases (Avanzado)" />
 
         <!-- OPCIONES DE EVENTO DINÁMICAS -->
         <LinearLayout
