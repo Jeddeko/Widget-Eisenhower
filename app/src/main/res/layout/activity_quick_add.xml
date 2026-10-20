@@ -47,21 +47,34 @@
             android:maxLines="3"
             android:minHeight="48dp" />
 
-        <Spinner
-            android:id="@+id/quickQuadrant"
+        <!-- SELECTOR DE CUADRANTE BASE (Se oculta si es evento) -->
+        <LinearLayout
+            android:id="@+id/layoutBaseQuadrant"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp" />
+            android:orientation="vertical">
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Cuadrante (Tarea normal)"
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp"/>
+            <Spinner
+                android:id="@+id/quickQuadrant"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
 
+        <!-- FECHA PRINCIPAL -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:text="Fecha de vencimiento / Inicio"
+            android:text="Fecha de vencimiento / Inicio del Evento"
             android:textColor="@color/text_primary"
             android:textSize="14sp"
             android:textStyle="bold"/>
-
         <com.google.android.material.button.MaterialButton
             android:id="@+id/quickDateBtn"
             style="@style/Widget.Material3.Button.OutlinedButton"
@@ -70,7 +83,7 @@
             android:layout_marginTop="4dp"
             android:text="Sin fecha" />
 
-        <!-- SECCIÓN DE RECURRENCIA -->
+        <!-- RECURRENCIA -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -85,7 +98,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp" />
 
-        <!-- SECCIÓN DE EVENTO EN MATRIZ -->
+        <!-- CHECKBOX EVENTO -->
         <CheckBox
             android:id="@+id/checkIsEvent"
             android:layout_width="match_parent"
@@ -94,54 +107,66 @@
             android:textColor="@color/text_primary"
             android:text="Es un evento. Ocultar en la matriz hasta que falten X días." />
 
+        <!-- OPCIONES DE EVENTO (3 FASES CON BOTÓN DE CALENDARIO) -->
         <LinearLayout
             android:id="@+id/layoutEventOptions"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:visibility="gone">
+            android:visibility="gone"
+            android:background="@color/card_background"
+            android:padding="12dp"
+            android:layout_marginTop="8dp">
 
+            <!-- FASE 1 -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="Días de antelación para aparecer en la matriz:"
-                android:textColor="@color/text_secondary"
-                android:textSize="12sp"/>
-            <Spinner
-                android:id="@+id/spinnerAdvanceNotice"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp" />
+                android:text="FASE 1: Planificación Lejana"
+                android:textColor="@color/text_primary"
+                android:textStyle="bold"/>
+            
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="4dp" android:gravity="center_vertical">
+                <EditText android:id="@+id/etDaysPhase1" android:layout_width="70dp" android:layout_height="wrap_content" android:inputType="number" android:text="30" android:hint="Días"/>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="días antes" android:layout_marginStart="8dp" android:layout_marginEnd="8dp"/>
+                <ImageButton android:id="@+id/btnCalPhase1" android:layout_width="40dp" android:layout_height="40dp" android:src="@android:drawable/ic_menu_my_calendar" android:background="?attr/selectableItemBackgroundBorderless"/>
+                <Spinner android:id="@+id/spinnerPhase1Quadrant" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginStart="8dp"/>
+            </LinearLayout>
 
+            <!-- FASE 2 -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="Aparecer en el cuadrante (antes del evento):"
-                android:textColor="@color/text_secondary"
-                android:textSize="12sp"/>
-            <Spinner
-                android:id="@+id/spinnerQuadrantBefore"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp" />
+                android:layout_marginTop="12dp"
+                android:text="FASE 2: Aproximación"
+                android:textColor="@color/text_primary"
+                android:textStyle="bold"/>
+            
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="4dp" android:gravity="center_vertical">
+                <EditText android:id="@+id/etDaysPhase2" android:layout_width="70dp" android:layout_height="wrap_content" android:inputType="number" android:text="7" android:hint="Días"/>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="días antes" android:layout_marginStart="8dp" android:layout_marginEnd="8dp"/>
+                <ImageButton android:id="@+id/btnCalPhase2" android:layout_width="40dp" android:layout_height="40dp" android:src="@android:drawable/ic_menu_my_calendar" android:background="?attr/selectableItemBackgroundBorderless"/>
+                <Spinner android:id="@+id/spinnerPhase2Quadrant" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginStart="8dp"/>
+            </LinearLayout>
 
+            <!-- FASE 3 -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="Mover al cuadrante (el día del evento):"
-                android:textColor="@color/text_secondary"
-                android:textSize="12sp"/>
-            <Spinner
-                android:id="@+id/spinnerQuadrantOnDay"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp" />
+                android:layout_marginTop="12dp"
+                android:text="FASE 3: Día del Evento o Urgencia"
+                android:textColor="@color/text_primary"
+                android:textStyle="bold"/>
+            
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="4dp" android:gravity="center_vertical">
+                <EditText android:id="@+id/etDaysPhase3" android:layout_width="70dp" android:layout_height="wrap_content" android:inputType="number" android:text="0" android:hint="Días"/>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="días antes" android:layout_marginStart="8dp" android:layout_marginEnd="8dp"/>
+                <ImageButton android:id="@+id/btnCalPhase3" android:layout_width="40dp" android:layout_height="40dp" android:src="@android:drawable/ic_menu_my_calendar" android:background="?attr/selectableItemBackgroundBorderless"/>
+                <Spinner android:id="@+id/spinnerPhase3Quadrant" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginStart="8dp"/>
+            </LinearLayout>
         </LinearLayout>
 
-        <!-- SECCIÓN DE ALERTAS -->
+        <!-- ALERTAS -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
