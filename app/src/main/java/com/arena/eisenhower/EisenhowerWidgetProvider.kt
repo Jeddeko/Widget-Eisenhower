@@ -88,6 +88,9 @@ class EisenhowerWidgetProvider : AppWidgetProvider() {
             val repo = TaskRepository(context)
             val isDark = settings.isDarkMode
             
+            // ARREGLO DE RENDIMIENTO: Obtenemos todas las tareas UNA SOLA VEZ
+            val allTasks = repo.getAll()
+
             val bgColor = if (isDark) Color.parseColor("#121212") else Color.parseColor("#F8FAFC")
             val headerColor = if (isDark) Color.parseColor("#F8FAFC") else Color.parseColor("#0F172A")
 
@@ -143,12 +146,12 @@ class EisenhowerWidgetProvider : AppWidgetProvider() {
                 val isBgDark = isColorDark(color)
                 val textColor = if (isBgDark) Color.WHITE else Color.BLACK
 
-                // CONTADOR DINÁMICO
-                val activeCount = repo.getAll().count { it.getEffectiveQuadrant() == quadrant && !it.done }
+                // USAMOS LA LISTA CACHEADA EN LUGAR DE LLAMAR A LA BASE DE DATOS
+                val activeCount = allTasks.count { it.getEffectiveQuadrant() == quadrant && !it.done }
                 views.setTextViewText(slot.titleId, "$title · $activeCount")
                 views.setTextColor(slot.titleId, textColor)
                 
-                val completedCount = repo.getAll().count { it.getEffectiveQuadrant() == quadrant && it.done }
+                val completedCount = allTasks.count { it.getEffectiveQuadrant() == quadrant && it.done }
                 if (completedCount > 0) {
                     views.setTextViewText(slot.addId, "+ Añadir (Completadas: $completedCount)")
                 } else {
