@@ -34,7 +34,7 @@ class WidgetFactory(private val context: Context, private val quadrant: Quadrant
             Quadrant.ELIMINATE -> settings.colorQ4
         }
 
-        // AQUI ESTA EL ARREGLO: Usamos getEffectiveQuadrant() en lugar de la propiedad fija
+        // Filtramos usando el cuadrante efectivo de la Fase 1, 2 o 3
         tasks = repo.getAll()
             .filter { it.getEffectiveQuadrant() == quadrant && !it.done }
             .sortedBy { it.order }
