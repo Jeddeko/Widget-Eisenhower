@@ -36,7 +36,9 @@ class QuickAddActivity : Activity() {
         params.width = ViewGroup.LayoutParams.MATCH_PARENT
         params.height = ViewGroup.LayoutParams.WRAP_CONTENT
         window.attributes = params
-        window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
+        
+        // ARREGLO DEL TECLADO: SOFT_INPUT_ADJUST_RESIZE para que el scroll funcione
+        window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE or WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
 
         repo = TaskRepository(this)
 
@@ -262,7 +264,6 @@ class QuickAddActivity : Activity() {
             val days3 = if (layoutPhase3.visibility == View.VISIBLE) (etDaysPhase3.text.toString().toIntOrNull() ?: 0) else null
             val quad3 = if (layoutPhase3.visibility == View.VISIBLE) Quadrant.values()[spinnerPhase3Quadrant.selectedItemPosition] else null
 
-            // VALIDACIÓN LÓGICA
             if (isEvent) {
                 if (days2 != null && days2 > days1) {
                     Toast.makeText(this, "La Fase 2 no puede tener más días que la Fase 1", Toast.LENGTH_LONG).show()
