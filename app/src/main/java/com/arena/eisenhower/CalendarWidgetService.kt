@@ -10,7 +10,6 @@ import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
-import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
@@ -87,7 +86,7 @@ class CalendarWidgetFactory(
                 Quadrant.ELIMINATE -> settings.colorQ4
             }
 
-            // USAMOS getOccurrences PARA QUE SE REPITA EN EL WIDGET
+            // AQUI ESTA EL ARREGLO: Usamos getOccurrences para no colapsar y dibujar las recurrentes
             val occurrences = task.getOccurrences(monthStartMillis, monthEndMillis)
             occurrences.forEach { time ->
                 val date = Instant.ofEpochMilli(time).atZone(ZoneId.systemDefault()).toLocalDate()
@@ -96,7 +95,6 @@ class CalendarWidgetFactory(
                 )
             }
 
-            // Agregar recordatorios
             task.reminders.forEach { reminderTime ->
                 if (reminderTime in monthStartMillis..monthEndMillis) {
                     val remDate = Instant.ofEpochMilli(reminderTime).atZone(ZoneId.systemDefault()).toLocalDate()
