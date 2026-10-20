@@ -15,7 +15,7 @@ enum class RecurrenceType { NONE, DAILY, WEEKLY, MONTHLY }
 data class Task(
     val id: Long,
     val title: String,
-    val quadrant: Quadrant, 
+    val quadrant: Quadrant, // Cuadrante base (solo para tareas normales)
     val done: Boolean = false,
     val dueAt: Long? = null,
     val createdAt: Long = System.currentTimeMillis(),
@@ -25,9 +25,16 @@ data class Task(
     val reminders: List<Long> = emptyList(),
     
     val isEvent: Boolean = false,
-    val advanceNoticeDays: Int = 0,
-    val quadrantBeforeEvent: Quadrant? = null,
-    val quadrantOnEventDay: Quadrant? = null,
+    
+    // NUEVOS CAMPOS: 3 FASES DINÁMICAS
+    val advanceNoticeDays1: Int = 30, 
+    val quadrantPhase1: Quadrant = Quadrant.DELEGATE, 
+    
+    val advanceNoticeDays2: Int = 7, 
+    val quadrantPhase2: Quadrant = Quadrant.SCHEDULE, 
+    
+    val advanceNoticeDays3: Int = 0, 
+    val quadrantPhase3: Quadrant = Quadrant.DO_FIRST,
     
     val recurrence: RecurrenceType = RecurrenceType.NONE,
     val recurrenceDayOfWeek: Int? = null,
@@ -46,7 +53,7 @@ data class Task(
             }.timeInMillis
             
             var iterations = 0
-            while (cal.timeInMillis < today && iterations < 100) { // Límite de seguridad
+            while (cal.timeInMillis < today && iterations < 100) {
                 when (recurrence) {
                     RecurrenceType.DAILY -> cal.add(Calendar.DAY_OF_YEAR, 1)
                     RecurrenceType.WEEKLY -> cal.add(Calendar.WEEK_OF_YEAR, 1)
@@ -79,9 +86,10 @@ data class Task(
         val daysUntil = TimeUnit.MILLISECONDS.toDays(diffMillis).toInt()
 
         return when {
-            daysUntil <= 0 -> quadrantOnEventDay ?: quadrant
-            daysUntil <= advanceNoticeDays -> quadrantBeforeEvent ?: quadrant
-            else -> null
+            daysUntil <= advanceNoticeDays3 -> quadrantPhase3
+            daysUntil <= advanceNoticeDays2 -> quadrantPhase2
+            daysUntil <= advanceNoticeDays1 -> quadrantPhase1
+            else -> null // No se muestra aún en la matriz
         }
     }
 
@@ -94,7 +102,24 @@ data class Task(
         val cal = Calendar.getInstance().apply { timeInMillis = dueAt }
         var iterations = 0
 
-        while (cal.timeInMillis <= endMillis && iterations < 100) { // Límite de seguridad
+        while (cal.timeInMillis < startMillis && iterations < 100) {
+            when (recurrence) {
+                RecurrenceType.DAILY -> cal.add(Calendar.DAY_OF_YEAR, 1)
+                RecurrenceType.WEEKLY -> cal.add(Calendar.WEEK_OF_YEAR, 1)
+                RecurrenceType.MONTHLY -> {
+                    cal.add(Calendar.MONTH, 1)
+                    if (recurrenceDayOfMonth != null) {
+                        val maxDay = cal.getActualMaximum(Calendar.DAY_OF_MONTH)
+                        cal.set(Calendar.DAY_OF_MONTH, minOf(recurrenceDayOfMonth, maxDay))
+                    }
+                }
+                else -> break
+            }
+            iterations++
+        }
+
+        iterations = 0
+        while (cal.timeInMillis <= endMillis && iterations < 100) {
             if (cal.timeInMillis >= startMillis) {
                 occurrences.add(cal.timeInMillis)
             }
