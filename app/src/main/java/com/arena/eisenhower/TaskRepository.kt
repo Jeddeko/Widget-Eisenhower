@@ -39,9 +39,12 @@ class TaskRepository(context: Context) {
                         reminders = remindersList,
                         
                         isEvent = obj.optBoolean("isEvent", false),
-                        advanceNoticeDays = obj.optInt("advanceNoticeDays", 0),
-                        quadrantBeforeEvent = obj.optString("quadrantBeforeEvent", "").let { if (it.isBlank()) null else Quadrant.fromKey(it) },
-                        quadrantOnEventDay = obj.optString("quadrantOnEventDay", "").let { if (it.isBlank()) null else Quadrant.fromKey(it) },
+                        advanceNoticeDays1 = obj.optInt("advanceNoticeDays1", 30),
+                        quadrantPhase1 = Quadrant.fromKey(obj.optString("quadrantPhase1", "delegate")),
+                        advanceNoticeDays2 = obj.optInt("advanceNoticeDays2", 7),
+                        quadrantPhase2 = Quadrant.fromKey(obj.optString("quadrantPhase2", "schedule")),
+                        advanceNoticeDays3 = obj.optInt("advanceNoticeDays3", 0),
+                        quadrantPhase3 = Quadrant.fromKey(obj.optString("quadrantPhase3", "do")),
                         
                         recurrence = try { RecurrenceType.valueOf(obj.optString("recurrence", "NONE")) } catch(e: Exception) { RecurrenceType.NONE },
                         recurrenceDayOfWeek = if (obj.has("recurrenceDayOfWeek") && !obj.isNull("recurrenceDayOfWeek")) obj.getInt("recurrenceDayOfWeek") else null,
@@ -89,9 +92,10 @@ class TaskRepository(context: Context) {
                 .put("id", task.id).put("title", task.title).put("quadrant", task.quadrant.key)
                 .put("done", task.done).put("createdAt", task.createdAt).put("updatedAt", task.updatedAt)
                 .put("order", task.order)
-                .put("isEvent", task.isEvent).put("advanceNoticeDays", task.advanceNoticeDays)
-                .put("quadrantBeforeEvent", task.quadrantBeforeEvent?.key ?: "")
-                .put("quadrantOnEventDay", task.quadrantOnEventDay?.key ?: "")
+                .put("isEvent", task.isEvent)
+                .put("advanceNoticeDays1", task.advanceNoticeDays1).put("quadrantPhase1", task.quadrantPhase1.key)
+                .put("advanceNoticeDays2", task.advanceNoticeDays2).put("quadrantPhase2", task.quadrantPhase2.key)
+                .put("advanceNoticeDays3", task.advanceNoticeDays3).put("quadrantPhase3", task.quadrantPhase3.key)
                 .put("recurrence", task.recurrence.name)
 
             obj.put("dueAt", if (task.dueAt == null) JSONObject.NULL else task.dueAt)
