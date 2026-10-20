@@ -23,11 +23,13 @@
             </intent-filter>
         </activity>
 
+        <!-- AQUI ESTA EL ARREGLO DEL TECLADO -->
         <activity
             android:name=".QuickAddActivity"
             android:excludeFromRecents="true"
             android:exported="false"
             android:taskAffinity=""
+            android:windowSoftInputMode="adjustResize"
             android:theme="@style/QuickAddTheme" />
 
         <activity
@@ -53,7 +55,6 @@
             android:permission="android.permission.BIND_REMOTEVIEWS"
             android:exported="false" />
 
-        <!-- NUEVO: Receiver del widget Calendario -->
         <receiver
             android:name=".CalendarWidgetProvider"
             android:exported="true">
@@ -69,7 +70,6 @@
                 android:resource="@xml/calendar_widget_info" />
         </receiver>
 
-        <!-- NUEVO: Service del widget Calendario -->
         <service
             android:name=".CalendarWidgetService"
             android:permission="android.permission.BIND_REMOTEVIEWS"
