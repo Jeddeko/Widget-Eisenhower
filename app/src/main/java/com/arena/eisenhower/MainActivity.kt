@@ -48,7 +48,6 @@ class MainActivity : Activity() {
     private lateinit var viewMatrix: View
     private lateinit var viewCalendar: View
     
-    // Variables del Calendario
     private var appCurrentMonth = Calendar.getInstance()
     private lateinit var tvAppCurrentMonth: TextView
     private lateinit var containerWeeksApp: LinearLayout
@@ -69,7 +68,6 @@ class MainActivity : Activity() {
         viewCalendar = findViewById(R.id.viewCalendar)
         val bottomNav = findViewById<BottomNavigationView>(R.id.bottomNavigation)
 
-        // Configuración del Calendario
         tvAppCurrentMonth = findViewById(R.id.tvAppCurrentMonth)
         containerWeeksApp = findViewById(R.id.containerWeeksApp)
         
@@ -82,7 +80,6 @@ class MainActivity : Activity() {
             renderAppCalendar()
         }
 
-        // Botón flotante para añadir tarea desde el calendario
         findViewById<FloatingActionButton>(R.id.fabAddTaskCalendar).setOnClickListener {
             val intent = Intent(this, QuickAddActivity::class.java)
             val cal = Calendar.getInstance().apply {
@@ -92,7 +89,6 @@ class MainActivity : Activity() {
             startActivity(intent)
         }
 
-        // Menú Inferior
         bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.nav_matrix -> {
@@ -111,7 +107,6 @@ class MainActivity : Activity() {
             }
         }
 
-        // Botones de añadir en la Matriz
         findViewById<MaterialButton>(R.id.btnAddQ1).setOnClickListener { openQuickAdd(Quadrant.DO_FIRST) }
         findViewById<MaterialButton>(R.id.btnAddQ2).setOnClickListener { openQuickAdd(Quadrant.SCHEDULE) }
         findViewById<MaterialButton>(R.id.btnAddQ3).setOnClickListener { openQuickAdd(Quadrant.DELEGATE) }
@@ -119,7 +114,6 @@ class MainActivity : Activity() {
 
         findViewById<MaterialButton>(R.id.btnSettings).setOnClickListener { startActivity(Intent(this, SettingsActivity::class.java)) }
         
-        // Botón de eliminar seleccionados
         findViewById<ImageButton>(R.id.btnDeleteSelected).setOnClickListener {
             if (selectedTaskIds.isNotEmpty()) {
                 selectedTaskIds.forEach { id -> repo.deleteTask(id) }
@@ -166,6 +160,7 @@ class MainActivity : Activity() {
     }
 
     private fun refreshTasks() {
+        // FILTRO CLAVE: Usamos getEffectiveQuadrant() para las tareas dinámicas
         val allTasks = repo.getAll().filter { it.getEffectiveQuadrant() != null }
         
         setupQuadrantUI(Quadrant.DO_FIRST, R.id.cardQ1, R.id.titleQ1View, R.id.btnAddQ1, R.id.headerCompletedQ1, R.id.containerCompletedQ1, rvQ1, settings.colorQ1, settings.titleQ1, allTasks)
@@ -196,11 +191,10 @@ class MainActivity : Activity() {
         val allTasks = repo.getAll()
         val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
         
-        // AHORA GUARDAMOS UN PAR: La Tarea y un Booleano (si es recordatorio o no)
         val eventsByDay = mutableMapOf<Int, MutableList<Pair<Task, Boolean>>>()
         
         allTasks.forEach { task ->
-            // 1. Agregar la tarea principal en sus fechas de ocurrencia
+            // 1. Agregar la tarea principal en sus fechas de ocurrencia (RECURRENTES Y NORMALES)
             val occurrences = task.getOccurrences(monthStartMillis, monthEndMillis)
             occurrences.forEach { time ->
                 val cal = Calendar.getInstance().apply { timeInMillis = time }
@@ -242,7 +236,6 @@ class MainActivity : Activity() {
                     tvDayNumber.text = dayNumber.toString()
                     tvDayNumber.setTextColor(Color.parseColor(if (settings.isDarkMode) "#F8FAFC" else "#0F172A"))
 
-                    // Resaltar día de hoy
                     val todayCal = Calendar.getInstance()
                     if (todayCal.get(Calendar.YEAR) == year && todayCal.get(Calendar.MONTH) == month && todayCal.get(Calendar.DAY_OF_MONTH) == dayNumber) {
                         val drawable = ContextCompat.getDrawable(this, R.drawable.bg_calendar_cell_today)
@@ -269,7 +262,6 @@ class MainActivity : Activity() {
                     }
 
                     val dayEvents = eventsByDay[dayNumber] ?: emptyList()
-                    // Ordenamos para que las tareas salgan primero y luego los recordatorios
                     val sortedDayEvents = dayEvents.sortedBy { it.second }
 
                     sortedDayEvents.forEach { pair ->
@@ -278,7 +270,6 @@ class MainActivity : Activity() {
                         val eventView = inflater.inflate(R.layout.app_calendar_event, eventsContainer, false) as TextView
                         
                         if (isReminder) {
-                            // Buscamos la hora exacta del recordatorio para este día
                             val remTime = task.reminders.firstOrNull { 
                                 val rCal = Calendar.getInstance().apply { timeInMillis = it }
                                 rCal.get(Calendar.MONTH) == month && rCal.get(Calendar.YEAR) == year && rCal.get(Calendar.DAY_OF_MONTH) == dayNumber
