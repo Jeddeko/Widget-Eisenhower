@@ -26,7 +26,6 @@ class TaskRepository(context: Context) {
                         }
                     }
 
-                    // LECTURA SEGURA DE NULOS PARA FASE 2 Y 3
                     val days2 = if (obj.has("advanceNoticeDays2") && !obj.isNull("advanceNoticeDays2")) obj.getInt("advanceNoticeDays2") else null
                     val quad2 = if (obj.has("quadrantPhase2") && !obj.isNull("quadrantPhase2")) Quadrant.fromKey(obj.getString("quadrantPhase2")) else null
                     
@@ -103,7 +102,6 @@ class TaskRepository(context: Context) {
                 .put("advanceNoticeDays1", task.advanceNoticeDays1).put("quadrantPhase1", task.quadrantPhase1.key)
                 .put("recurrence", task.recurrence.name)
 
-            // ESCRITURA SEGURA DE NULOS
             obj.put("advanceNoticeDays2", task.advanceNoticeDays2 ?: JSONObject.NULL)
             obj.put("quadrantPhase2", task.quadrantPhase2?.key ?: JSONObject.NULL)
             
