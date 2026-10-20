@@ -88,11 +88,8 @@ data class Task(
         val daysUntil = TimeUnit.MILLISECONDS.toDays(diffMillis).toInt()
 
         return when {
-            // Revisa si la Fase 3 existe (no es null) y si estamos en el rango
             advanceNoticeDays3 != null && quadrantPhase3 != null && daysUntil <= advanceNoticeDays3 -> quadrantPhase3
-            // Revisa si la Fase 2 existe
             advanceNoticeDays2 != null && quadrantPhase2 != null && daysUntil <= advanceNoticeDays2 -> quadrantPhase2
-            // La Fase 1 siempre existe si es un evento
             daysUntil <= advanceNoticeDays1 -> quadrantPhase1
             else -> null 
         }
