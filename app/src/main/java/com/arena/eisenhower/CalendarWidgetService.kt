@@ -86,7 +86,6 @@ class CalendarWidgetFactory(
                 Quadrant.ELIMINATE -> settings.colorQ4
             }
 
-            // AQUI ESTA EL ARREGLO: Usamos getOccurrences para no colapsar y dibujar las recurrentes
             val occurrences = task.getOccurrences(monthStartMillis, monthEndMillis)
             occurrences.forEach { time ->
                 val date = Instant.ofEpochMilli(time).atZone(ZoneId.systemDefault()).toLocalDate()
@@ -157,6 +156,7 @@ class CalendarWidgetFactory(
             }
             rv.setOnClickFillInIntent(cellId, addIntent)
 
+            // Mostramos hasta 15 tareas (el límite del diseño XML)
             for (t in 1..15) {
                 val taskId = context.resources.getIdentifier("task_${i+1}_$t", "id", context.packageName)
                 if (t <= cell.items.size) {
@@ -173,7 +173,7 @@ class CalendarWidgetFactory(
                         putExtra(EisenhowerWidgetProvider.EXTRA_TASK_ID, item.id)
                         putExtra(EisenhowerWidgetProvider.EXTRA_ACTION_TYPE, EisenhowerWidgetProvider.ACTION_EDIT)
                     }
-                    rv.setOnClickFillInIntent(taskId, editIntent)
+                    rv.setOnClickListener(taskId, editIntent)
                 } else {
                     rv.setViewVisibility(taskId, View.GONE)
                 }
