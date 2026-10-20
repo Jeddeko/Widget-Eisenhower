@@ -173,7 +173,8 @@ class CalendarWidgetFactory(
                         putExtra(EisenhowerWidgetProvider.EXTRA_TASK_ID, item.id)
                         putExtra(EisenhowerWidgetProvider.EXTRA_ACTION_TYPE, EisenhowerWidgetProvider.ACTION_EDIT)
                     }
-                    rv.setOnClickListener(taskId, editIntent)
+                    // LA LÍNEA CORREGIDA AQUÍ:
+                    rv.setOnClickFillInIntent(taskId, editIntent)
                 } else {
                     rv.setViewVisibility(taskId, View.GONE)
                 }
