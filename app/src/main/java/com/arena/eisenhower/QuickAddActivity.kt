@@ -51,6 +51,8 @@ class QuickAddActivity : Activity() {
         val layoutPhase2 = findViewById<LinearLayout>(R.id.layoutPhase2)
         val layoutPhase3 = findViewById<LinearLayout>(R.id.layoutPhase3)
         val btnAddPhase = findViewById<MaterialButton>(R.id.btnAddPhase)
+        val btnRemovePhase2 = findViewById<ImageButton>(R.id.btnRemovePhase2)
+        val btnRemovePhase3 = findViewById<ImageButton>(R.id.btnRemovePhase3)
 
         val etDaysPhase1 = findViewById<EditText>(R.id.etDaysPhase1)
         val btnCalPhase1 = findViewById<ImageButton>(R.id.btnCalPhase1)
@@ -89,8 +91,17 @@ class QuickAddActivity : Activity() {
                 layoutPhase2.visibility = View.VISIBLE
             } else if (layoutPhase3.visibility == View.GONE) {
                 layoutPhase3.visibility = View.VISIBLE
-                btnAddPhase.visibility = View.GONE // Ocultar el botón porque ya llegamos al máximo
+                btnAddPhase.visibility = View.GONE
             }
+        }
+
+        btnRemovePhase2.setOnClickListener {
+            layoutPhase2.visibility = View.GONE
+            btnAddPhase.visibility = View.VISIBLE
+        }
+        btnRemovePhase3.setOnClickListener {
+            layoutPhase3.visibility = View.GONE
+            btnAddPhase.visibility = View.VISIBLE
         }
 
         val taskId = intent.getLongExtra(EisenhowerWidgetProvider.EXTRA_TASK_ID, -1L)
@@ -162,7 +173,6 @@ class QuickAddActivity : Activity() {
                 etDaysPhase1.setText(task.advanceNoticeDays1.toString())
                 spinnerPhase1Quadrant.setSelection(task.quadrantPhase1.ordinal)
                 
-                // SI LOS DÍAS SON NULL, LA FASE ESTÁ OCULTA
                 if (task.advanceNoticeDays2 != null && task.quadrantPhase2 != null) {
                     layoutPhase2.visibility = View.VISIBLE
                     etDaysPhase2.setText(task.advanceNoticeDays2.toString())
@@ -246,12 +256,23 @@ class QuickAddActivity : Activity() {
             val days1 = etDaysPhase1.text.toString().toIntOrNull() ?: 30
             val quad1 = Quadrant.values()[spinnerPhase1Quadrant.selectedItemPosition]
             
-            // SI LA FASE ESTÁ OCULTA, GUARDAMOS NULL
             val days2 = if (layoutPhase2.visibility == View.VISIBLE) (etDaysPhase2.text.toString().toIntOrNull() ?: 7) else null
             val quad2 = if (layoutPhase2.visibility == View.VISIBLE) Quadrant.values()[spinnerPhase2Quadrant.selectedItemPosition] else null
             
             val days3 = if (layoutPhase3.visibility == View.VISIBLE) (etDaysPhase3.text.toString().toIntOrNull() ?: 0) else null
             val quad3 = if (layoutPhase3.visibility == View.VISIBLE) Quadrant.values()[spinnerPhase3Quadrant.selectedItemPosition] else null
+
+            // VALIDACIÓN LÓGICA
+            if (isEvent) {
+                if (days2 != null && days2 > days1) {
+                    Toast.makeText(this, "La Fase 2 no puede tener más días que la Fase 1", Toast.LENGTH_LONG).show()
+                    return@setOnClickListener
+                }
+                if (days3 != null && days3 > (days2 ?: days1)) {
+                    Toast.makeText(this, "La Fase 3 no puede tener más días que la fase anterior", Toast.LENGTH_LONG).show()
+                    return@setOnClickListener
+                }
+            }
 
             val recurrence = RecurrenceType.values()[spinnerRecurrence.selectedItemPosition]
             
