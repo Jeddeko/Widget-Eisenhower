@@ -48,6 +48,10 @@ class QuickAddActivity : Activity() {
         val checkIsEvent = findViewById<CheckBox>(R.id.checkIsEvent)
         val layoutEventOptions = findViewById<LinearLayout>(R.id.layoutEventOptions)
         
+        val layoutPhase2 = findViewById<LinearLayout>(R.id.layoutPhase2)
+        val layoutPhase3 = findViewById<LinearLayout>(R.id.layoutPhase3)
+        val btnAddPhase = findViewById<MaterialButton>(R.id.btnAddPhase)
+
         val etDaysPhase1 = findViewById<EditText>(R.id.etDaysPhase1)
         val btnCalPhase1 = findViewById<ImageButton>(R.id.btnCalPhase1)
         val spinnerPhase1Quadrant = findViewById<Spinner>(R.id.spinnerPhase1Quadrant)
@@ -80,6 +84,15 @@ class QuickAddActivity : Activity() {
             layoutBaseQuadrant.visibility = if (isChecked) View.GONE else View.VISIBLE
         }
 
+        btnAddPhase.setOnClickListener {
+            if (layoutPhase2.visibility == View.GONE) {
+                layoutPhase2.visibility = View.VISIBLE
+            } else if (layoutPhase3.visibility == View.GONE) {
+                layoutPhase3.visibility = View.VISIBLE
+                btnAddPhase.visibility = View.GONE // Ocultar el botón porque ya llegamos al máximo
+            }
+        }
+
         val taskId = intent.getLongExtra(EisenhowerWidgetProvider.EXTRA_TASK_ID, -1L)
         val incomingQuadrant = Quadrant.fromKey(intent.getStringExtra(EisenhowerWidgetProvider.EXTRA_QUADRANT))
 
@@ -103,7 +116,6 @@ class QuickAddActivity : Activity() {
             }
         }
 
-        // Función reutilizable para elegir fecha exacta y convertir a días
         fun showCalendarForPhase(editText: EditText) {
             if (selectedDueAt == null) {
                 Toast.makeText(this, "Primero selecciona la fecha del evento principal", Toast.LENGTH_SHORT).show()
@@ -115,13 +127,10 @@ class QuickAddActivity : Activity() {
                     set(Calendar.YEAR, year); set(Calendar.MONTH, month); set(Calendar.DAY_OF_MONTH, dayOfMonth)
                     set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
                 }
-                
-                // Convertimos la fecha del evento a las 00:00 para calcular días exactos
                 val eventCal = Calendar.getInstance().apply {
                     timeInMillis = selectedDueAt!!
                     set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
                 }
-                
                 val diffMillis = eventCal.timeInMillis - chosenCal.timeInMillis
                 val days = TimeUnit.MILLISECONDS.toDays(diffMillis).toInt()
                 
@@ -152,10 +161,24 @@ class QuickAddActivity : Activity() {
                 checkIsEvent.isChecked = task.isEvent
                 etDaysPhase1.setText(task.advanceNoticeDays1.toString())
                 spinnerPhase1Quadrant.setSelection(task.quadrantPhase1.ordinal)
-                etDaysPhase2.setText(task.advanceNoticeDays2.toString())
-                spinnerPhase2Quadrant.setSelection(task.quadrantPhase2.ordinal)
-                etDaysPhase3.setText(task.advanceNoticeDays3.toString())
-                spinnerPhase3Quadrant.setSelection(task.quadrantPhase3.ordinal)
+                
+                // SI LOS DÍAS SON NULL, LA FASE ESTÁ OCULTA
+                if (task.advanceNoticeDays2 != null && task.quadrantPhase2 != null) {
+                    layoutPhase2.visibility = View.VISIBLE
+                    etDaysPhase2.setText(task.advanceNoticeDays2.toString())
+                    spinnerPhase2Quadrant.setSelection(task.quadrantPhase2.ordinal)
+                } else {
+                    layoutPhase2.visibility = View.GONE
+                }
+
+                if (task.advanceNoticeDays3 != null && task.quadrantPhase3 != null) {
+                    layoutPhase3.visibility = View.VISIBLE
+                    etDaysPhase3.setText(task.advanceNoticeDays3.toString())
+                    spinnerPhase3Quadrant.setSelection(task.quadrantPhase3.ordinal)
+                    btnAddPhase.visibility = View.GONE
+                } else {
+                    layoutPhase3.visibility = View.GONE
+                }
                 
                 spinnerRecurrence.setSelection(task.recurrence.ordinal)
                 
@@ -222,10 +245,13 @@ class QuickAddActivity : Activity() {
             
             val days1 = etDaysPhase1.text.toString().toIntOrNull() ?: 30
             val quad1 = Quadrant.values()[spinnerPhase1Quadrant.selectedItemPosition]
-            val days2 = etDaysPhase2.text.toString().toIntOrNull() ?: 7
-            val quad2 = Quadrant.values()[spinnerPhase2Quadrant.selectedItemPosition]
-            val days3 = etDaysPhase3.text.toString().toIntOrNull() ?: 0
-            val quad3 = Quadrant.values()[spinnerPhase3Quadrant.selectedItemPosition]
+            
+            // SI LA FASE ESTÁ OCULTA, GUARDAMOS NULL
+            val days2 = if (layoutPhase2.visibility == View.VISIBLE) (etDaysPhase2.text.toString().toIntOrNull() ?: 7) else null
+            val quad2 = if (layoutPhase2.visibility == View.VISIBLE) Quadrant.values()[spinnerPhase2Quadrant.selectedItemPosition] else null
+            
+            val days3 = if (layoutPhase3.visibility == View.VISIBLE) (etDaysPhase3.text.toString().toIntOrNull() ?: 0) else null
+            val quad3 = if (layoutPhase3.visibility == View.VISIBLE) Quadrant.values()[spinnerPhase3Quadrant.selectedItemPosition] else null
 
             val recurrence = RecurrenceType.values()[spinnerRecurrence.selectedItemPosition]
             
