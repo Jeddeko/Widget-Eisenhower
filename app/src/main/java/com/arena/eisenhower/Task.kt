@@ -15,7 +15,7 @@ enum class RecurrenceType { NONE, DAILY, WEEKLY, MONTHLY }
 data class Task(
     val id: Long,
     val title: String,
-    val quadrant: Quadrant, // Cuadrante base (solo para tareas normales)
+    val quadrant: Quadrant,
     val done: Boolean = false,
     val dueAt: Long? = null,
     val createdAt: Long = System.currentTimeMillis(),
@@ -26,15 +26,17 @@ data class Task(
     
     val isEvent: Boolean = false,
     
-    // NUEVOS CAMPOS: 3 FASES DINÁMICAS
+    // FASE 1: Obligatoria si es evento
     val advanceNoticeDays1: Int = 30, 
     val quadrantPhase1: Quadrant = Quadrant.DELEGATE, 
     
-    val advanceNoticeDays2: Int = 7, 
-    val quadrantPhase2: Quadrant = Quadrant.SCHEDULE, 
+    // FASE 2: Opcional (null por defecto)
+    val advanceNoticeDays2: Int? = null, 
+    val quadrantPhase2: Quadrant? = null, 
     
-    val advanceNoticeDays3: Int = 0, 
-    val quadrantPhase3: Quadrant = Quadrant.DO_FIRST,
+    // FASE 3: Opcional (null por defecto)
+    val advanceNoticeDays3: Int? = null, 
+    val quadrantPhase3: Quadrant? = null,
     
     val recurrence: RecurrenceType = RecurrenceType.NONE,
     val recurrenceDayOfWeek: Int? = null,
@@ -86,10 +88,13 @@ data class Task(
         val daysUntil = TimeUnit.MILLISECONDS.toDays(diffMillis).toInt()
 
         return when {
-            daysUntil <= advanceNoticeDays3 -> quadrantPhase3
-            daysUntil <= advanceNoticeDays2 -> quadrantPhase2
+            // Revisa si la Fase 3 existe (no es null) y si estamos en el rango
+            advanceNoticeDays3 != null && quadrantPhase3 != null && daysUntil <= advanceNoticeDays3 -> quadrantPhase3
+            // Revisa si la Fase 2 existe
+            advanceNoticeDays2 != null && quadrantPhase2 != null && daysUntil <= advanceNoticeDays2 -> quadrantPhase2
+            // La Fase 1 siempre existe si es un evento
             daysUntil <= advanceNoticeDays1 -> quadrantPhase1
-            else -> null // No se muestra aún en la matriz
+            else -> null 
         }
     }
 
