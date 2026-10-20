@@ -26,6 +26,13 @@ class TaskRepository(context: Context) {
                         }
                     }
 
+                    // LECTURA SEGURA DE NULOS PARA FASE 2 Y 3
+                    val days2 = if (obj.has("advanceNoticeDays2") && !obj.isNull("advanceNoticeDays2")) obj.getInt("advanceNoticeDays2") else null
+                    val quad2 = if (obj.has("quadrantPhase2") && !obj.isNull("quadrantPhase2")) Quadrant.fromKey(obj.getString("quadrantPhase2")) else null
+                    
+                    val days3 = if (obj.has("advanceNoticeDays3") && !obj.isNull("advanceNoticeDays3")) obj.getInt("advanceNoticeDays3") else null
+                    val quad3 = if (obj.has("quadrantPhase3") && !obj.isNull("quadrantPhase3")) Quadrant.fromKey(obj.getString("quadrantPhase3")) else null
+
                     add(Task(
                         id = obj.getLong("id"), 
                         title = obj.optString("title", ""), 
@@ -41,10 +48,10 @@ class TaskRepository(context: Context) {
                         isEvent = obj.optBoolean("isEvent", false),
                         advanceNoticeDays1 = obj.optInt("advanceNoticeDays1", 30),
                         quadrantPhase1 = Quadrant.fromKey(obj.optString("quadrantPhase1", "delegate")),
-                        advanceNoticeDays2 = obj.optInt("advanceNoticeDays2", 7),
-                        quadrantPhase2 = Quadrant.fromKey(obj.optString("quadrantPhase2", "schedule")),
-                        advanceNoticeDays3 = obj.optInt("advanceNoticeDays3", 0),
-                        quadrantPhase3 = Quadrant.fromKey(obj.optString("quadrantPhase3", "do")),
+                        advanceNoticeDays2 = days2,
+                        quadrantPhase2 = quad2,
+                        advanceNoticeDays3 = days3,
+                        quadrantPhase3 = quad3,
                         
                         recurrence = try { RecurrenceType.valueOf(obj.optString("recurrence", "NONE")) } catch(e: Exception) { RecurrenceType.NONE },
                         recurrenceDayOfWeek = if (obj.has("recurrenceDayOfWeek") && !obj.isNull("recurrenceDayOfWeek")) obj.getInt("recurrenceDayOfWeek") else null,
@@ -94,9 +101,14 @@ class TaskRepository(context: Context) {
                 .put("order", task.order)
                 .put("isEvent", task.isEvent)
                 .put("advanceNoticeDays1", task.advanceNoticeDays1).put("quadrantPhase1", task.quadrantPhase1.key)
-                .put("advanceNoticeDays2", task.advanceNoticeDays2).put("quadrantPhase2", task.quadrantPhase2.key)
-                .put("advanceNoticeDays3", task.advanceNoticeDays3).put("quadrantPhase3", task.quadrantPhase3.key)
                 .put("recurrence", task.recurrence.name)
+
+            // ESCRITURA SEGURA DE NULOS
+            obj.put("advanceNoticeDays2", task.advanceNoticeDays2 ?: JSONObject.NULL)
+            obj.put("quadrantPhase2", task.quadrantPhase2?.key ?: JSONObject.NULL)
+            
+            obj.put("advanceNoticeDays3", task.advanceNoticeDays3 ?: JSONObject.NULL)
+            obj.put("quadrantPhase3", task.quadrantPhase3?.key ?: JSONObject.NULL)
 
             obj.put("dueAt", if (task.dueAt == null) JSONObject.NULL else task.dueAt)
             obj.put("calendarEventId", if (task.calendarEventId == null) JSONObject.NULL else task.calendarEventId)
