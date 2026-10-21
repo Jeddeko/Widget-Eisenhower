@@ -3,6 +3,7 @@ package com.arena.eisenhower
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
+import android.graphics.Paint
 import android.view.View
 import android.widget.RemoteViews
 import android.widget.RemoteViewsService
@@ -10,8 +11,10 @@ import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import java.util.concurrent.TimeUnit
 
 class CalendarWidgetService : RemoteViewsService() {
     override fun onGetViewFactory(intent: Intent): RemoteViewsFactory {
@@ -36,7 +39,9 @@ class CalendarWidgetFactory(
         val title: String,
         val color: Int,
         val isReminder: Boolean,
-        val timePrefix: String = ""
+        val timePrefix: String = "",
+        val isDone: Boolean = false,
+        val isGhost: Boolean = false // Si es un registro de tarea atrasada
     )
 
     private data class DayCell(
@@ -53,7 +58,6 @@ class CalendarWidgetFactory(
     private var todayBgColor: Int = Color.LTGRAY
     private var todayTextColor: Int = Color.BLUE
 
-    // CACHE DE IDs ESTÁTICOS PARA EVITAR EL COLAPSO POR RENDIMIENTO
     private val cellIds = intArrayOf(R.id.cell_1, R.id.cell_2, R.id.cell_3, R.id.cell_4, R.id.cell_5, R.id.cell_6, R.id.cell_7)
     private val numIds = intArrayOf(R.id.day_1_number, R.id.day_2_number, R.id.day_3_number, R.id.day_4_number, R.id.day_5_number, R.id.day_6_number, R.id.day_7_number)
     private val taskIds = arrayOf(
@@ -82,7 +86,6 @@ class CalendarWidgetFactory(
 
         val today = LocalDate.now()
         val todayStart = today.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-        
         val itemsByDay = mutableMapOf<LocalDate, MutableList<CalendarEventItem>>()
         val settings = AppSettings(context)
         val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
@@ -91,11 +94,7 @@ class CalendarWidgetFactory(
         val monthStartMillis = firstOfMonth.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
         val monthEndMillis = firstOfMonth.plusMonths(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli() - 1
 
-        val allTasks = TaskRepository(context).getAll()
-
-        allTasks.forEach { task ->
-            if (task.done) return@forEach 
-            
+        TaskRepository(context).getAll().forEach { task ->
             val qColor = when (task.quadrant) {
                 Quadrant.DO_FIRST -> settings.colorQ1
                 Quadrant.SCHEDULE -> settings.colorQ2
@@ -106,13 +105,39 @@ class CalendarWidgetFactory(
             val occurrences = task.getOccurrences(monthStartMillis, monthEndMillis)
             occurrences.forEach { time ->
                 val date = Instant.ofEpochMilli(time).atZone(ZoneId.systemDefault()).toLocalDate()
-                itemsByDay.getOrPut(date) { mutableListOf() }.add(
-                    CalendarEventItem(task.id, task.title, qColor, isReminder = false)
-                )
+                
+                if (task.done) {
+                    // Lógica de tarea completada
+                    val completionDay = Instant.ofEpochMilli(task.updatedAt).atZone(ZoneId.systemDefault()).toLocalDate()
+                    val dueDay = Instant.ofEpochMilli(task.dueAt ?: task.updatedAt).atZone(ZoneId.systemDefault()).toLocalDate()
+
+                    if (date == dueDay && date == completionDay) {
+                        // Completada a tiempo
+                        itemsByDay.getOrPut(date) { mutableListOf() }.add(
+                            CalendarEventItem(task.id, task.title, qColor, isReminder = false, isDone = true)
+                        )
+                    } else if (date == dueDay) {
+                        // Fecha original de tarea atrasada (Ghost en gris)
+                        itemsByDay.getOrPut(date) { mutableListOf() }.add(
+                            CalendarEventItem(task.id, task.title, Color.parseColor("#94A3B8"), isReminder = false, isDone = true, isGhost = true)
+                        )
+                    } else if (date == completionDay) {
+                        // Día en que se completó tarde
+                        val daysLate = TimeUnit.MILLISECONDS.toDays(task.updatedAt - (task.dueAt ?: task.updatedAt)).toInt()
+                        val prefix = if (daysLate == 1) "COMPLETADO 1 DÍA DESPUÉS: " else "COMPLETADO $daysLate DÍAS DESPUÉS: "
+                        itemsByDay.getOrPut(date) { mutableListOf() }.add(
+                            CalendarEventItem(task.id, prefix + task.title, qColor, isReminder = false, isDone = true)
+                        )
+                    }
+                } else {
+                    // Tarea normal no completada
+                    itemsByDay.getOrPut(date) { mutableListOf() }.add(
+                        CalendarEventItem(task.id, task.title, qColor, isReminder = false, isDone = false)
+                    )
+                }
             }
 
             task.reminders.forEach { reminderTime ->
-                // ARREGLO: Solo agregamos el recordatorio si es de hoy en adelante
                 if (reminderTime in monthStartMillis..monthEndMillis && reminderTime >= todayStart) {
                     val remDate = Instant.ofEpochMilli(reminderTime).atZone(ZoneId.systemDefault()).toLocalDate()
                     val timeStr = timeFormat.format(Date(reminderTime))
@@ -174,7 +199,6 @@ class CalendarWidgetFactory(
             }
             rv.setOnClickFillInIntent(cellId, addIntent)
 
-            // USAMOS LOS IDs PRECALCULADOS (SÚPER RÁPIDO)
             for (t in 0 until 15) {
                 val taskId = taskIds[i][t]
                 if (t < cell.items.size) {
@@ -186,6 +210,13 @@ class CalendarWidgetFactory(
                     rv.setTextViewText(taskId, displayText)
                     rv.setInt(taskId, "setBackgroundColor", item.color)
                     rv.setTextColor(taskId, if (isColorDark(item.color)) Color.WHITE else Color.BLACK)
+
+                    // TACHADO SI ESTÁ COMPLETADA
+                    if (item.isDone) {
+                        rv.setInt(taskId, "setPaintFlags", Paint.STRIKE_THRU_TEXT_FLAG or Paint.ANTI_ALIAS_FLAG)
+                    } else {
+                        rv.setInt(taskId, "setPaintFlags", Paint.ANTI_ALIAS_FLAG)
+                    }
 
                     val editIntent = Intent().apply {
                         putExtra(EisenhowerWidgetProvider.EXTRA_TASK_ID, item.id)
