@@ -177,7 +177,6 @@ class MainActivity : Activity() {
         setupQuadrantUI(Quadrant.DELEGATE, R.id.cardQ3, R.id.titleQ3View, R.id.btnAddQ3, R.id.headerCompletedQ3, R.id.containerCompletedQ3, rvQ3, settings.colorQ3, settings.titleQ3, allTasks)
         setupQuadrantUI(Quadrant.ELIMINATE, R.id.cardQ4, R.id.titleQ4View, R.id.btnAddQ4, R.id.headerCompletedQ4, R.id.containerCompletedQ4, rvQ4, settings.colorQ4, settings.titleQ4, allTasks)
         
-        // Arreglo: Refrescar la vista del calendario si está visible
         if (viewCalendar.visibility == View.VISIBLE) {
             renderAppCalendar()
         }
