@@ -19,7 +19,7 @@ data class Task(
     val done: Boolean = false,
     val dueAt: Long? = null,
     val createdAt: Long = System.currentTimeMillis(),
-    val updatedAt: Long = System.currentTimeMillis(),
+    val updatedAt: Long = System.currentTimeMillis(), // Esta fecha sirve como fecha de completado
     val calendarEventId: Long? = null,
     val order: Int = 0,
     val reminders: List<Long> = emptyList(),
@@ -88,82 +88,95 @@ data class Task(
 
     fun getOccurrences(startMillis: Long, endMillis: Long): List<Long> {
         if (dueAt == null) return emptyList()
-        val occurrences = mutableListOf<Long>()
+        val occurrences = mutableSetOf<Long>()
+        
         val todayStart = Calendar.getInstance().apply {
             set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
         }.timeInMillis
 
-        // 1. ROLLOVER (Mover si no está hecha y es del pasado)
-        var isRolledOver = false
-        if (!done && dueAt < todayStart) {
-            val originalCal = Calendar.getInstance().apply { timeInMillis = dueAt }
-            val rolledCal = Calendar.getInstance().apply {
-                timeInMillis = todayStart
-                set(Calendar.HOUR_OF_DAY, originalCal.get(Calendar.HOUR_OF_DAY))
-                set(Calendar.MINUTE, originalCal.get(Calendar.MINUTE))
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
+        if (done) {
+            // SI ESTÁ COMPLETADA
+            val completionDay = Calendar.getInstance().apply {
+                timeInMillis = updatedAt
+                set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+            }.timeInMillis
+
+            val dueDay = Calendar.getInstance().apply {
+                timeInMillis = dueAt
+                set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+            }.timeInMillis
+
+            // Mostrar en la fecha original (se pintará de gris)
+            if (dueDay in startMillis..endMillis) occurrences.add(dueAt)
+
+            // Si se completó después del día de vencimiento, mostrar también en el día de completado
+            if (completionDay > dueDay && completionDay in startMillis..endMillis) {
+                occurrences.add(updatedAt)
             }
-            // Si la hora de hoy ya pasó, moverlo a mañana
-            if (rolledCal.timeInMillis < System.currentTimeMillis()) {
-                rolledCal.add(Calendar.DAY_OF_YEAR, 1)
-            }
-            if (rolledCal.timeInMillis in startMillis..endMillis) {
-                occurrences.add(rolledCal.timeInMillis)
-            }
-            isRolledOver = true
-        }
-        
-        // 2. Lógica normal o recurrente
-        if (recurrence == RecurrenceType.NONE) {
-            // Si NO es recurrente, agregamos la original SOLO si no fue rodada o si está completada
-            if (dueAt in startMillis..endMillis && (!isRolledOver || done)) {
+        } else {
+            // SI NO ESTÁ COMPLETADA
+            // 1. Rollover (si ya venció)
+            if (dueAt < todayStart) {
+                val originalCal = Calendar.getInstance().apply { timeInMillis = dueAt }
+                val rolledCal = Calendar.getInstance().apply {
+                    timeInMillis = todayStart
+                    set(Calendar.HOUR_OF_DAY, originalCal.get(Calendar.HOUR_OF_DAY))
+                    set(Calendar.MINUTE, originalCal.get(Calendar.MINUTE))
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }
+                if (rolledCal.timeInMillis < System.currentTimeMillis()) {
+                    rolledCal.add(Calendar.DAY_OF_YEAR, 1)
+                }
+                if (rolledCal.timeInMillis in startMillis..endMillis) {
+                    occurrences.add(rolledCal.timeInMillis)
+                }
+            } else if (dueAt in startMillis..endMillis) {
                 occurrences.add(dueAt)
             }
-            return occurrences.distinct()
-        }
-        
-        // Si es recurrente, calculamos las ocurrencias
-        val cal = Calendar.getInstance().apply { timeInMillis = dueAt }
-        
-        // Salto rápido para no colapsar el widget
-        if (startMillis > dueAt) {
-            val diffDays = TimeUnit.MILLISECONDS.toDays(startMillis - dueAt)
-            when (recurrence) {
-                RecurrenceType.DAILY -> cal.add(Calendar.DAY_OF_YEAR, diffDays.toInt())
-                RecurrenceType.WEEKLY -> cal.add(Calendar.WEEK_OF_YEAR, (diffDays / 7).toInt())
-                RecurrenceType.MONTHLY -> {
-                    val months = (diffDays / 30).toInt()
-                    cal.add(Calendar.MONTH, months)
-                    if (recurrenceDayOfMonth != null) {
-                        val maxDay = cal.getActualMaximum(Calendar.DAY_OF_MONTH)
-                        cal.set(Calendar.DAY_OF_MONTH, minOf(recurrenceDayOfMonth, maxDay))
+            
+            // 2. Lógica recurrente (solo si no se ha completado)
+            if (recurrence != RecurrenceType.NONE) {
+                val cal = Calendar.getInstance().apply { timeInMillis = dueAt }
+                
+                if (startMillis > dueAt) {
+                    val diffDays = TimeUnit.MILLISECONDS.toDays(startMillis - dueAt)
+                    when (recurrence) {
+                        RecurrenceType.DAILY -> cal.add(Calendar.DAY_OF_YEAR, diffDays.toInt())
+                        RecurrenceType.WEEKLY -> cal.add(Calendar.WEEK_OF_YEAR, (diffDays / 7).toInt())
+                        RecurrenceType.MONTHLY -> {
+                            val months = (diffDays / 30).toInt()
+                            cal.add(Calendar.MONTH, months)
+                            if (recurrenceDayOfMonth != null) {
+                                val maxDay = cal.getActualMaximum(Calendar.DAY_OF_MONTH)
+                                cal.set(Calendar.DAY_OF_MONTH, minOf(recurrenceDayOfMonth, maxDay))
+                            }
+                        }
+                        else -> {}
                     }
                 }
-                else -> {}
-            }
-        }
 
-        var iterations = 0
-        // Máximo 100 iteraciones para no colapsar la memoria
-        while (cal.timeInMillis <= endMillis && iterations < 100) {
-            if (cal.timeInMillis >= startMillis && cal.timeInMillis >= todayStart) {
-                occurrences.add(cal.timeInMillis)
-            }
-            when (recurrence) {
-                RecurrenceType.DAILY -> cal.add(Calendar.DAY_OF_YEAR, 1)
-                RecurrenceType.WEEKLY -> cal.add(Calendar.WEEK_OF_YEAR, 1)
-                RecurrenceType.MONTHLY -> {
-                    cal.add(Calendar.MONTH, 1)
-                    if (recurrenceDayOfMonth != null) {
-                        val maxDay = cal.getActualMaximum(Calendar.DAY_OF_MONTH)
-                        cal.set(Calendar.DAY_OF_MONTH, minOf(recurrenceDayOfMonth, maxDay))
+                var iterations = 0
+                while (cal.timeInMillis <= endMillis && iterations < 100) {
+                    if (cal.timeInMillis >= startMillis && cal.timeInMillis >= todayStart) {
+                        occurrences.add(cal.timeInMillis)
                     }
+                    when (recurrence) {
+                        RecurrenceType.DAILY -> cal.add(Calendar.DAY_OF_YEAR, 1)
+                        RecurrenceType.WEEKLY -> cal.add(Calendar.WEEK_OF_YEAR, 1)
+                        RecurrenceType.MONTHLY -> {
+                            cal.add(Calendar.MONTH, 1)
+                            if (recurrenceDayOfMonth != null) {
+                                val maxDay = cal.getActualMaximum(Calendar.DAY_OF_MONTH)
+                                cal.set(Calendar.DAY_OF_MONTH, minOf(recurrenceDayOfMonth, maxDay))
+                            }
+                        }
+                        else -> break
+                    }
+                    iterations++
                 }
-                else -> break
             }
-            iterations++
         }
-        return occurrences.distinct()
+        return occurrences.toList()
     }
 }
