@@ -110,7 +110,6 @@ class CalendarWidgetProvider : AppWidgetProvider() {
             }
             views.setOnClickPendingIntent(R.id.btn_next_month, PendingIntent.getBroadcast(context, 200 + appWidgetId, nextIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
 
-            // --- CÁLCULO DE ALTURA REAL (MIN_HEIGHT / MAX_HEIGHT) ---
             val options = manager.getAppWidgetOptions(appWidgetId)
             val isPortrait = context.resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT
             
@@ -123,12 +122,9 @@ class CalendarWidgetProvider : AppWidgetProvider() {
             }
             
             val density = context.resources.displayMetrics.density
-            
-            // Restamos 70dp exactos para la cabecera
             val headerHeightPx = (70 * density).toInt()
             val totalAvailablePx = ((currentHeightDp * density).toInt() - headerHeightPx).coerceAtLeast(0)
             
-            // Dividimos entre 6 filas y redondeamos hacia arriba
             var minRowHeightPx = ceil(totalAvailablePx / 6.0).toInt()
             if (minRowHeightPx < (40 * density).toInt()) minRowHeightPx = (40 * density).toInt()
 
