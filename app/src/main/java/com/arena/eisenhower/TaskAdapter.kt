@@ -7,6 +7,7 @@ import android.text.SpannableString
 import android.text.Spanned
 import android.text.style.StrikethroughSpan
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.CheckBox
@@ -20,7 +21,7 @@ class TaskAdapter(
     private val onCheckClick: (Task) -> Unit,
     private val onItemClick: (Task) -> Unit,
     private val onItemLongClick: (Task) -> Unit,
-    private val onStartDrag: (RecyclerView.ViewHolder) -> Unit // NUEVO: Para el arrastre
+    private val onStartDrag: (RecyclerView.ViewHolder) -> Unit
 ) : RecyclerView.Adapter<TaskAdapter.TaskViewHolder>() {
 
     class TaskViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -28,7 +29,7 @@ class TaskAdapter(
         val title: TextView = view.findViewById(R.id.rowTitle)
         val meta: TextView = view.findViewById(R.id.rowMeta)
         val btnDelete: View = view.findViewById(R.id.btnDelete)
-        val dragHandle: View = view.findViewById(R.id.dragHandle) // NUEVO
+        val dragHandle: View = view.findViewById(R.id.dragHandle)
         val root: View = view
     }
 
@@ -73,7 +74,6 @@ class TaskAdapter(
         holder.meta.text = "Orden: ${task.order} · ${DueDateUtils.format(task.dueAt)}"
         holder.btnDelete.visibility = View.GONE
 
-        // Color del tirador adaptado al tema
         (holder.dragHandle as TextView).setTextColor(if (isDark) Color.parseColor("#94A3B8") else Color.parseColor("#64748B"))
 
         holder.check.setOnClickListener { onCheckClick(task) }
@@ -83,12 +83,14 @@ class TaskAdapter(
             true 
         }
 
-        // Iniciar el arrastre solo si tocas el tirador
+        // NUEVO: Arrastrar y soltar nativo para mover entre cuadrantes
         holder.dragHandle.setOnTouchListener { v, event ->
-            if (event.actionMasked == android.view.MotionEvent.ACTION_DOWN) {
-                onStartDrag(holder)
+            if (event.actionMasked == MotionEvent.ACTION_DOWN) {
+                val dragData = android.content.ClipData.newPlainText("task", task.id.toString())
+                val shadow = View.DragShadowBuilder(v)
+                v.startDragAndDrop(dragData, shadow, task, 0)
             }
-            false
+            true
         }
     }
 
