@@ -32,6 +32,7 @@ import java.util.Calendar
 import java.util.Collections
 import java.util.Date
 import java.util.Locale
+import java.util.concurrent.TimeUnit
 
 class MainActivity : Activity() {
     private lateinit var repo: TaskRepository
@@ -48,7 +49,6 @@ class MainActivity : Activity() {
     private lateinit var viewMatrix: View
     private lateinit var viewCalendar: View
     
-    // Variables del Calendario
     private var appCurrentMonth = Calendar.getInstance()
     private lateinit var tvAppCurrentMonth: TextView
     private lateinit var containerWeeksApp: LinearLayout
@@ -69,7 +69,6 @@ class MainActivity : Activity() {
         viewCalendar = findViewById(R.id.viewCalendar)
         val bottomNav = findViewById<BottomNavigationView>(R.id.bottomNavigation)
 
-        // Configuración del Calendario
         tvAppCurrentMonth = findViewById(R.id.tvAppCurrentMonth)
         containerWeeksApp = findViewById(R.id.containerWeeksApp)
         
@@ -82,7 +81,6 @@ class MainActivity : Activity() {
             renderAppCalendar()
         }
 
-        // Botón flotante para añadir tarea desde el calendario
         findViewById<FloatingActionButton>(R.id.fabAddTaskCalendar).setOnClickListener {
             val intent = Intent(this, QuickAddActivity::class.java)
             val cal = Calendar.getInstance().apply {
@@ -92,7 +90,6 @@ class MainActivity : Activity() {
             startActivity(intent)
         }
 
-        // Menú Inferior
         bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.nav_matrix -> {
@@ -111,7 +108,6 @@ class MainActivity : Activity() {
             }
         }
 
-        // Botones de añadir en la Matriz
         findViewById<MaterialButton>(R.id.btnAddQ1).setOnClickListener { openQuickAdd(Quadrant.DO_FIRST) }
         findViewById<MaterialButton>(R.id.btnAddQ2).setOnClickListener { openQuickAdd(Quadrant.SCHEDULE) }
         findViewById<MaterialButton>(R.id.btnAddQ3).setOnClickListener { openQuickAdd(Quadrant.DELEGATE) }
@@ -119,7 +115,6 @@ class MainActivity : Activity() {
 
         findViewById<MaterialButton>(R.id.btnSettings).setOnClickListener { startActivity(Intent(this, SettingsActivity::class.java)) }
         
-        // Botón de eliminar seleccionados
         findViewById<ImageButton>(R.id.btnDeleteSelected).setOnClickListener {
             if (selectedTaskIds.isNotEmpty()) {
                 selectedTaskIds.forEach { id -> repo.deleteTask(id) }
@@ -200,7 +195,7 @@ class MainActivity : Activity() {
         val allTasks = repo.getAll()
         val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
         
-        val eventsByDay = mutableMapOf<Int, MutableList<Pair<Task, Boolean>>>()
+        val eventsByDay = mutableMapOf<Int, MutableList<Triple<Task, Boolean, Boolean>>>()
         
         allTasks.forEach { task ->
             val occurrences = task.getOccurrences(monthStartMillis, monthEndMillis)
@@ -208,17 +203,36 @@ class MainActivity : Activity() {
                 val cal = Calendar.getInstance().apply { timeInMillis = time }
                 if (cal.get(Calendar.MONTH) == month && cal.get(Calendar.YEAR) == year) {
                     val day = cal.get(Calendar.DAY_OF_MONTH)
-                    eventsByDay.getOrPut(day) { mutableListOf() }.add(Pair(task, false))
+                    
+                    if (task.done) {
+                        val completionCal = Calendar.getInstance().apply { timeInMillis = task.updatedAt }
+                        val dueCal = Calendar.getInstance().apply { timeInMillis = task.dueAt ?: task.updatedAt }
+                        
+                        val isSameDay = completionCal.get(Calendar.DAY_OF_YEAR) == dueCal.get(Calendar.DAY_OF_YEAR) && 
+                                        completionCal.get(Calendar.YEAR) == dueCal.get(Calendar.YEAR)
+
+                        if (cal.get(Calendar.DAY_OF_YEAR) == dueCal.get(Calendar.DAY_OF_YEAR) && isSameDay) {
+                            // Completada a tiempo
+                            eventsByDay.getOrPut(day) { mutableListOf() }.add(Triple(task, false, true))
+                        } else if (cal.get(Calendar.DAY_OF_YEAR) == dueCal.get(Calendar.DAY_OF_YEAR)) {
+                            // Fecha original, atrasada (Ghost)
+                            eventsByDay.getOrPut(day) { mutableListOf() }.add(Triple(task, false, true))
+                        } else if (cal.get(Calendar.DAY_OF_YEAR) == completionCal.get(Calendar.DAY_OF_YEAR)) {
+                            // Día de completado tarde
+                            eventsByDay.getOrPut(day) { mutableListOf() }.add(Triple(task, true, true))
+                        }
+                    } else {
+                        eventsByDay.getOrPut(day) { mutableListOf() }.add(Triple(task, false, false))
+                    }
                 }
             }
 
             task.reminders.forEach { reminderTime ->
-                // ARREGLO: Solo agregamos el recordatorio si es de hoy en adelante
                 if (reminderTime >= todayStart) {
                     val cal = Calendar.getInstance().apply { timeInMillis = reminderTime }
                     if (cal.get(Calendar.MONTH) == month && cal.get(Calendar.YEAR) == year) {
                         val day = cal.get(Calendar.DAY_OF_MONTH)
-                        eventsByDay.getOrPut(day) { mutableListOf() }.add(Pair(task, true))
+                        eventsByDay.getOrPut(day) { mutableListOf() }.add(Triple(task, true, false))
                     }
                 }
             }
@@ -274,34 +288,78 @@ class MainActivity : Activity() {
                     val dayEvents = eventsByDay[dayNumber] ?: emptyList()
                     val sortedDayEvents = dayEvents.sortedBy { it.second }
 
-                    sortedDayEvents.forEach { pair ->
-                        val task = pair.first
-                        val isReminder = pair.second
+                    sortedDayEvents.forEach { triple ->
+                        val task = triple.first
+                        val isReminder = triple.second
+                        val isDone = triple.third
                         val eventView = inflater.inflate(R.layout.app_calendar_event, eventsContainer, false) as TextView
                         
+                        var displayText = ""
                         if (isReminder) {
                             val remTime = task.reminders.firstOrNull { 
                                 val rCal = Calendar.getInstance().apply { timeInMillis = it }
                                 rCal.get(Calendar.MONTH) == month && rCal.get(Calendar.YEAR) == year && rCal.get(Calendar.DAY_OF_MONTH) == dayNumber
                             } ?: 0L
-                            eventView.text = "🔔 ${timeFormat.format(Date(remTime))} - ${task.title}"
+                            displayText = "🔔 ${timeFormat.format(Date(remTime))} - ${task.title}"
                         } else {
-                            eventView.text = task.title
+                            // Lógica de texto de tareas atrasadas
+                            if (isDone && task.dueAt != null) {
+                                val dueCal = Calendar.getInstance().apply { 
+                                    timeInMillis = task.dueAt 
+                                    set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+                                }
+                                val completionCal = Calendar.getInstance().apply { 
+                                    timeInMillis = task.updatedAt 
+                                    set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+                                }
+                                val currentCellCal = Calendar.getInstance().apply { 
+                                    set(Calendar.YEAR, year); set(Calendar.MONTH, month); set(Calendar.DAY_OF_MONTH, dayNumber)
+                                }
+                                
+                                if (completionCal.after(dueCal) && currentCellCal.get(Calendar.DAY_OF_YEAR) == completionCal.get(Calendar.DAY_OF_YEAR)) {
+                                    val daysLate = TimeUnit.MILLISECONDS.toDays(completionCal.timeInMillis - dueCal.timeInMillis).toInt()
+                                    val prefix = if (daysLate == 1) "COMPLETADO 1 DÍA DESPUÉS: " else "COMPLETADO $daysLate DÍAS DESPUÉS: "
+                                    displayText = prefix + task.title
+                                } else {
+                                    displayText = task.title
+                                }
+                            } else {
+                                displayText = task.title
+                            }
                         }
+
+                        eventView.text = displayText
                         
-                        val qColor = when(task.quadrant) {
+                        var qColor = when(task.quadrant) {
                             Quadrant.DO_FIRST -> settings.colorQ1
                             Quadrant.SCHEDULE -> settings.colorQ2
                             Quadrant.DELEGATE -> settings.colorQ3
                             Quadrant.ELIMINATE -> settings.colorQ4
                         }
                         
+                        // Pintar de gris si es la tarea original atrasada
+                        if (isDone && task.dueAt != null) {
+                            val dueCal = Calendar.getInstance().apply { timeInMillis = task.dueAt; set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0) }
+                            val completionCal = Calendar.getInstance().apply { timeInMillis = task.updatedAt; set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0) }
+                            val currentCellCal = Calendar.getInstance().apply { set(Calendar.YEAR, year); set(Calendar.MONTH, month); set(Calendar.DAY_OF_MONTH, dayNumber) }
+                            
+                            if (completionCal.after(dueCal) && currentCellCal.get(Calendar.DAY_OF_YEAR) == dueCal.get(Calendar.DAY_OF_YEAR)) {
+                                qColor = Color.parseColor("#94A3B8") // Gris
+                            }
+                        }
+
                         val drawable = GradientDrawable().apply {
                             setColor(qColor)
                             cornerRadius = 8f
                         }
                         eventView.background = drawable
                         eventView.setTextColor(if (isColorDark(qColor)) Color.WHITE else Color.BLACK)
+                        
+                        if (isDone) {
+                            eventView.paintFlags = eventView.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
+                        } else {
+                            eventView.paintFlags = eventView.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
+                        }
                         
                         eventView.setOnClickListener {
                             val intent = Intent(this, QuickAddActivity::class.java)
@@ -327,156 +385,4 @@ class MainActivity : Activity() {
     ) {
         val isDark = isColorDark(color)
         val mainTextColor = if (isDark) Color.WHITE else Color.BLACK
-        val secondaryTextColor = if (isDark) Color.parseColor("#D1D5DB") else Color.parseColor("#4B5563")
-
-        findViewById<MaterialCardView>(cardId).setCardBackgroundColor(color)
-        findViewById<TextView>(titleId).apply { text = titleStr; setTextColor(mainTextColor) }
-        findViewById<MaterialButton>(btnAddId).setTextColor(mainTextColor)
-
-        val quadrantTasks = allTasks.filter { it.getEffectiveQuadrant() == quadrant }
-        val activeTasks = quadrantTasks.filter { !it.done }.sortedBy { it.order }.toMutableList()
-        val completedTasks = quadrantTasks.filter { it.done }.sortedByDescending { it.updatedAt }
-
-        val activeAdapter = TaskAdapter(
-            activeTasks, color, selectedTaskIds,
-            onCheckClick = { task -> 
-                repo.toggleTask(task.id); refreshTasks(); EisenhowerWidgetProvider.updateAllWidgets(this); CloudSync.uploadTasks(this) 
-            },
-            onItemClick = { task -> 
-                if (selectedTaskIds.isEmpty()) openQuickAddEdit(task)
-                else {
-                    if (selectedTaskIds.contains(task.id)) selectedTaskIds.remove(task.id) else selectedTaskIds.add(task.id)
-                    updateSelectionHeader(); refreshTasks()
-                }
-            },
-            onItemLongClick = { task ->
-                if (selectedTaskIds.contains(task.id)) selectedTaskIds.remove(task.id) else selectedTaskIds.add(task.id)
-                updateSelectionHeader(); refreshTasks()
-            },
-            onStartDrag = { }
-        )
-        rv.layoutManager = LinearLayoutManager(this)
-        rv.adapter = activeAdapter
-
-        val completedHeader = findViewById<TextView>(headerId)
-        val completedContainer = findViewById<LinearLayout>(containerId)
-
-        if (completedTasks.isEmpty()) {
-            completedHeader.visibility = View.GONE
-            completedContainer.visibility = View.GONE
-        } else {
-            completedHeader.visibility = View.VISIBLE
-            completedHeader.setTextColor(secondaryTextColor)
-            completedHeader.text = "Completadas (${completedTasks.size}) ▼"
-            completedContainer.visibility = View.GONE
-            
-            completedHeader.setOnClickListener {
-                if (completedContainer.visibility == View.GONE) {
-                    completedContainer.visibility = View.VISIBLE
-                    completedHeader.text = "Completadas (${completedTasks.size}) ▲"
-                } else {
-                    completedContainer.visibility = View.GONE
-                    completedHeader.text = "Completadas (${completedTasks.size}) ▼"
-                }
-            }
-
-            completedContainer.removeAllViews()
-            val inflater = LayoutInflater.from(this)
-            completedTasks.forEach { task ->
-                val row = inflater.inflate(R.layout.row_task_main, completedContainer, false)
-                val check = row.findViewById<CheckBox>(R.id.rowCheck)
-                val title = row.findViewById<TextView>(R.id.rowTitle)
-                val meta = row.findViewById<TextView>(R.id.rowMeta)
-                
-                check.isChecked = true
-                check.buttonTintList = android.content.res.ColorStateList.valueOf(mainTextColor)
-                title.text = task.title
-                title.setTextColor(mainTextColor)
-                title.paintFlags = title.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
-                meta.text = DueDateUtils.format(task.dueAt)
-                meta.setTextColor(secondaryTextColor)
-                
-                check.setOnClickListener { 
-                    repo.toggleTask(task.id); refreshTasks(); EisenhowerWidgetProvider.updateAllWidgets(this); CloudSync.uploadTasks(this) 
-                }
-                completedContainer.addView(row)
-            }
-        }
-
-        val itemTouchHelper = ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(
-            ItemTouchHelper.UP or ItemTouchHelper.DOWN, ItemTouchHelper.LEFT 
-        ) {
-            override fun onMove(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder): Boolean {
-                val fromPos = viewHolder.adapterPosition
-                val toPos = target.adapterPosition
-                if (fromPos < activeTasks.size && toPos < activeTasks.size && selectedTaskIds.isEmpty()) {
-                    Collections.swap(activeTasks, fromPos, toPos)
-                    activeAdapter.notifyItemMoved(fromPos, toPos)
-                    return true
-                }
-                return false
-            }
-
-            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
-                val position = viewHolder.adapterPosition
-                if (position != RecyclerView.NO_POSITION && direction == ItemTouchHelper.LEFT) {
-                    val taskToDelete = activeTasks[position]
-                    repo.deleteTask(taskToDelete.id)
-                    CloudSync.uploadTasks(this@MainActivity)
-                    refreshTasks()
-                    EisenhowerWidgetProvider.updateAllWidgets(this@MainActivity)
-                    Toast.makeText(this@MainActivity, "Tarea eliminada", Toast.LENGTH_SHORT).show()
-                }
-            }
-
-            override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
-                super.clearView(recyclerView, viewHolder)
-                viewHolder.itemView.translationX = 0f
-                viewHolder.itemView.alpha = 1f
-                if (selectedTaskIds.isEmpty()) {
-                    for (i in activeTasks.indices) { repo.updateOrder(activeTasks[i].id, i + 1) }
-                    EisenhowerWidgetProvider.updateAllWidgets(this@MainActivity)
-                    CloudSync.uploadTasks(this@MainActivity)
-                }
-            }
-
-            override fun isLongPressDragEnabled(): Boolean = selectedTaskIds.isEmpty()
-            override fun getSwipeThreshold(viewHolder: RecyclerView.ViewHolder): Float = 0.5f
-
-            override fun onChildDraw(c: Canvas, recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, dX: Float, dY: Float, actionState: Int, isCurrentlyActive: Boolean) {
-                val itemView = viewHolder.itemView
-                val background = ColorDrawable(Color.parseColor("#EF4444"))
-                val deleteIcon: Drawable? = ContextCompat.getDrawable(this@MainActivity, android.R.drawable.ic_menu_delete)
-                
-                if (actionState == ItemTouchHelper.ACTION_STATE_SWIPE && dX < 0) {
-                    background.setBounds(itemView.right + dX.toInt(), itemView.top, itemView.right, itemView.bottom)
-                    background.draw(c)
-                    if (deleteIcon != null) {
-                        val iconMargin = (itemView.height - deleteIcon.intrinsicHeight) / 2
-                        deleteIcon.setBounds(itemView.right - iconMargin - deleteIcon.intrinsicWidth, itemView.top + iconMargin, itemView.right - iconMargin, itemView.bottom - iconMargin)
-                        deleteIcon.setTint(Color.WHITE)
-                        deleteIcon.draw(c)
-                    }
-                }
-                super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive)
-            }
-        })
-        itemTouchHelper.attachToRecyclerView(rv)
-    }
-
-    private fun openQuickAddEdit(task: Task) {
-        val intent = Intent(this, QuickAddActivity::class.java).apply {
-            putExtra(EisenhowerWidgetProvider.EXTRA_TASK_ID, task.id)
-            putExtra(EisenhowerWidgetProvider.EXTRA_QUADRANT, task.quadrant.key)
-        }
-        startActivity(intent)
-    }
-
-    private fun askPermissions() {
-        val permissions = mutableListOf<String>()
-        if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) permissions.add(Manifest.permission.POST_NOTIFICATIONS)
-        if (checkSelfPermission(Manifest.permission.READ_CALENDAR) != PackageManager.PERMISSION_GRANTED) permissions.add(Manifest.permission.READ_CALENDAR)
-        if (checkSelfPermission(Manifest.permission.WRITE_CALENDAR) != PackageManager.PERMISSION_GRANTED) permissions.add(Manifest.permission.WRITE_CALENDAR)
-        if (permissions.isNotEmpty()) requestPermissions(permissions.toTypedArray(), 42)
-    }
-}
+      
