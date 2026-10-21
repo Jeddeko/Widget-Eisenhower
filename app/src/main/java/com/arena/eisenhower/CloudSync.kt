@@ -81,16 +81,12 @@ object CloudSync {
                             )
                         }
                         repo.saveAll(newTasks)
-                        
                         EisenhowerWidgetProvider.updateAllWidgets(context)
                         CalendarWidgetProvider.updateAllWidgets(context)
                     }
                 }
                 onComplete()
             }
-            .addOnFailureListener { e -> 
-                Log.e("CloudSync", "Error al descargar", e)
-                onComplete() 
-            }
+            .addOnFailureListener { e -> Log.e("CloudSync", "Error al descargar", e); onComplete() }
     }
 }
