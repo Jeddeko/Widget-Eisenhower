@@ -21,16 +21,15 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
-import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.firebase.auth.FirebaseAuth
 import java.text.SimpleDateFormat
 import java.util.Calendar
-import java.util.Collections
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.TimeUnit
@@ -136,7 +135,6 @@ class MainActivity : Activity() {
             }
         }
 
-        // NUEVO: Configurar Drag and Drop en los cuadrantes
         val dropListener = View.OnDragListener { v, event ->
             when (event.action) {
                 DragEvent.ACTION_DRAG_STARTED -> true
@@ -182,6 +180,27 @@ class MainActivity : Activity() {
         findViewById<MaterialCardView>(R.id.cardQ4).setOnDragListener(dropListener)
 
         askPermissions()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        // Iniciamos la escucha solo si el usuario ya está logueado
+        if (FirebaseAuth.getInstance().currentUser != null) {
+            CloudSync.startRealtimeSync(this) {
+                runOnUiThread {
+                    refreshTasks()
+                    if (viewCalendar.visibility == View.VISIBLE) {
+                        renderAppCalendar()
+                    }
+                }
+            }
+        }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        // Detenemos la escucha para no gastar batería cuando la app está cerrada
+        CloudSync.stopRealtimeSync()
     }
 
     private fun openQuickAdd(quadrant: Quadrant) {
