@@ -12,6 +12,7 @@ import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.os.Build
 import android.os.Bundle
+import android.view.DragEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.CheckBox
@@ -135,6 +136,51 @@ class MainActivity : Activity() {
             }
         }
 
+        // NUEVO: Configurar Drag and Drop en los cuadrantes
+        val dropListener = View.OnDragListener { v, event ->
+            when (event.action) {
+                DragEvent.ACTION_DRAG_STARTED -> true
+                DragEvent.ACTION_DRAG_ENTERED -> {
+                    v.alpha = 0.7f
+                    true
+                }
+                DragEvent.ACTION_DRAG_EXITED -> {
+                    v.alpha = 1.0f
+                    true
+                }
+                DragEvent.ACTION_DROP -> {
+                    v.alpha = 1.0f
+                    val draggedTask = event.localState as? Task
+                    if (draggedTask != null) {
+                        val newQuadrant = when (v.id) {
+                            R.id.cardQ1 -> Quadrant.DO_FIRST
+                            R.id.cardQ2 -> Quadrant.SCHEDULE
+                            R.id.cardQ3 -> Quadrant.DELEGATE
+                            R.id.cardQ4 -> Quadrant.ELIMINATE
+                            else -> return@OnDragListener false
+                        }
+                        if (draggedTask.quadrant != newQuadrant) {
+                            repo.updateTask(draggedTask.copy(quadrant = newQuadrant))
+                            refreshTasks()
+                            EisenhowerWidgetProvider.updateAllWidgets(this)
+                            CloudSync.uploadTasks(this)
+                        }
+                    }
+                    true
+                }
+                DragEvent.ACTION_DRAG_ENDED -> {
+                    v.alpha = 1.0f
+                    true
+                }
+                else -> false
+            }
+        }
+
+        findViewById<MaterialCardView>(R.id.cardQ1).setOnDragListener(dropListener)
+        findViewById<MaterialCardView>(R.id.cardQ2).setOnDragListener(dropListener)
+        findViewById<MaterialCardView>(R.id.cardQ3).setOnDragListener(dropListener)
+        findViewById<MaterialCardView>(R.id.cardQ4).setOnDragListener(dropListener)
+
         askPermissions()
     }
 
@@ -257,6 +303,7 @@ class MainActivity : Activity() {
                 }
             }
         }
+
         val inflater = LayoutInflater.from(this)
         val totalCells = offset + maxDays
         val totalWeeks = Math.ceil(totalCells / 7.0).toInt()
@@ -327,22 +374,14 @@ class MainActivity : Activity() {
                             if (isDone && task.dueAt != null) {
                                 val dueCal = Calendar.getInstance().apply { 
                                     timeInMillis = task.dueAt 
-                                    set(Calendar.HOUR_OF_DAY, 0)
-                                    set(Calendar.MINUTE, 0)
-                                    set(Calendar.SECOND, 0)
-                                    set(Calendar.MILLISECOND, 0)
+                                    set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
                                 }
                                 val completionCal = Calendar.getInstance().apply { 
                                     timeInMillis = task.updatedAt 
-                                    set(Calendar.HOUR_OF_DAY, 0)
-                                    set(Calendar.MINUTE, 0)
-                                    set(Calendar.SECOND, 0)
-                                    set(Calendar.MILLISECOND, 0)
+                                    set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
                                 }
                                 val currentCellCal = Calendar.getInstance().apply { 
-                                    set(Calendar.YEAR, year)
-                                    set(Calendar.MONTH, month)
-                                    set(Calendar.DAY_OF_MONTH, dayNumber)
+                                    set(Calendar.YEAR, year); set(Calendar.MONTH, month); set(Calendar.DAY_OF_MONTH, dayNumber)
                                 }
                                 
                                 if (completionCal.after(dueCal) && currentCellCal.get(Calendar.DAY_OF_YEAR) == completionCal.get(Calendar.DAY_OF_YEAR)) {
@@ -368,23 +407,13 @@ class MainActivity : Activity() {
                         
                         if (isDone && task.dueAt != null) {
                             val dueCal = Calendar.getInstance().apply { 
-                                timeInMillis = task.dueAt
-                                set(Calendar.HOUR_OF_DAY, 0)
-                                set(Calendar.MINUTE, 0)
-                                set(Calendar.SECOND, 0)
-                                set(Calendar.MILLISECOND, 0) 
+                                timeInMillis = task.dueAt; set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0) 
                             }
                             val completionCal = Calendar.getInstance().apply { 
-                                timeInMillis = task.updatedAt
-                                set(Calendar.HOUR_OF_DAY, 0)
-                                set(Calendar.MINUTE, 0)
-                                set(Calendar.SECOND, 0)
-                                set(Calendar.MILLISECOND, 0) 
+                                timeInMillis = task.updatedAt; set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0) 
                             }
                             val currentCellCal = Calendar.getInstance().apply { 
-                                set(Calendar.YEAR, year)
-                                set(Calendar.MONTH, month)
-                                set(Calendar.DAY_OF_MONTH, dayNumber) 
+                                set(Calendar.YEAR, year); set(Calendar.MONTH, month); set(Calendar.DAY_OF_MONTH, dayNumber) 
                             }
                             
                             if (completionCal.after(dueCal) && currentCellCal.get(Calendar.DAY_OF_YEAR) == dueCal.get(Calendar.DAY_OF_YEAR)) {
@@ -515,69 +544,6 @@ class MainActivity : Activity() {
                 completedContainer.addView(row)
             }
         }
-
-        val itemTouchHelper = ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(
-            ItemTouchHelper.UP or ItemTouchHelper.DOWN, ItemTouchHelper.LEFT 
-        ) {
-            override fun onMove(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder): Boolean {
-                val fromPos = viewHolder.adapterPosition
-                val toPos = target.adapterPosition
-                if (fromPos < activeTasks.size && toPos < activeTasks.size && selectedTaskIds.isEmpty()) {
-                    Collections.swap(activeTasks, fromPos, toPos)
-                    activeAdapter.notifyItemMoved(fromPos, toPos)
-                    return true
-                }
-                return false
-            }
-
-            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
-                val position = viewHolder.adapterPosition
-                if (position != RecyclerView.NO_POSITION && direction == ItemTouchHelper.LEFT) {
-                    val taskToDelete = activeTasks[position]
-                    repo.deleteTask(taskToDelete.id)
-                    CloudSync.uploadTasks(this@MainActivity)
-                    refreshTasks()
-                    EisenhowerWidgetProvider.updateAllWidgets(this@MainActivity)
-                    CalendarWidgetProvider.updateAllWidgets(this@MainActivity)
-                    Toast.makeText(this@MainActivity, "Tarea eliminada", Toast.LENGTH_SHORT).show()
-                }
-            }
-
-            override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
-                super.clearView(recyclerView, viewHolder)
-                viewHolder.itemView.translationX = 0f
-                viewHolder.itemView.alpha = 1f
-                if (selectedTaskIds.isEmpty()) {
-                    for (i in activeTasks.indices) { 
-                        repo.updateOrder(activeTasks[i].id, i + 1) 
-                    }
-                    EisenhowerWidgetProvider.updateAllWidgets(this@MainActivity)
-                    CloudSync.uploadTasks(this@MainActivity)
-                }
-            }
-
-            override fun isLongPressDragEnabled(): Boolean = selectedTaskIds.isEmpty()
-            override fun getSwipeThreshold(viewHolder: RecyclerView.ViewHolder): Float = 0.5f
-
-            override fun onChildDraw(c: Canvas, recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, dX: Float, dY: Float, actionState: Int, isCurrentlyActive: Boolean) {
-                val itemView = viewHolder.itemView
-                val background = ColorDrawable(Color.parseColor("#EF4444"))
-                val deleteIcon: Drawable? = ContextCompat.getDrawable(this@MainActivity, android.R.drawable.ic_menu_delete)
-                
-                if (actionState == ItemTouchHelper.ACTION_STATE_SWIPE && dX < 0) {
-                    background.setBounds(itemView.right + dX.toInt(), itemView.top, itemView.right, itemView.bottom)
-                    background.draw(c)
-                    if (deleteIcon != null) {
-                        val iconMargin = (itemView.height - deleteIcon.intrinsicHeight) / 2
-                        deleteIcon.setBounds(itemView.right - iconMargin - deleteIcon.intrinsicWidth, itemView.top + iconMargin, itemView.right - iconMargin, itemView.bottom - iconMargin)
-                        deleteIcon.setTint(Color.WHITE)
-                        deleteIcon.draw(c)
-                    }
-                }
-                super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive)
-            }
-        })
-        itemTouchHelper.attachToRecyclerView(rv)
     }
 
     private fun openQuickAddEdit(task: Task) {
