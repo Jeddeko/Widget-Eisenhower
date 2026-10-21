@@ -38,8 +38,10 @@ class MainActivity : Activity() {
     private lateinit var repo: TaskRepository
     private lateinit var settings: AppSettings
 
-    private lateinit var rvQ1: RecyclerView; private lateinit var rvQ2: RecyclerView
-    private lateinit var rvQ3: RecyclerView; private lateinit var rvQ4: RecyclerView
+    private lateinit var rvQ1: RecyclerView
+    private lateinit var rvQ2: RecyclerView
+    private lateinit var rvQ3: RecyclerView
+    private lateinit var rvQ4: RecyclerView
 
     private val selectedTaskIds = mutableSetOf<Long>()
     private lateinit var selectionHeader: LinearLayout
@@ -56,10 +58,13 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        repo = TaskRepository(this); settings = AppSettings(this)
+        repo = TaskRepository(this)
+        settings = AppSettings(this)
 
-        rvQ1 = findViewById(R.id.listQ1); rvQ2 = findViewById(R.id.listQ2)
-        rvQ3 = findViewById(R.id.listQ3); rvQ4 = findViewById(R.id.listQ4)
+        rvQ1 = findViewById(R.id.listQ1)
+        rvQ2 = findViewById(R.id.listQ2)
+        rvQ3 = findViewById(R.id.listQ3)
+        rvQ4 = findViewById(R.id.listQ4)
 
         selectionHeader = findViewById(R.id.selectionHeader)
         normalHeader = findViewById(R.id.normalHeader)
@@ -76,6 +81,7 @@ class MainActivity : Activity() {
             appCurrentMonth.add(Calendar.MONTH, -1)
             renderAppCalendar()
         }
+        
         findViewById<ImageButton>(R.id.btnAppNextMonth).setOnClickListener {
             appCurrentMonth.add(Calendar.MONTH, 1)
             renderAppCalendar()
@@ -84,7 +90,8 @@ class MainActivity : Activity() {
         findViewById<FloatingActionButton>(R.id.fabAddTaskCalendar).setOnClickListener {
             val intent = Intent(this, QuickAddActivity::class.java)
             val cal = Calendar.getInstance().apply {
-                set(Calendar.HOUR_OF_DAY, 9); set(Calendar.MINUTE, 0)
+                set(Calendar.HOUR_OF_DAY, 9)
+                set(Calendar.MINUTE, 0)
             }
             intent.putExtra(CalendarWidgetProvider.EXTRA_DUE_AT, cal.timeInMillis)
             startActivity(intent)
@@ -138,10 +145,12 @@ class MainActivity : Activity() {
     }
 
     override fun onResume() { 
-        super.onResume(); 
-        refreshTasks(); 
+        super.onResume() 
+        refreshTasks()
         EisenhowerWidgetProvider.updateAllWidgets(this) 
-        if (viewCalendar.visibility == View.VISIBLE) renderAppCalendar()
+        if (viewCalendar.visibility == View.VISIBLE) {
+            renderAppCalendar()
+        }
     }
 
     private fun isColorDark(color: Int): Boolean {
@@ -178,7 +187,9 @@ class MainActivity : Activity() {
         val month = appCurrentMonth.get(Calendar.MONTH)
         
         val firstOfMonth = Calendar.getInstance().apply {
-            set(Calendar.YEAR, year); set(Calendar.MONTH, month); set(Calendar.DAY_OF_MONTH, 1)
+            set(Calendar.YEAR, year)
+            set(Calendar.MONTH, month)
+            set(Calendar.DAY_OF_MONTH, 1)
         }
         val maxDays = firstOfMonth.getActualMaximum(Calendar.DAY_OF_MONTH)
         
@@ -189,7 +200,10 @@ class MainActivity : Activity() {
         val monthEndMillis = monthStartMillis + (maxDays * 24 * 60 * 60 * 1000L)
         
         val todayStart = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
         }.timeInMillis
 
         val allTasks = repo.getAll()
@@ -274,8 +288,11 @@ class MainActivity : Activity() {
 
                     dayCellView.setOnClickListener {
                         val cal = Calendar.getInstance().apply {
-                            set(Calendar.YEAR, year); set(Calendar.MONTH, month); set(Calendar.DAY_OF_MONTH, dayNumber)
-                            set(Calendar.HOUR_OF_DAY, 9); set(Calendar.MINUTE, 0)
+                            set(Calendar.YEAR, year)
+                            set(Calendar.MONTH, month)
+                            set(Calendar.DAY_OF_MONTH, dayNumber)
+                            set(Calendar.HOUR_OF_DAY, 9)
+                            set(Calendar.MINUTE, 0)
                         }
                         val intent = Intent(this, QuickAddActivity::class.java)
                         intent.putExtra(CalendarWidgetProvider.EXTRA_DUE_AT, cal.timeInMillis)
@@ -302,14 +319,22 @@ class MainActivity : Activity() {
                             if (isDone && task.dueAt != null) {
                                 val dueCal = Calendar.getInstance().apply { 
                                     timeInMillis = task.dueAt 
-                                    set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+                                    set(Calendar.HOUR_OF_DAY, 0)
+                                    set(Calendar.MINUTE, 0)
+                                    set(Calendar.SECOND, 0)
+                                    set(Calendar.MILLISECOND, 0)
                                 }
                                 val completionCal = Calendar.getInstance().apply { 
                                     timeInMillis = task.updatedAt 
-                                    set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+                                    set(Calendar.HOUR_OF_DAY, 0)
+                                    set(Calendar.MINUTE, 0)
+                                    set(Calendar.SECOND, 0)
+                                    set(Calendar.MILLISECOND, 0)
                                 }
                                 val currentCellCal = Calendar.getInstance().apply { 
-                                    set(Calendar.YEAR, year); set(Calendar.MONTH, month); set(Calendar.DAY_OF_MONTH, dayNumber)
+                                    set(Calendar.YEAR, year)
+                                    set(Calendar.MONTH, month)
+                                    set(Calendar.DAY_OF_MONTH, dayNumber)
                                 }
                                 
                                 if (completionCal.after(dueCal) && currentCellCal.get(Calendar.DAY_OF_YEAR) == completionCal.get(Calendar.DAY_OF_YEAR)) {
@@ -334,9 +359,25 @@ class MainActivity : Activity() {
                         }
                         
                         if (isDone && task.dueAt != null) {
-                            val dueCal = Calendar.getInstance().apply { timeInMillis = task.dueAt; set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0) }
-                            val completionCal = Calendar.getInstance().apply { timeInMillis = task.updatedAt; set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0) }
-                            val currentCellCal = Calendar.getInstance().apply { set(Calendar.YEAR, year); set(Calendar.MONTH, month); set(Calendar.DAY_OF_MONTH, dayNumber) }
+                            val dueCal = Calendar.getInstance().apply { 
+                                timeInMillis = task.dueAt
+                                set(Calendar.HOUR_OF_DAY, 0)
+                                set(Calendar.MINUTE, 0)
+                                set(Calendar.SECOND, 0)
+                                set(Calendar.MILLISECOND, 0) 
+                            }
+                            val completionCal = Calendar.getInstance().apply { 
+                                timeInMillis = task.updatedAt
+                                set(Calendar.HOUR_OF_DAY, 0)
+                                set(Calendar.MINUTE, 0)
+                                set(Calendar.SECOND, 0)
+                                set(Calendar.MILLISECOND, 0) 
+                            }
+                            val currentCellCal = Calendar.getInstance().apply { 
+                                set(Calendar.YEAR, year)
+                                set(Calendar.MONTH, month)
+                                set(Calendar.DAY_OF_MONTH, dayNumber) 
+                            }
                             
                             if (completionCal.after(dueCal) && currentCellCal.get(Calendar.DAY_OF_YEAR) == dueCal.get(Calendar.DAY_OF_YEAR)) {
                                 qColor = Color.parseColor("#94A3B8")
@@ -361,27 +402,4 @@ class MainActivity : Activity() {
                             intent.putExtra(EisenhowerWidgetProvider.EXTRA_TASK_ID, task.id)
                             startActivity(intent)
                         }
-                        eventsContainer.addView(eventView)
-                    }
-                    
-                    cellLayout.addView(dayCellView)
-                } else {
-                    val emptyView = View(this)
-                    cellLayout.addView(emptyView)
-                }
-            }
-            containerWeeksApp.addView(weekView)
-        }
-    }
-
-    private fun setupQuadrantUI(
-        quadrant: Quadrant, cardId: Int, titleId: Int, btnAddId: Int, headerId: Int, containerId: Int,
-        rv: RecyclerView, color: Int, titleStr: String, allTasks: List<Task>
-    ) {
-        val isDark = isColorDark(color)
-        val mainTextColor = if (isDark) Color.WHITE else Color.BLACK
-        val secondaryTextColor = if (isDark) Color.parseColor("#D1D5DB") else Color.parseColor("#4B5563")
-
-        findViewById<MaterialCardView>(cardId).setCardBackgroundColor(color)
-        findViewById<TextView>(titleId).apply { text = titleStr; setTextColor(mainTextColor) }
-        findViewById<MaterialButton>(btnAddId).
+                        eventsContainer.addVi
