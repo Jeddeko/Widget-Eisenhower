@@ -15,34 +15,35 @@ object CloudSync {
         val tasks = repo.getAll()
 
         val taskMaps = tasks.map { task ->
-            mapOf(
-                "id" to task.id, 
-                "title" to task.title, 
-                "quadrant" to task.quadrant.key, 
-                "done" to task.done,
-                "dueAt" to task.dueAt, 
-                "createdAt" to task.createdAt, 
-                "updatedAt" to task.updatedAt,
-                "calendarEventId" to task.calendarEventId, 
-                "order" to task.order, 
-                "reminders" to task.reminders,
-                
-                "isEvent" to task.isEvent,
-                "advanceNoticeDays1" to task.advanceNoticeDays1,
-                "quadrantPhase1" to task.quadrantPhase1.key,
-                "advanceNoticeDays2" to task.advanceNoticeDays2,
-                "quadrantPhase2" to task.quadrantPhase2?.key,
-                "advanceNoticeDays3" to task.advanceNoticeDays3,
-                "quadrantPhase3" to task.quadrantPhase3?.key,
-                "recurrence" to task.recurrence.name,
-                "recurrenceDayOfWeek" to task.recurrenceDayOfWeek,
-                "recurrenceDayOfMonth" to task.recurrenceDayOfMonth
-            )
+            val map = HashMap<String, Any?>()
+            map["id"] = task.id
+            map["title"] = task.title
+            map["quadrant"] = task.quadrant.key
+            map["done"] = task.done
+            map["dueAt"] = task.dueAt
+            map["createdAt"] = task.createdAt
+            map["updatedAt"] = task.updatedAt
+            map["calendarEventId"] = task.calendarEventId
+            map["order"] = task.order
+            map["reminders"] = task.reminders
+            
+            map["isEvent"] = task.isEvent
+            map["advanceNoticeDays1"] = task.advanceNoticeDays1
+            map["quadrantPhase1"] = task.quadrantPhase1.key
+            map["advanceNoticeDays2"] = task.advanceNoticeDays2
+            map["quadrantPhase2"] = task.quadrantPhase2?.key
+            map["advanceNoticeDays3"] = task.advanceNoticeDays3
+            map["quadrantPhase3"] = task.quadrantPhase3?.key
+            map["recurrence"] = task.recurrence.name
+            map["recurrenceDayOfWeek"] = task.recurrenceDayOfWeek
+            map["recurrenceDayOfMonth"] = task.recurrenceDayOfMonth
+            map
         }
 
         db.collection("users").document(user.uid).collection("tasks")
             .document("sync_data").set(mapOf("tasks" to taskMaps))
             .addOnSuccessListener { Log.d("CloudSync", "Nube actualizada") }
+            .addOnFailureListener { e -> Log.e("CloudSync", "Error al subir", e) }
     }
 
     fun downloadTasks(context: Context, onComplete: () -> Unit) {
