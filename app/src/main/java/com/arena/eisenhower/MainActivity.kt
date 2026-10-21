@@ -223,18 +223,23 @@ class MainActivity : Activity() {
                     val day = cal.get(Calendar.DAY_OF_MONTH)
                     
                     if (task.done) {
-                        val completionCal = Calendar.getInstance().apply { timeInMillis = task.updatedAt }
-                        val dueCal = Calendar.getInstance().apply { timeInMillis = task.dueAt ?: task.updatedAt }
-                        
-                        val isSameDay = completionCal.get(Calendar.DAY_OF_YEAR) == dueCal.get(Calendar.DAY_OF_YEAR) && 
-                                        completionCal.get(Calendar.YEAR) == dueCal.get(Calendar.YEAR)
+                        val dueDay = Calendar.getInstance().apply { 
+                            timeInMillis = task.dueAt ?: task.updatedAt
+                            set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+                        }.timeInMillis
+                        val compDay = Calendar.getInstance().apply { 
+                            timeInMillis = task.updatedAt
+                            set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+                        }.timeInMillis
+                        val cellDay = Calendar.getInstance().apply { 
+                            timeInMillis = time
+                            set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+                        }.timeInMillis
 
-                        if (cal.get(Calendar.DAY_OF_YEAR) == dueCal.get(Calendar.DAY_OF_YEAR) && isSameDay) {
+                        if (cellDay == compDay && compDay > dueDay) {
                             eventsByDay.getOrPut(day) { mutableListOf() }.add(Triple(task, false, true))
-                        } else if (cal.get(Calendar.DAY_OF_YEAR) == dueCal.get(Calendar.DAY_OF_YEAR)) {
+                        } else if (cellDay == dueDay) {
                             eventsByDay.getOrPut(day) { mutableListOf() }.add(Triple(task, false, true))
-                        } else if (cal.get(Calendar.DAY_OF_YEAR) == completionCal.get(Calendar.DAY_OF_YEAR)) {
-                            eventsByDay.getOrPut(day) { mutableListOf() }.add(Triple(task, true, true))
                         }
                     } else {
                         eventsByDay.getOrPut(day) { mutableListOf() }.add(Triple(task, false, false))
@@ -252,7 +257,6 @@ class MainActivity : Activity() {
                 }
             }
         }
-
         val inflater = LayoutInflater.from(this)
         val totalCells = offset + maxDays
         val totalWeeks = Math.ceil(totalCells / 7.0).toInt()
