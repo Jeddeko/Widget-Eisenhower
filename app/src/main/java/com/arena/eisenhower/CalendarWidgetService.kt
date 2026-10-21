@@ -41,7 +41,7 @@ class CalendarWidgetFactory(
         val isReminder: Boolean,
         val timePrefix: String = "",
         val isDone: Boolean = false,
-        val isGhost: Boolean = false // Si es un registro de tarea atrasada
+        val isGhost: Boolean = false
     )
 
     private data class DayCell(
@@ -107,30 +107,23 @@ class CalendarWidgetFactory(
                 val date = Instant.ofEpochMilli(time).atZone(ZoneId.systemDefault()).toLocalDate()
                 
                 if (task.done) {
-                    // Lógica de tarea completada
-                    val completionDay = Instant.ofEpochMilli(task.updatedAt).atZone(ZoneId.systemDefault()).toLocalDate()
-                    val dueDay = Instant.ofEpochMilli(task.dueAt ?: task.updatedAt).atZone(ZoneId.systemDefault()).toLocalDate()
+                    val dueDay = Calendar.getInstance().apply { timeInMillis = task.dueAt ?: task.updatedAt; set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0) }.timeInMillis
+                    val compDay = Calendar.getInstance().apply { timeInMillis = task.updatedAt; set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0) }.timeInMillis
+                    val cellDay = Calendar.getInstance().apply { timeInMillis = time; set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0) }.timeInMillis
 
-                    if (date == dueDay && date == completionDay) {
-                        // Completada a tiempo
-                        itemsByDay.getOrPut(date) { mutableListOf() }.add(
-                            CalendarEventItem(task.id, task.title, qColor, isReminder = false, isDone = true)
-                        )
-                    } else if (date == dueDay) {
-                        // Fecha original de tarea atrasada (Ghost en gris)
-                        itemsByDay.getOrPut(date) { mutableListOf() }.add(
-                            CalendarEventItem(task.id, task.title, Color.parseColor("#94A3B8"), isReminder = false, isDone = true, isGhost = true)
-                        )
-                    } else if (date == completionDay) {
-                        // Día en que se completó tarde
-                        val daysLate = TimeUnit.MILLISECONDS.toDays(task.updatedAt - (task.dueAt ?: task.updatedAt)).toInt()
+                    if (cellDay == compDay && compDay > dueDay) {
+                        val daysLate = TimeUnit.MILLISECONDS.toDays(compDay - dueDay).toInt()
                         val prefix = if (daysLate == 1) "COMPLETADO 1 DÍA DESPUÉS: " else "COMPLETADO $daysLate DÍAS DESPUÉS: "
                         itemsByDay.getOrPut(date) { mutableListOf() }.add(
-                            CalendarEventItem(task.id, prefix + task.title, qColor, isReminder = false, isDone = true)
+                            CalendarEventItem(task.id, prefix + task.title, qColor, isReminder = false, isDone = true, isGhost = false)
+                        )
+                    } else if (cellDay == dueDay) {
+                        val isGhost = compDay > dueDay
+                        itemsByDay.getOrPut(date) { mutableListOf() }.add(
+                            CalendarEventItem(task.id, task.title, if (isGhost) Color.parseColor("#94A3B8") else qColor, isReminder = false, isDone = true, isGhost = isGhost)
                         )
                     }
                 } else {
-                    // Tarea normal no completada
                     itemsByDay.getOrPut(date) { mutableListOf() }.add(
                         CalendarEventItem(task.id, task.title, qColor, isReminder = false, isDone = false)
                     )
@@ -211,7 +204,6 @@ class CalendarWidgetFactory(
                     rv.setInt(taskId, "setBackgroundColor", item.color)
                     rv.setTextColor(taskId, if (isColorDark(item.color)) Color.WHITE else Color.BLACK)
 
-                    // TACHADO SI ESTÁ COMPLETADA
                     if (item.isDone) {
                         rv.setInt(taskId, "setPaintFlags", Paint.STRIKE_THRU_TEXT_FLAG or Paint.ANTI_ALIAS_FLAG)
                     } else {
