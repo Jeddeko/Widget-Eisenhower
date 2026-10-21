@@ -16,9 +16,27 @@ object CloudSync {
 
         val taskMaps = tasks.map { task ->
             mapOf(
-                "id" to task.id, "title" to task.title, "quadrant" to task.quadrant.key, "done" to task.done,
-                "dueAt" to task.dueAt, "createdAt" to task.createdAt, "updatedAt" to task.updatedAt,
-                "calendarEventId" to task.calendarEventId, "order" to task.order, "reminders" to task.reminders
+                "id" to task.id, 
+                "title" to task.title, 
+                "quadrant" to task.quadrant.key, 
+                "done" to task.done,
+                "dueAt" to task.dueAt, 
+                "createdAt" to task.createdAt, 
+                "updatedAt" to task.updatedAt,
+                "calendarEventId" to task.calendarEventId, 
+                "order" to task.order, 
+                "reminders" to task.reminders,
+                
+                "isEvent" to task.isEvent,
+                "advanceNoticeDays1" to task.advanceNoticeDays1,
+                "quadrantPhase1" to task.quadrantPhase1.key,
+                "advanceNoticeDays2" to task.advanceNoticeDays2,
+                "quadrantPhase2" to task.quadrantPhase2?.key,
+                "advanceNoticeDays3" to task.advanceNoticeDays3,
+                "quadrantPhase3" to task.quadrantPhase3?.key,
+                "recurrence" to task.recurrence.name,
+                "recurrenceDayOfWeek" to task.recurrenceDayOfWeek,
+                "recurrenceDayOfMonth" to task.recurrenceDayOfMonth
             )
         }
 
@@ -38,21 +56,40 @@ object CloudSync {
                     if (cloudTasksList != null) {
                         val newTasks = cloudTasksList.map { map ->
                             Task(
-                                id = (map["id"] as? Number)?.toLong() ?: 0L, title = map["title"] as? String ?: "",
-                                quadrant = Quadrant.fromKey(map["quadrant"] as? String), done = map["done"] as? Boolean ?: false,
-                                dueAt = (map["dueAt"] as? Number)?.toLong(), createdAt = (map["createdAt"] as? Number)?.toLong() ?: System.currentTimeMillis(),
+                                id = (map["id"] as? Number)?.toLong() ?: 0L, 
+                                title = map["title"] as? String ?: "",
+                                quadrant = Quadrant.fromKey(map["quadrant"] as? String), 
+                                done = map["done"] as? Boolean ?: false,
+                                dueAt = (map["dueAt"] as? Number)?.toLong(), 
+                                createdAt = (map["createdAt"] as? Number)?.toLong() ?: System.currentTimeMillis(),
                                 updatedAt = (map["updatedAt"] as? Number)?.toLong() ?: System.currentTimeMillis(),
-                                calendarEventId = (map["calendarEventId"] as? Number)?.toLong(), order = (map["order"] as? Number)?.toInt() ?: 0,
-                                reminders = (map["reminders"] as? List<Number>)?.map { it.toLong() } ?: emptyList()
+                                calendarEventId = (map["calendarEventId"] as? Number)?.toLong(), 
+                                order = (map["order"] as? Number)?.toInt() ?: 0,
+                                reminders = (map["reminders"] as? List<Number>)?.map { it.toLong() } ?: emptyList(),
+                                
+                                isEvent = map["isEvent"] as? Boolean ?: false,
+                                advanceNoticeDays1 = (map["advanceNoticeDays1"] as? Number)?.toInt() ?: 30,
+                                quadrantPhase1 = Quadrant.fromKey(map["quadrantPhase1"] as? String),
+                                advanceNoticeDays2 = (map["advanceNoticeDays2"] as? Number)?.toInt(),
+                                quadrantPhase2 = (map["quadrantPhase2"] as? String)?.let { Quadrant.fromKey(it) },
+                                advanceNoticeDays3 = (map["advanceNoticeDays3"] as? Number)?.toInt(),
+                                quadrantPhase3 = (map["quadrantPhase3"] as? String)?.let { Quadrant.fromKey(it) },
+                                recurrence = try { RecurrenceType.valueOf(map["recurrence"] as? String ?: "NONE") } catch(e: Exception) { RecurrenceType.NONE },
+                                recurrenceDayOfWeek = (map["recurrenceDayOfWeek"] as? Number)?.toInt(),
+                                recurrenceDayOfMonth = (map["recurrenceDayOfMonth"] as? Number)?.toInt()
                             )
                         }
                         repo.saveAll(newTasks)
+                        
                         EisenhowerWidgetProvider.updateAllWidgets(context)
-                        CalendarWidgetProvider.updateAllWidgets(context) // NUEVO
+                        CalendarWidgetProvider.updateAllWidgets(context)
                     }
                 }
                 onComplete()
             }
-            .addOnFailureListener { e -> Log.e("CloudSync", "Error al descargar", e); onComplete() }
+            .addOnFailureListener { e -> 
+                Log.e("CloudSync", "Error al descargar", e)
+                onComplete() 
+            }
     }
 }
