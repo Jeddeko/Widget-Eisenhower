@@ -176,6 +176,11 @@ class MainActivity : Activity() {
         setupQuadrantUI(Quadrant.SCHEDULE, R.id.cardQ2, R.id.titleQ2View, R.id.btnAddQ2, R.id.headerCompletedQ2, R.id.containerCompletedQ2, rvQ2, settings.colorQ2, settings.titleQ2, allTasks)
         setupQuadrantUI(Quadrant.DELEGATE, R.id.cardQ3, R.id.titleQ3View, R.id.btnAddQ3, R.id.headerCompletedQ3, R.id.containerCompletedQ3, rvQ3, settings.colorQ3, settings.titleQ3, allTasks)
         setupQuadrantUI(Quadrant.ELIMINATE, R.id.cardQ4, R.id.titleQ4View, R.id.btnAddQ4, R.id.headerCompletedQ4, R.id.containerCompletedQ4, rvQ4, settings.colorQ4, settings.titleQ4, allTasks)
+        
+        // Arreglo: Refrescar la vista del calendario si está visible
+        if (viewCalendar.visibility == View.VISIBLE) {
+            renderAppCalendar()
+        }
     }
 
     private fun renderAppCalendar() {
@@ -437,6 +442,7 @@ class MainActivity : Activity() {
                 repo.toggleTask(task.id)
                 refreshTasks()
                 EisenhowerWidgetProvider.updateAllWidgets(this)
+                CalendarWidgetProvider.updateAllWidgets(this)
                 CloudSync.uploadTasks(this) 
             },
             onItemClick = { task -> 
@@ -500,6 +506,7 @@ class MainActivity : Activity() {
                     repo.toggleTask(task.id)
                     refreshTasks()
                     EisenhowerWidgetProvider.updateAllWidgets(this)
+                    CalendarWidgetProvider.updateAllWidgets(this)
                     CloudSync.uploadTasks(this) 
                 }
                 completedContainer.addView(row)
@@ -528,6 +535,7 @@ class MainActivity : Activity() {
                     CloudSync.uploadTasks(this@MainActivity)
                     refreshTasks()
                     EisenhowerWidgetProvider.updateAllWidgets(this@MainActivity)
+                    CalendarWidgetProvider.updateAllWidgets(this@MainActivity)
                     Toast.makeText(this@MainActivity, "Tarea eliminada", Toast.LENGTH_SHORT).show()
                 }
             }
