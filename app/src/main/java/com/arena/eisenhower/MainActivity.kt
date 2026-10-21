@@ -402,4 +402,186 @@ class MainActivity : Activity() {
                             intent.putExtra(EisenhowerWidgetProvider.EXTRA_TASK_ID, task.id)
                             startActivity(intent)
                         }
-                        eventsContainer.addVi
+                        eventsContainer.addView(eventView)
+                    }
+                    
+                    cellLayout.addView(dayCellView)
+                } else {
+                    val emptyView = View(this)
+                    cellLayout.addView(emptyView)
+                }
+            }
+            containerWeeksApp.addView(weekView)
+        }
+    }
+
+    private fun setupQuadrantUI(
+        quadrant: Quadrant, cardId: Int, titleId: Int, btnAddId: Int, headerId: Int, containerId: Int,
+        rv: RecyclerView, color: Int, titleStr: String, allTasks: List<Task>
+    ) {
+        val isDark = isColorDark(color)
+        val mainTextColor = if (isDark) Color.WHITE else Color.BLACK
+        val secondaryTextColor = if (isDark) Color.parseColor("#D1D5DB") else Color.parseColor("#4B5563")
+
+        findViewById<MaterialCardView>(cardId).setCardBackgroundColor(color)
+        findViewById<TextView>(titleId).apply { text = titleStr; setTextColor(mainTextColor) }
+        findViewById<MaterialButton>(btnAddId).setTextColor(mainTextColor)
+
+        val quadrantTasks = allTasks.filter { it.getEffectiveQuadrant() == quadrant }
+        val activeTasks = quadrantTasks.filter { !it.done }.sortedBy { it.order }.toMutableList()
+        val completedTasks = quadrantTasks.filter { it.done }.sortedByDescending { it.updatedAt }
+
+        val activeAdapter = TaskAdapter(
+            activeTasks, color, selectedTaskIds,
+            onCheckClick = { task -> 
+                repo.toggleTask(task.id)
+                refreshTasks()
+                EisenhowerWidgetProvider.updateAllWidgets(this)
+                CloudSync.uploadTasks(this) 
+            },
+            onItemClick = { task -> 
+                if (selectedTaskIds.isEmpty()) {
+                    openQuickAddEdit(task)
+                } else {
+                    if (selectedTaskIds.contains(task.id)) selectedTaskIds.remove(task.id) else selectedTaskIds.add(task.id)
+                    updateSelectionHeader()
+                    refreshTasks()
+                }
+            },
+            onItemLongClick = { task ->
+                if (selectedTaskIds.contains(task.id)) selectedTaskIds.remove(task.id) else selectedTaskIds.add(task.id)
+                updateSelectionHeader()
+                refreshTasks()
+            },
+            onStartDrag = { }
+        )
+        rv.layoutManager = LinearLayoutManager(this)
+        rv.adapter = activeAdapter
+
+        val completedHeader = findViewById<TextView>(headerId)
+        val completedContainer = findViewById<LinearLayout>(containerId)
+
+        if (completedTasks.isEmpty()) {
+            completedHeader.visibility = View.GONE
+            completedContainer.visibility = View.GONE
+        } else {
+            completedHeader.visibility = View.VISIBLE
+            completedHeader.setTextColor(secondaryTextColor)
+            completedHeader.text = "Completadas (${completedTasks.size}) ▼"
+            completedContainer.visibility = View.GONE
+            
+            completedHeader.setOnClickListener {
+                if (completedContainer.visibility == View.GONE) {
+                    completedContainer.visibility = View.VISIBLE
+                    completedHeader.text = "Completadas (${completedTasks.size}) ▲"
+                } else {
+                    completedContainer.visibility = View.GONE
+                    completedHeader.text = "Completadas (${completedTasks.size}) ▼"
+                }
+            }
+
+            completedContainer.removeAllViews()
+            val inflater = LayoutInflater.from(this)
+            completedTasks.forEach { task ->
+                val row = inflater.inflate(R.layout.row_task_main, completedContainer, false)
+                val check = row.findViewById<CheckBox>(R.id.rowCheck)
+                val title = row.findViewById<TextView>(R.id.rowTitle)
+                val meta = row.findViewById<TextView>(R.id.rowMeta)
+                
+                check.isChecked = true
+                check.buttonTintList = android.content.res.ColorStateList.valueOf(mainTextColor)
+                title.text = task.title
+                title.setTextColor(mainTextColor)
+                title.paintFlags = title.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
+                meta.text = DueDateUtils.format(task.dueAt)
+                meta.setTextColor(secondaryTextColor)
+                
+                check.setOnClickListener { 
+                    repo.toggleTask(task.id)
+                    refreshTasks()
+                    EisenhowerWidgetProvider.updateAllWidgets(this)
+                    CloudSync.uploadTasks(this) 
+                }
+                completedContainer.addView(row)
+            }
+        }
+
+        val itemTouchHelper = ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(
+            ItemTouchHelper.UP or ItemTouchHelper.DOWN, ItemTouchHelper.LEFT 
+        ) {
+            override fun onMove(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder): Boolean {
+                val fromPos = viewHolder.adapterPosition
+                val toPos = target.adapterPosition
+                if (fromPos < activeTasks.size && toPos < activeTasks.size && selectedTaskIds.isEmpty()) {
+                    Collections.swap(activeTasks, fromPos, toPos)
+                    activeAdapter.notifyItemMoved(fromPos, toPos)
+                    return true
+                }
+                return false
+            }
+
+            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
+                val position = viewHolder.adapterPosition
+                if (position != RecyclerView.NO_POSITION && direction == ItemTouchHelper.LEFT) {
+                    val taskToDelete = activeTasks[position]
+                    repo.deleteTask(taskToDelete.id)
+                    CloudSync.uploadTasks(this@MainActivity)
+                    refreshTasks()
+                    EisenhowerWidgetProvider.updateAllWidgets(this@MainActivity)
+                    Toast.makeText(this@MainActivity, "Tarea eliminada", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
+                super.clearView(recyclerView, viewHolder)
+                viewHolder.itemView.translationX = 0f
+                viewHolder.itemView.alpha = 1f
+                if (selectedTaskIds.isEmpty()) {
+                    for (i in activeTasks.indices) { 
+                        repo.updateOrder(activeTasks[i].id, i + 1) 
+                    }
+                    EisenhowerWidgetProvider.updateAllWidgets(this@MainActivity)
+                    CloudSync.uploadTasks(this@MainActivity)
+                }
+            }
+
+            override fun isLongPressDragEnabled(): Boolean = selectedTaskIds.isEmpty()
+            override fun getSwipeThreshold(viewHolder: RecyclerView.ViewHolder): Float = 0.5f
+
+            override fun onChildDraw(c: Canvas, recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, dX: Float, dY: Float, actionState: Int, isCurrentlyActive: Boolean) {
+                val itemView = viewHolder.itemView
+                val background = ColorDrawable(Color.parseColor("#EF4444"))
+                val deleteIcon: Drawable? = ContextCompat.getDrawable(this@MainActivity, android.R.drawable.ic_menu_delete)
+                
+                if (actionState == ItemTouchHelper.ACTION_STATE_SWIPE && dX < 0) {
+                    background.setBounds(itemView.right + dX.toInt(), itemView.top, itemView.right, itemView.bottom)
+                    background.draw(c)
+                    if (deleteIcon != null) {
+                        val iconMargin = (itemView.height - deleteIcon.intrinsicHeight) / 2
+                        deleteIcon.setBounds(itemView.right - iconMargin - deleteIcon.intrinsicWidth, itemView.top + iconMargin, itemView.right - iconMargin, itemView.bottom - iconMargin)
+                        deleteIcon.setTint(Color.WHITE)
+                        deleteIcon.draw(c)
+                    }
+                }
+                super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive)
+            }
+        })
+        itemTouchHelper.attachToRecyclerView(rv)
+    }
+
+    private fun openQuickAddEdit(task: Task) {
+        val intent = Intent(this, QuickAddActivity::class.java).apply {
+            putExtra(EisenhowerWidgetProvider.EXTRA_TASK_ID, task.id)
+            putExtra(EisenhowerWidgetProvider.EXTRA_QUADRANT, task.quadrant.key)
+        }
+        startActivity(intent)
+    }
+
+    private fun askPermissions() {
+        val permissions = mutableListOf<String>()
+        if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) permissions.add(Manifest.permission.POST_NOTIFICATIONS)
+        if (checkSelfPermission(Manifest.permission.READ_CALENDAR) != PackageManager.PERMISSION_GRANTED) permissions.add(Manifest.permission.READ_CALENDAR)
+        if (checkSelfPermission(Manifest.permission.WRITE_CALENDAR) != PackageManager.PERMISSION_GRANTED) permissions.add(Manifest.permission.WRITE_CALENDAR)
+        if (permissions.isNotEmpty()) requestPermissions(permissions.toTypedArray(), 42)
+    }
+}
