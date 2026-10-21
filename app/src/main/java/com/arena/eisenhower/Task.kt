@@ -88,53 +88,92 @@ data class Task(
 
     fun getOccurrences(startMillis: Long, endMillis: Long): List<Long> {
         if (dueAt == null) return emptyList()
-        val occurrences = mutableListOf<Long>()
+        val occurrences = mutableSetOf<Long>()
         
-        // Lógica normal o recurrente (SIN ROLLOVER PARA EVITAR COLAPSOS)
-        if (recurrence == RecurrenceType.NONE || !isEvent) {
-            if (dueAt in startMillis..endMillis) occurrences.add(dueAt)
-            return occurrences
-        }
-        
-        val cal = Calendar.getInstance().apply { timeInMillis = dueAt }
-        
-        if (startMillis > dueAt) {
-            val diff = startMillis - dueAt
-            val days = TimeUnit.MILLISECONDS.toDays(diff)
-            when (recurrence) {
-                RecurrenceType.DAILY -> cal.add(Calendar.DAY_OF_YEAR, days.toInt())
-                RecurrenceType.WEEKLY -> cal.add(Calendar.WEEK_OF_YEAR, (days / 7).toInt())
-                RecurrenceType.MONTHLY -> {
-                    val months = (days / 30).toInt()
-                    cal.add(Calendar.MONTH, months)
-                    if (recurrenceDayOfMonth != null) {
-                        val maxDay = cal.getActualMaximum(Calendar.DAY_OF_MONTH)
-                        cal.set(Calendar.DAY_OF_MONTH, minOf(recurrenceDayOfMonth, maxDay))
-                    }
-                }
-                else -> {}
-            }
-        }
+        val todayStart = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
 
-        var iterations = 0
-        while (cal.timeInMillis <= endMillis && iterations < 50) {
-            if (cal.timeInMillis >= startMillis) {
-                occurrences.add(cal.timeInMillis)
+        if (done) {
+            // SI ESTÁ COMPLETADA
+            val completionDay = Calendar.getInstance().apply {
+                timeInMillis = updatedAt
+                set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+            }.timeInMillis
+
+            val dueDay = Calendar.getInstance().apply {
+                timeInMillis = dueAt
+                set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+            }.timeInMillis
+
+            // Mostrar en la fecha original (se pintará de gris)
+            if (dueAt in startMillis..endMillis) occurrences.add(dueAt)
+
+            // Si se completó tarde, mostrar también en el día que se completó
+            if (completionDay > dueDay && updatedAt in startMillis..endMillis) {
+                occurrences.add(updatedAt)
             }
-            when (recurrence) {
-                RecurrenceType.DAILY -> cal.add(Calendar.DAY_OF_YEAR, 1)
-                RecurrenceType.WEEKLY -> cal.add(Calendar.WEEK_OF_YEAR, 1)
-                RecurrenceType.MONTHLY -> {
-                    cal.add(Calendar.MONTH, 1)
-                    if (recurrenceDayOfMonth != null) {
-                        val maxDay = cal.getActualMaximum(Calendar.DAY_OF_MONTH)
-                        cal.set(Calendar.DAY_OF_MONTH, minOf(recurrenceDayOfMonth, maxDay))
+        } else {
+            // SI NO ESTÁ COMPLETADA
+            // 1. Rollover (si venció, mover al día siguiente)
+            if (dueAt < todayStart) {
+                val originalCal = Calendar.getInstance().apply { timeInMillis = dueAt }
+                val rolledCal = Calendar.getInstance().apply {
+                    timeInMillis = todayStart
+                    set(Calendar.HOUR_OF_DAY, originalCal.get(Calendar.HOUR_OF_DAY))
+                    set(Calendar.MINUTE, originalCal.get(Calendar.MINUTE))
+                    set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+                }
+                if (rolledCal.timeInMillis < System.currentTimeMillis()) {
+                    rolledCal.add(Calendar.DAY_OF_YEAR, 1)
+                }
+                if (rolledCal.timeInMillis in startMillis..endMillis) occurrences.add(rolledCal.timeInMillis)
+            } else if (dueAt in startMillis..endMillis) {
+                occurrences.add(dueAt)
+            }
+            
+            // 2. Lógica recurrente
+            if (recurrence != RecurrenceType.NONE) {
+                val cal = Calendar.getInstance().apply { timeInMillis = dueAt }
+                
+                if (startMillis > dueAt) {
+                    val diffDays = TimeUnit.MILLISECONDS.toDays(startMillis - dueAt)
+                    when (recurrence) {
+                        RecurrenceType.DAILY -> cal.add(Calendar.DAY_OF_YEAR, diffDays.toInt())
+                        RecurrenceType.WEEKLY -> cal.add(Calendar.WEEK_OF_YEAR, (diffDays / 7).toInt())
+                        RecurrenceType.MONTHLY -> {
+                            val months = (diffDays / 30).toInt()
+                            cal.add(Calendar.MONTH, months)
+                            if (recurrenceDayOfMonth != null) {
+                                val maxDay = cal.getActualMaximum(Calendar.DAY_OF_MONTH)
+                                cal.set(Calendar.DAY_OF_MONTH, minOf(recurrenceDayOfMonth, maxDay))
+                            }
+                        }
+                        else -> {}
                     }
                 }
-                else -> break
+
+                var iterations = 0
+                while (cal.timeInMillis <= endMillis && iterations < 50) {
+                    if (cal.timeInMillis >= startMillis && cal.timeInMillis >= todayStart) {
+                        occurrences.add(cal.timeInMillis)
+                    }
+                    when (recurrence) {
+                        RecurrenceType.DAILY -> cal.add(Calendar.DAY_OF_YEAR, 1)
+                        RecurrenceType.WEEKLY -> cal.add(Calendar.WEEK_OF_YEAR, 1)
+                        RecurrenceType.MONTHLY -> {
+                            cal.add(Calendar.MONTH, 1)
+                            if (recurrenceDayOfMonth != null) {
+                                val maxDay = cal.getActualMaximum(Calendar.DAY_OF_MONTH)
+                                cal.set(Calendar.DAY_OF_MONTH, minOf(recurrenceDayOfMonth, maxDay))
+                            }
+                        }
+                        else -> break
+                    }
+                    iterations++
+                }
             }
-            iterations++
         }
-        return occurrences.distinct()
+        return occurrences.toList()
     }
 }
