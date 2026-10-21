@@ -212,13 +212,10 @@ class MainActivity : Activity() {
                                         completionCal.get(Calendar.YEAR) == dueCal.get(Calendar.YEAR)
 
                         if (cal.get(Calendar.DAY_OF_YEAR) == dueCal.get(Calendar.DAY_OF_YEAR) && isSameDay) {
-                            // Completada a tiempo
                             eventsByDay.getOrPut(day) { mutableListOf() }.add(Triple(task, false, true))
                         } else if (cal.get(Calendar.DAY_OF_YEAR) == dueCal.get(Calendar.DAY_OF_YEAR)) {
-                            // Fecha original, atrasada (Ghost)
                             eventsByDay.getOrPut(day) { mutableListOf() }.add(Triple(task, false, true))
                         } else if (cal.get(Calendar.DAY_OF_YEAR) == completionCal.get(Calendar.DAY_OF_YEAR)) {
-                            // Día de completado tarde
                             eventsByDay.getOrPut(day) { mutableListOf() }.add(Triple(task, true, true))
                         }
                     } else {
@@ -302,7 +299,6 @@ class MainActivity : Activity() {
                             } ?: 0L
                             displayText = "🔔 ${timeFormat.format(Date(remTime))} - ${task.title}"
                         } else {
-                            // Lógica de texto de tareas atrasadas
                             if (isDone && task.dueAt != null) {
                                 val dueCal = Calendar.getInstance().apply { 
                                     timeInMillis = task.dueAt 
@@ -337,14 +333,13 @@ class MainActivity : Activity() {
                             Quadrant.ELIMINATE -> settings.colorQ4
                         }
                         
-                        // Pintar de gris si es la tarea original atrasada
                         if (isDone && task.dueAt != null) {
                             val dueCal = Calendar.getInstance().apply { timeInMillis = task.dueAt; set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0) }
                             val completionCal = Calendar.getInstance().apply { timeInMillis = task.updatedAt; set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0) }
                             val currentCellCal = Calendar.getInstance().apply { set(Calendar.YEAR, year); set(Calendar.MONTH, month); set(Calendar.DAY_OF_MONTH, dayNumber) }
                             
                             if (completionCal.after(dueCal) && currentCellCal.get(Calendar.DAY_OF_YEAR) == dueCal.get(Calendar.DAY_OF_YEAR)) {
-                                qColor = Color.parseColor("#94A3B8") // Gris
+                                qColor = Color.parseColor("#94A3B8")
                             }
                         }
 
@@ -385,4 +380,8 @@ class MainActivity : Activity() {
     ) {
         val isDark = isColorDark(color)
         val mainTextColor = if (isDark) Color.WHITE else Color.BLACK
-      
+        val secondaryTextColor = if (isDark) Color.parseColor("#D1D5DB") else Color.parseColor("#4B5563")
+
+        findViewById<MaterialCardView>(cardId).setCardBackgroundColor(color)
+        findViewById<TextView>(titleId).apply { text = titleStr; setTextColor(mainTextColor) }
+        findViewById<MaterialButton>(btnAddId).
