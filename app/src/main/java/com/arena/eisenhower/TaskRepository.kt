@@ -17,6 +17,7 @@ class TaskRepository(context: Context) {
                     val obj = array.getJSONObject(i)
                     val due = if (obj.has("dueAt") && !obj.isNull("dueAt")) obj.getLong("dueAt") else null
                     val calId = if (obj.has("calendarEventId") && !obj.isNull("calendarEventId")) obj.getLong("calendarEventId") else null
+                    val compAt = if (obj.has("completedAt") && !obj.isNull("completedAt")) obj.getLong("completedAt") else null
                     
                     val remindersList = mutableListOf<Long>()
                     if (obj.has("reminders")) {
@@ -40,6 +41,7 @@ class TaskRepository(context: Context) {
                         dueAt = due, 
                         createdAt = obj.optLong("createdAt", System.currentTimeMillis()),
                         updatedAt = obj.optLong("updatedAt", System.currentTimeMillis()), 
+                        completedAt = compAt,
                         calendarEventId = calId, 
                         order = obj.optInt("order", 0),
                         reminders = remindersList,
@@ -70,6 +72,7 @@ class TaskRepository(context: Context) {
         
         val newTask = task.copy(
             id = id, title = clean, createdAt = now, updatedAt = now,
+            completedAt = if (task.done) now else null,
             order = (all.filter { it.quadrant == task.quadrant }.maxOfOrNull { it.order } ?: 0) + 1
         )
         saveAll(all + newTask)
@@ -79,7 +82,12 @@ class TaskRepository(context: Context) {
     @Synchronized
     fun toggleTask(id: Long) {
         val now = System.currentTimeMillis()
-        saveAll(getAll().map { if (it.id == id) it.copy(done = !it.done, updatedAt = now) else it })
+        saveAll(getAll().map { 
+            if (it.id == id) {
+                val newDone = !it.done
+                it.copy(done = newDone, updatedAt = now, completedAt = if (newDone) now else null)
+            } else it 
+        })
     }
 
     @Synchronized
@@ -97,17 +105,15 @@ class TaskRepository(context: Context) {
             val obj = JSONObject()
                 .put("id", task.id).put("title", task.title).put("quadrant", task.quadrant.key)
                 .put("done", task.done).put("createdAt", task.createdAt).put("updatedAt", task.updatedAt)
-                .put("order", task.order)
-                .put("isEvent", task.isEvent)
+                .put("order", task.order).put("isEvent", task.isEvent)
                 .put("advanceNoticeDays1", task.advanceNoticeDays1).put("quadrantPhase1", task.quadrantPhase1.key)
                 .put("recurrence", task.recurrence.name)
 
+            obj.put("completedAt", task.completedAt ?: JSONObject.NULL)
             obj.put("advanceNoticeDays2", task.advanceNoticeDays2 ?: JSONObject.NULL)
             obj.put("quadrantPhase2", task.quadrantPhase2?.key ?: JSONObject.NULL)
-            
             obj.put("advanceNoticeDays3", task.advanceNoticeDays3 ?: JSONObject.NULL)
             obj.put("quadrantPhase3", task.quadrantPhase3?.key ?: JSONObject.NULL)
-
             obj.put("dueAt", if (task.dueAt == null) JSONObject.NULL else task.dueAt)
             obj.put("calendarEventId", if (task.calendarEventId == null) JSONObject.NULL else task.calendarEventId)
             obj.put("recurrenceDayOfWeek", task.recurrenceDayOfWeek ?: JSONObject.NULL)
@@ -116,7 +122,6 @@ class TaskRepository(context: Context) {
             val remArray = JSONArray()
             task.reminders.forEach { remArray.put(it) }
             obj.put("reminders", remArray)
-            
             array.put(obj)
         }
         prefs.edit().putString(KEY_TASKS, array.toString()).apply()
