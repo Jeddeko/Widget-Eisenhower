@@ -20,8 +20,7 @@ class TaskAdapter(
     private val selectedTaskIds: MutableSet<Long>,
     private val onCheckClick: (Task) -> Unit,
     private val onItemClick: (Task) -> Unit,
-    private val onItemLongClick: (Task) -> Unit,
-    private val onStartDrag: (RecyclerView.ViewHolder) -> Unit
+    private val onItemLongClick: (Task) -> Unit
 ) : RecyclerView.Adapter<TaskAdapter.TaskViewHolder>() {
 
     class TaskViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -71,7 +70,8 @@ class TaskAdapter(
         holder.title.setTextColor(textColor)
         
         holder.meta.setTextColor(subTextColor)
-        holder.meta.text = "Orden: ${task.order} · ${DueDateUtils.format(task.dueAt)}"
+        // Ya no mostramos "Orden: N"
+        holder.meta.text = DueDateUtils.format(task.dueAt)
         holder.btnDelete.visibility = View.GONE
 
         (holder.dragHandle as TextView).setTextColor(if (isDark) Color.parseColor("#94A3B8") else Color.parseColor("#64748B"))
@@ -83,7 +83,6 @@ class TaskAdapter(
             true 
         }
 
-        // NUEVO: Arrastrar y soltar nativo para mover entre cuadrantes
         holder.dragHandle.setOnTouchListener { v, event ->
             if (event.actionMasked == MotionEvent.ACTION_DOWN) {
                 val dragData = android.content.ClipData.newPlainText("task", task.id.toString())
