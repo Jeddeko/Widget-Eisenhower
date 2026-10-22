@@ -20,6 +20,7 @@ data class Task(
     val dueAt: Long? = null,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis(),
+    val completedAt: Long? = null, // NUEVO CAMPO
     val calendarEventId: Long? = null,
     val order: Int = 0,
     val reminders: List<Long> = emptyList(),
@@ -95,9 +96,9 @@ data class Task(
         }.timeInMillis
 
         if (done) {
-            // SI ESTÁ COMPLETADA
+            val compAt = completedAt ?: updatedAt // Fallback a updatedAt si no existe
             val completionDay = Calendar.getInstance().apply {
-                timeInMillis = updatedAt
+                timeInMillis = compAt
                 set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
             }.timeInMillis
 
@@ -106,16 +107,9 @@ data class Task(
                 set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
             }.timeInMillis
 
-            // Mostrar en la fecha original (se pintará de gris)
             if (dueAt in startMillis..endMillis) occurrences.add(dueAt)
-
-            // Si se completó tarde, mostrar también en el día que se completó
-            if (completionDay > dueDay && updatedAt in startMillis..endMillis) {
-                occurrences.add(updatedAt)
-            }
+            if (completionDay > dueDay && compAt in startMillis..endMillis) occurrences.add(compAt)
         } else {
-            // SI NO ESTÁ COMPLETADA
-            // 1. Rollover (si venció, mover al día siguiente)
             if (dueAt < todayStart) {
                 val originalCal = Calendar.getInstance().apply { timeInMillis = dueAt }
                 val rolledCal = Calendar.getInstance().apply {
@@ -132,10 +126,8 @@ data class Task(
                 occurrences.add(dueAt)
             }
             
-            // 2. Lógica recurrente
             if (recurrence != RecurrenceType.NONE) {
                 val cal = Calendar.getInstance().apply { timeInMillis = dueAt }
-                
                 if (startMillis > dueAt) {
                     val diffDays = TimeUnit.MILLISECONDS.toDays(startMillis - dueAt)
                     when (recurrence) {
