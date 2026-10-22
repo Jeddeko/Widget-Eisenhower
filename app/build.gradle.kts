@@ -16,13 +16,22 @@ android {
         versionName = "1.0.0"
     }
 
-    // Configuración de la firma fija (no afecta al login por correo, pero es buena práctica mantenerla)
+    // ARREGLO PARA CLON LIMPIO: Usa un keystore propio si existe, si no, usa el estándar.
     signingConfigs {
         getByName("debug") {
-            storeFile = file("debug.keystore")
-            storePassword = "android123"
-            keyAlias = "androiddebugkey"
-            keyPassword = "android123"
+            val customKeystore = file("debug.keystore")
+            if (customKeystore.exists()) {
+                storeFile = customKeystore
+                storePassword = "android123"
+                keyAlias = "androiddebugkey"
+                keyPassword = "android123"
+            } else {
+                // Fallback al keystore por defecto de Android
+                storeFile = file(System.getProperty("user.home") + "/.android/debug.keystore")
+                storePassword = "android"
+                keyAlias = "androiddebugkey"
+                keyPassword = "android"
+            }
         }
     }
 
@@ -48,11 +57,8 @@ dependencies {
     implementation("com.google.android.material:material:1.12.0")
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("androidx.recyclerview:recyclerview:1.3.2")
-    
-    // Firebase (Solo Firestore y Auth por correo)
     implementation(platform("com.google.firebase:firebase-bom:32.8.1"))
     implementation("com.google.firebase:firebase-firestore-ktx")
     implementation("com.google.firebase:firebase-auth-ktx")
-    
-    // NOTA: La librería play-services-auth ya ha sido eliminada.
+    implementation("com.google.android.gms:play-services-auth:21.0.0")
 }
