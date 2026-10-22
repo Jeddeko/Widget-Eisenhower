@@ -18,11 +18,17 @@ class NotificationActionReceiver : BroadcastReceiver() {
                 .orEmpty()
 
             if (title.isNotBlank()) {
-                // Usamos la nueva firma addTask(Task)
-                val newTask = repoAddTask(context, title)
+                val repo = TaskRepository(context)
+                val newTask = repo.addTask(
+                    Task(id = 0, title = title, quadrant = Quadrant.DO_FIRST, isEvent = false)
+                )
                 if (newTask != null) {
                     ReminderScheduler.schedule(context, newTask)
                 }
+                
+                // ARREGLO: Subir a la nube inmediatamente
+                CloudSync.uploadTasks(context)
+                
                 EisenhowerWidgetProvider.updateAllWidgets(context)
                 CalendarWidgetProvider.updateAllWidgets(context)
 
@@ -30,18 +36,6 @@ class NotificationActionReceiver : BroadcastReceiver() {
                     .cancel(NotificationHelper.NOTIFICATION_ID)
             }
         }
-    }
-
-    private fun repoAddTask(context: Context, title: String): Task? {
-        val repo = TaskRepository(context)
-        return repo.addTask(
-            Task(
-                id = 0, 
-                title = title, 
-                quadrant = Quadrant.DO_FIRST,
-                isEvent = false
-            )
-        )
     }
 
     companion object {
