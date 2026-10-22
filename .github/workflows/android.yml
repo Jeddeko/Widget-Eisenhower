@@ -21,18 +21,17 @@ jobs:
         with:
           gradle-version: 8.7
 
-      # 1. Genera un keystore JKS fijo (evita el error PKCS12)
-      - name: Generate JKS Keystore
+      # Genera el keystore estándar para debug
+      - name: Generate Debug Keystore
         run: |
-          keytool -genkey -v -keystore app/debug.keystore -storepass android123 -alias androiddebugkey -keypass android123 -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US" -storetype JKS
+          mkdir -p ~/.android
+          keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
 
-      # 2. Muestra el SHA-1 en los logs para que lo copies a Firebase
-      - name: Show SHA-1 Fingerprint
-        run: |
-          keytool -list -v -keystore app/debug.keystore -alias androiddebugkey -storepass android123 | grep "SHA1:"
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
 
       - name: Build debug APK
-        run: gradle assembleDebug --no-daemon
+        run: ./gradlew assembleDebug --no-daemon
 
       - uses: actions/upload-artifact@v4
         with:
