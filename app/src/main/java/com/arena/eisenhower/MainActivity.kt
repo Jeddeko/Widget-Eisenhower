@@ -27,7 +27,6 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.google.firebase.auth.FirebaseAuth
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -138,14 +137,8 @@ class MainActivity : Activity() {
         val dropListener = View.OnDragListener { v, event ->
             when (event.action) {
                 DragEvent.ACTION_DRAG_STARTED -> true
-                DragEvent.ACTION_DRAG_ENTERED -> {
-                    v.alpha = 0.7f
-                    true
-                }
-                DragEvent.ACTION_DRAG_EXITED -> {
-                    v.alpha = 1.0f
-                    true
-                }
+                DragEvent.ACTION_DRAG_ENTERED -> { v.alpha = 0.7f; true }
+                DragEvent.ACTION_DRAG_EXITED -> { v.alpha = 1.0f; true }
                 DragEvent.ACTION_DROP -> {
                     v.alpha = 1.0f
                     val draggedTask = event.localState as? Task
@@ -166,10 +159,7 @@ class MainActivity : Activity() {
                     }
                     true
                 }
-                DragEvent.ACTION_DRAG_ENDED -> {
-                    v.alpha = 1.0f
-                    true
-                }
+                DragEvent.ACTION_DRAG_ENDED -> { v.alpha = 1.0f; true }
                 else -> false
             }
         }
@@ -180,27 +170,6 @@ class MainActivity : Activity() {
         findViewById<MaterialCardView>(R.id.cardQ4).setOnDragListener(dropListener)
 
         askPermissions()
-    }
-
-    override fun onStart() {
-        super.onStart()
-        // Iniciamos la escucha solo si el usuario ya está logueado
-        if (FirebaseAuth.getInstance().currentUser != null) {
-            CloudSync.startRealtimeSync(this) {
-                runOnUiThread {
-                    refreshTasks()
-                    if (viewCalendar.visibility == View.VISIBLE) {
-                        renderAppCalendar()
-                    }
-                }
-            }
-        }
-    }
-
-    override fun onStop() {
-        super.onStop()
-        // Detenemos la escucha para no gastar batería cuando la app está cerrada
-        CloudSync.stopRealtimeSync()
     }
 
     private fun openQuickAdd(quadrant: Quadrant) {
@@ -246,7 +215,6 @@ class MainActivity : Activity() {
             renderAppCalendar()
         }
     }
-
     private fun renderAppCalendar() {
         containerWeeksApp.removeAllViews()
         val monthFormat = SimpleDateFormat("MMMM yyyy", Locale.getDefault())
@@ -275,7 +243,8 @@ class MainActivity : Activity() {
             set(Calendar.MILLISECOND, 0)
         }.timeInMillis
 
-        val allTasks = repo.getAll()
+        // ARREGLO: "Mostrar tareas completadas" ahora funciona de verdad
+        val allTasks = repo.getAll().filter { settings.showCompleted || !it.done }
         val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
         
         val eventsByDay = mutableMapOf<Int, MutableList<Triple<Task, Boolean, Boolean>>>()
@@ -288,12 +257,15 @@ class MainActivity : Activity() {
                     val day = cal.get(Calendar.DAY_OF_MONTH)
                     
                     if (task.done) {
+                        // ARREGLO: Usamos completedAt en lugar de updatedAt
+                        val compAt = task.completedAt ?: task.updatedAt 
+                        
                         val dueDay = Calendar.getInstance().apply { 
-                            timeInMillis = task.dueAt ?: task.updatedAt
+                            timeInMillis = task.dueAt ?: compAt
                             set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
                         }.timeInMillis
                         val compDay = Calendar.getInstance().apply { 
-                            timeInMillis = task.updatedAt
+                            timeInMillis = compAt
                             set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
                         }.timeInMillis
                         val cellDay = Calendar.getInstance().apply { 
@@ -391,12 +363,13 @@ class MainActivity : Activity() {
                             displayText = "🔔 ${timeFormat.format(Date(remTime))} - ${task.title}"
                         } else {
                             if (isDone && task.dueAt != null) {
+                                val compAt = task.completedAt ?: task.updatedAt
                                 val dueCal = Calendar.getInstance().apply { 
                                     timeInMillis = task.dueAt 
                                     set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
                                 }
                                 val completionCal = Calendar.getInstance().apply { 
-                                    timeInMillis = task.updatedAt 
+                                    timeInMillis = compAt
                                     set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
                                 }
                                 val currentCellCal = Calendar.getInstance().apply { 
@@ -425,11 +398,12 @@ class MainActivity : Activity() {
                         }
                         
                         if (isDone && task.dueAt != null) {
+                            val compAt = task.completedAt ?: task.updatedAt
                             val dueCal = Calendar.getInstance().apply { 
                                 timeInMillis = task.dueAt; set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0) 
                             }
                             val completionCal = Calendar.getInstance().apply { 
-                                timeInMillis = task.updatedAt; set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0) 
+                                timeInMillis = compAt; set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0) 
                             }
                             val currentCellCal = Calendar.getInstance().apply { 
                                 set(Calendar.YEAR, year); set(Calendar.MONTH, month); set(Calendar.DAY_OF_MONTH, dayNumber) 
@@ -485,7 +459,7 @@ class MainActivity : Activity() {
 
         val quadrantTasks = allTasks.filter { it.getEffectiveQuadrant() == quadrant }
         val activeTasks = quadrantTasks.filter { !it.done }.sortedBy { it.order }.toMutableList()
-        val completedTasks = quadrantTasks.filter { it.done }.sortedByDescending { it.updatedAt }
+        val completedTasks = quadrantTasks.filter { it.done }.sortedByDescending { it.completedAt ?: it.updatedAt }
 
         val activeAdapter = TaskAdapter(
             activeTasks, color, selectedTaskIds,
@@ -509,8 +483,7 @@ class MainActivity : Activity() {
                 if (selectedTaskIds.contains(task.id)) selectedTaskIds.remove(task.id) else selectedTaskIds.add(task.id)
                 updateSelectionHeader()
                 refreshTasks()
-            },
-            onStartDrag = { }
+            }
         )
         rv.layoutManager = LinearLayoutManager(this)
         rv.adapter = activeAdapter
@@ -518,7 +491,8 @@ class MainActivity : Activity() {
         val completedHeader = findViewById<TextView>(headerId)
         val completedContainer = findViewById<LinearLayout>(containerId)
 
-        if (completedTasks.isEmpty()) {
+        // ARREGLO: La opción "Mostrar tareas completadas" ahora se respeta aquí
+        if (completedTasks.isEmpty() || !settings.showCompleted) {
             completedHeader.visibility = View.GONE
             completedContainer.visibility = View.GONE
         } else {
