@@ -67,7 +67,8 @@ class TaskRepository(context: Context) {
     fun addTask(task: Task): Task? {
         val clean = task.title.trim(); if (clean.isBlank()) return null
         val all = getAll()
-        val id = (all.maxOfOrNull { it.id } ?: 0L) + 1L
+        // ID único basado en tiempo para evitar colisiones entre dispositivos
+        val id = System.currentTimeMillis() + (0..999).random()
         val now = System.currentTimeMillis()
         
         val newTask = task.copy(
