@@ -37,7 +37,6 @@ class QuickAddActivity : Activity() {
         params.height = ViewGroup.LayoutParams.WRAP_CONTENT
         window.attributes = params
         
-        // ARREGLO DEL TECLADO: SOFT_INPUT_ADJUST_RESIZE para que el scroll funcione
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE or WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
 
         repo = TaskRepository(this)
@@ -315,19 +314,29 @@ class QuickAddActivity : Activity() {
                 if (newTask != null) ReminderScheduler.schedule(this, newTask)
             }
 
+            CloudSync.uploadTasks(this)
             EisenhowerWidgetProvider.updateAllWidgets(this)
             CalendarWidgetProvider.updateAllWidgets(this)
-            CloudSync.uploadTasks(this)
             finish()
         }
     }
 
+    // ARREGLO: Usamos CalendarHelper para buscar el ID real
     private fun insertCalendarEvent(title: String, dueAt: Long): Long? {
         if (Build.VERSION.SDK_INT >= 23 && checkSelfPermission(Manifest.permission.WRITE_CALENDAR) != PackageManager.PERMISSION_GRANTED) return null
+        
+        val calId = CalendarHelper.getWritableCalendarId(this)
+        if (calId == -1L) {
+            Toast.makeText(this, "No se encontró un calendario editable", Toast.LENGTH_SHORT).show()
+            return null
+        }
+
         try {
             val values = ContentValues().apply {
                 put(CalendarContract.Events.DTSTART, dueAt); put(CalendarContract.Events.DTEND, dueAt + 60 * 60 * 1000)
-                put(CalendarContract.Events.TITLE, title); put(CalendarContract.Events.CALENDAR_ID, 1); put(CalendarContract.Events.EVENT_TIMEZONE, java.util.TimeZone.getDefault().id)
+                put(CalendarContract.Events.TITLE, title)
+                put(CalendarContract.Events.CALENDAR_ID, calId) // Usamos el ID real
+                put(CalendarContract.Events.EVENT_TIMEZONE, java.util.TimeZone.getDefault().id)
             }
             val uri: Uri? = contentResolver.insert(CalendarContract.Events.CONTENT_URI, values)
             return uri?.lastPathSegment?.toLongOrNull()
