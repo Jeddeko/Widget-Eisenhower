@@ -20,7 +20,7 @@ data class Task(
     val dueAt: Long? = null,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis(),
-    val completedAt: Long? = null, // NUEVO CAMPO
+    val completedAt: Long? = null,
     val calendarEventId: Long? = null,
     val order: Int = 0,
     val reminders: List<Long> = emptyList(),
@@ -96,7 +96,7 @@ data class Task(
         }.timeInMillis
 
         if (done) {
-            val compAt = completedAt ?: updatedAt // Fallback a updatedAt si no existe
+            val compAt = completedAt ?: updatedAt
             val completionDay = Calendar.getInstance().apply {
                 timeInMillis = compAt
                 set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
@@ -110,7 +110,8 @@ data class Task(
             if (dueAt in startMillis..endMillis) occurrences.add(dueAt)
             if (completionDay > dueDay && compAt in startMillis..endMillis) occurrences.add(compAt)
         } else {
-            if (dueAt < todayStart) {
+            // ARREGLO: El Rollover solo aplica si NO es recurrente
+            if (recurrence == RecurrenceType.NONE && dueAt < todayStart) {
                 val originalCal = Calendar.getInstance().apply { timeInMillis = dueAt }
                 val rolledCal = Calendar.getInstance().apply {
                     timeInMillis = todayStart
@@ -146,8 +147,9 @@ data class Task(
                 }
 
                 var iterations = 0
-                while (cal.timeInMillis <= endMillis && iterations < 50) {
-                    if (cal.timeInMillis >= startMillis && cal.timeInMillis >= todayStart) {
+                // ARREGLO: Límite de iteraciones más estricto para no colapsar
+                while (cal.timeInMillis <= endMillis && iterations < 35) {
+                    if (cal.timeInMillis >= startMillis) {
                         occurrences.add(cal.timeInMillis)
                     }
                     when (recurrence) {
