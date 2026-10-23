@@ -243,7 +243,7 @@ class MainActivity : Activity() {
             set(Calendar.MILLISECOND, 0)
         }.timeInMillis
 
-        // ARREGLO: "Mostrar tareas completadas" ahora funciona de verdad
+        // Respetamos si el usuario quiere ver o no las tareas completadas
         val allTasks = repo.getAll().filter { settings.showCompleted || !it.done }
         val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
         
@@ -257,9 +257,7 @@ class MainActivity : Activity() {
                     val day = cal.get(Calendar.DAY_OF_MONTH)
                     
                     if (task.done) {
-                        // ARREGLO: Usamos completedAt en lugar de updatedAt
-                        val compAt = task.completedAt ?: task.updatedAt 
-                        
+                        val compAt = task.completedAt ?: task.updatedAt
                         val dueDay = Calendar.getInstance().apply { 
                             timeInMillis = task.dueAt ?: compAt
                             set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
@@ -491,15 +489,15 @@ class MainActivity : Activity() {
         val completedHeader = findViewById<TextView>(headerId)
         val completedContainer = findViewById<LinearLayout>(containerId)
 
-        // ARREGLO: La opción "Mostrar tareas completadas" ahora se respeta aquí
-        if (completedTasks.isEmpty() || !settings.showCompleted) {
+        // Arreglo: Siempre mostrar el contenedor si hay tareas completadas, sin importar la configuración
+        if (completedTasks.isEmpty()) {
             completedHeader.visibility = View.GONE
             completedContainer.visibility = View.GONE
         } else {
             completedHeader.visibility = View.VISIBLE
             completedHeader.setTextColor(secondaryTextColor)
             completedHeader.text = "Completadas (${completedTasks.size}) ▼"
-            completedContainer.visibility = View.GONE
+            completedContainer.visibility = View.GONE // Colapsado por defecto
             
             completedHeader.setOnClickListener {
                 if (completedContainer.visibility == View.GONE) {
